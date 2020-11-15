@@ -2,7 +2,7 @@
   "name": "daily-planner",
   "version": "1.0.0",
   "description": "",
-  "homepage": "http://aaronmw.github.io/daily-planner",
+  "homepage": "https://aaronmw.github.io/daily-planner",
   "keywords": [],
   "main": "src/index.js",
   "dependencies": {
