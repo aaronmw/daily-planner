@@ -26,7 +26,7 @@ const GlobalStyle = createGlobalStyle(
             box-sizing: border-box;
             color: unset;
             font: unset;
-            line-height: 1.25em;
+            line-height: 1.4em;
             list-style-type: none;
             margin: 0;
             outline: unset;
@@ -71,7 +71,6 @@ const GlobalStyle = createGlobalStyle(
             }
         
             li {
-                margin-top: calc(${GRID_UNIT} / 4);
                 padding-left: ${GRID_UNIT};
                 position: relative;
         
@@ -90,10 +89,6 @@ const GlobalStyle = createGlobalStyle(
         }
     `
 );
-
-const Container = styled.div`
-    display: flex;
-`;
 
 /*
     tasks: {
@@ -120,10 +115,8 @@ function App() {
     );
     const [isDragging, setIsDragging] = useState(false);
     const activeTask = tasks[selectedTaskId];
-    const tasksArray = values(tasks).filter(task => !task.isComplete);
-    const hasTasks = tasksArray.length;
-    const scheduledTasks = tasksArray.filter(task => task.scheduled);
-    const unScheduledTasks = tasksArray.filter(task => !task.scheduled);
+    const incompleteTasks = values(tasks).filter(task => !task.isComplete);
+    const hasIncompleteTasks = incompleteTasks.length;
 
     const handleDragOver = () => setIsDragging(true);
 
@@ -169,17 +162,22 @@ function App() {
                 appActions={appActions}
                 isDragging={isDragging}
             />
-            <Container onDragOver={handleDragOver} onDragEnd={handleDragEnd}>
+            <FlexBox
+                align="stretch"
+                direction="row-reverse"
+                onDragOver={handleDragOver}
+                onDragEnd={handleDragEnd}
+            >
                 <Timeline
                     appActions={appActions}
                     selectedTaskId={selectedTaskId}
                     from={TIMELINE_FROM}
                     style={{
-                        opacity: hasTasks ? 1 : 0.25,
+                        opacity: hasIncompleteTasks ? 1 : 0.25,
                         width: '30vw',
-                        pointerEvents: hasTasks ? 'all' : 'none',
+                        pointerEvents: hasIncompleteTasks ? 'all' : 'none',
                     }}
-                    tasks={scheduledTasks}
+                    tasks={incompleteTasks}
                     to={TIMELINE_TO}
                 />
                 <TaskDetails
@@ -188,7 +186,7 @@ function App() {
                     style={{
                         width: '40vw',
                         height: '100vh',
-                        opacity: hasTasks ? 1 : 0.25,
+                        opacity: hasIncompleteTasks ? 1 : 0.25,
                         overflow: 'auto',
                     }}
                 />
@@ -208,10 +206,10 @@ function App() {
                     <WaitingArea
                         appActions={appActions}
                         selectedTaskId={selectedTaskId}
-                        tasks={unScheduledTasks}
+                        tasks={incompleteTasks}
                     />
                 </FlexBox>
-            </Container>
+            </FlexBox>
         </ThemeProvider>
     );
 }

@@ -28,7 +28,7 @@ const Container = styled(FlexBox).attrs({
 
 const CreateFirstTaskTip = styled(Box)`
     position: absolute;
-    right: calc(100% + ${GRID_UNIT} * 2);
+    left: calc(100% + ${GRID_UNIT} * 2);
     top: 50%;
     transform: translateY(-50%);
     white-space: nowrap;
@@ -47,6 +47,7 @@ const WaitingArea = ({
             scheduled: false,
         })
     );
+    const incompleteTasks = tasks.filter(task => !task.scheduled);
 
     const handleClickNewTask = () => {
         const newTaskId = Date.now();
@@ -74,10 +75,10 @@ const WaitingArea = ({
             <div style={{ position: 'relative', width: '100%' }}>
                 {tasks.length === 0 && (
                     <CreateFirstTaskTip>
-                        Create your first task{' '}
-                        <span role="img" aria-label="right-pointing hand">
-                            👉
-                        </span>
+                        <span role="img" aria-label="left-pointing hand">
+                            👈
+                        </span>{' '}
+                        Create your first task
                     </CreateFirstTaskTip>
                 )}
                 <GhostButton
@@ -89,7 +90,7 @@ const WaitingArea = ({
                     New Task
                 </GhostButton>
             </div>
-            {tasks.map(task => (
+            {incompleteTasks.map(task => (
                 <TaskCard
                     key={task.id}
                     appActions={appActions}

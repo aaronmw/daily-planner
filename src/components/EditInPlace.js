@@ -77,6 +77,7 @@ const EditInPlace = ({
     };
 
     const handleBlur = () => {
+        onSave(bufferedValue);
         setIsEditing(false);
     };
 

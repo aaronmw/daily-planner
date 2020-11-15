@@ -87,6 +87,7 @@ const Timeline = ({
     const [currentHour, currentMinute] = strToHoursAndMinutes(currentTime);
     const [fromHour, fromMinutes] = strToHoursAndMinutes(from);
     const [isLoaded, setIsLoaded] = useState(false);
+    const scheduledTasks = tasks.filter(task => task.scheduled);
     const [toHour, toMinutes] = strToHoursAndMinutes(to);
     const totalHours = toHour - fromHour;
     const totalMinutes =
@@ -120,7 +121,7 @@ const Timeline = ({
 
     return (
         <Container ref={timelineContainerRef} {...otherProps}>
-            {tasks.map(task => {
+            {scheduledTasks.map(task => {
                 const [hours, mins] = strToHoursAndMinutes(task.scheduled_time);
                 const offsetMinutes =
                     hours * 60 + mins - (fromHour * 60 + fromMinutes);

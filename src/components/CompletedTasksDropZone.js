@@ -25,16 +25,16 @@ const Container = styled.div(
         animation-name: ${isTargetedForDrop ? pulsingAnimation : 'unset'};
         animation-timing-function: ease-in-out;
         background: ${transparentize(
-            isTargetedForDrop ? 0 : isDragging ? 0.75 : 1,
+            isTargetedForDrop ? 0 : isDragging ? 0.75 : 0.9,
             COLORS[theme.name].PRIMARY
         )};
-        bottom: calc(${DROP_ZONE_RADIUS} * -${isDragging ? 1 : 2});
+        bottom: calc(${DROP_ZONE_RADIUS} * -1);
         border-radius: calc(${DROP_ZONE_RADIUS} * 2);
         height: calc(${DROP_ZONE_RADIUS} * 2);
         pointer-events: ${isDragging ? 'all' : 'none'};
         position: fixed;
-        right: calc(${DROP_ZONE_RADIUS} * -${isDragging ? 1 : 2});
-        transform: scale(0.5);
+        right: calc(${DROP_ZONE_RADIUS} * -1);
+        transform: scale(${isDragging ? 0.5 : 0.25});
         width: calc(${DROP_ZONE_RADIUS} * 2);
         z-index: 100;
         ${UNIFIED_TRANSITION};
