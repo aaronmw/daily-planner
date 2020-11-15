@@ -28,9 +28,10 @@ const Container = styled.div(
             calc(${GRID_UNIT} / 2 + ${LABEL_STRIP_WIDTH});
         pointer-events: ${isDraggingOver ? 'none' : 'auto'};
         position: relative;
+        transition-property: opacity, top;
+        width: auto;
         z-index: ${isActive ? 10 : 'initial'};
         ${UNIFIED_TRANSITION};
-        transition-property: opacity, top;
 
         &:before {
             background-color: ${COLORS[theme.name].PRIMARY};

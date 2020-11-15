@@ -1,4 +1,4 @@
-import { darken, lighten, rgba, setLightness, transparentize } from 'polished';
+import { lighten, rgba, setLightness, transparentize } from 'polished';
 
 export const BULLET_SIZE = '10px';
 export const BORDER_RADIUS = '3px';

@@ -4,6 +4,7 @@ import { COLORS, GRID_UNIT } from '../../tokens';
 const Box = styled.div(
     ({
         border = false,
+        isFlexible = false,
         margin = 0,
         marginX = 0,
         marginY = 0,
@@ -12,6 +13,11 @@ const Box = styled.div(
         paddingY = 0,
         theme,
     }) => `
+        box-shadow: ${
+            border ? `0 0 0 1px ${COLORS[theme.name].BORDER_NEUTRAL}` : 'none'
+        };
+        flex-grow: ${isFlexible ? 1 : 0};
+        flex-shrink: ${isFlexible ? 1 : 0};
         ${
             marginX
                 ? `
@@ -58,9 +64,6 @@ const Box = styled.div(
                 `
                 : ''
         }
-        box-shadow: ${
-            border ? `0 0 0 1px ${COLORS[theme.name].BORDER_NEUTRAL}` : 'none'
-        };
     `
 );
 

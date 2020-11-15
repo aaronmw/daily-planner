@@ -17,7 +17,6 @@ import {
     TIMELINE_FROM,
     TIMELINE_TO,
 } from './tokens';
-import minutesToHeight from './utils/minutesToHeight';
 
 const GlobalStyle = createGlobalStyle(
     ({ theme }) => `
@@ -193,26 +192,8 @@ function App() {
                         overflow: 'auto',
                     }}
                 />
-                {!activeTask && (
-                    <div
-                        style={{
-                            position: 'fixed',
-                            right: `calc(30vw + ${GRID_UNIT})`,
-                            top: `calc(${GRID_UNIT} + (${minutesToHeight(
-                                30
-                            )} * 0.5))`,
-                            transform: 'translateY(-50%)',
-                        }}
-                    >
-                        Create your first task{' '}
-                        <span role="img" aria-label="right-pointing hand">
-                            👉
-                        </span>
-                    </div>
-                )}
                 <FlexBox
                     direction="column"
-                    justify="stretch"
                     style={{
                         width: '30vw',
                     }}

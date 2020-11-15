@@ -55,12 +55,18 @@ const Container = styled.div(
 );
 
 const CompletedTasksDropZone = ({ appActions, isDragging, ...otherProps }) => {
-    const { onUpdateTask } = appActions;
-    const [dropProps] = useDrop('task-id', taskId =>
+    const { onSelectTask, onUpdateTask } = appActions;
+    const [dropProps] = useDrop('task-id', taskId => {
         onUpdateTask(taskId, {
             isComplete: true,
-        })
-    );
+        });
+        onSelectTask(currentSelectedTaskId => {
+            console.log(currentSelectedTaskId, 'v', taskId);
+            return currentSelectedTaskId === taskId
+                ? null
+                : currentSelectedTaskId;
+        });
+    });
 
     return <Container isDragging={isDragging} {...dropProps} {...otherProps} />;
 };

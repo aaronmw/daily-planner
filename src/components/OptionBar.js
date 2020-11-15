@@ -51,10 +51,7 @@ const OptionBar = ({
                 <OptionButton
                     key={option}
                     isSelected={isSelected}
-                    onClick={() => {
-                        console.log('Clicked Option:', option);
-                        onChange(option);
-                    }}
+                    onClick={() => onChange(option)}
                 >
                     {isSelected
                         ? renderSelectedOption(renderOption(option))

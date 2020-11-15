@@ -6,7 +6,7 @@ const FlexBox = styled(Box)(
     ({
         align = 'center',
         direction = 'row',
-        justify = 'center',
+        justify = 'stretch',
         spacing = 0,
     }) => `
         align-items: ${align};
@@ -19,7 +19,9 @@ const FlexBox = styled(Box)(
             spacing
                 ? `
                     & > * + * {
-                        margin-left: calc(${spacing} * ${GRID_UNIT});
+                        margin-${
+                            direction === 'row' ? 'left' : 'top'
+                        }: calc(${spacing} * ${GRID_UNIT});
                     }
                 `
                 : ''
