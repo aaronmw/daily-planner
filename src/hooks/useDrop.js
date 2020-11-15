@@ -18,7 +18,9 @@ const useDrop = (type, callback) => {
 
     const onDrop = evt => {
         const payload = evt.dataTransfer.getData(type);
-        callback(payload);
+        if (payload) {
+            callback(payload);
+        }
         setIsTargetedForDrop(false);
     };
 

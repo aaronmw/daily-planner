@@ -9,10 +9,11 @@ const FlexBox = styled(Box)(
         justify = 'center',
         spacing = 0,
     }) => `
+        align-items: ${align};
         display: flex;
         flex-direction: ${direction};
-        align-items: ${align};
         justify-content: ${justify};
+        width: 100%;
         
         ${
             spacing

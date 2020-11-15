@@ -1,16 +1,16 @@
 import styled from 'styled-components';
-import { COLOR_BORDER, GRID_UNIT } from '../../tokens';
+import { COLORS, GRID_UNIT } from '../../tokens';
 
 const Box = styled.div(
     ({
         border = false,
-        backgroundColor = false,
         margin = 0,
         marginX = 0,
         marginY = 0,
         padding = 0,
         paddingX = 0,
         paddingY = 0,
+        theme,
     }) => `
         ${
             marginX
@@ -58,7 +58,9 @@ const Box = styled.div(
                 `
                 : ''
         }
-        box-shadow: ${border ? `0 0 0 1px ${COLOR_BORDER}` : 'none'};
+        box-shadow: ${
+            border ? `0 0 0 1px ${COLORS[theme.name].BORDER_NEUTRAL}` : 'none'
+        };
     `
 );
 

@@ -5,6 +5,7 @@
   "keywords": [],
   "main": "src/index.js",
   "dependencies": {
+    "emojis-list": "^3.0.0",
     "marked": "1.2.2",
     "polished": "4.0.3",
     "react": "16.12.0",

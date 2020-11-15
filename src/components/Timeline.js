@@ -1,96 +1,98 @@
+import range from 'lodash/range';
+import { transparentize } from 'polished';
 import React, { Fragment, useEffect, useRef, useState } from 'react';
 import styled from 'styled-components';
-import range from 'lodash/range';
-import CurrentTimeMarker from './CurrentTimeMarker';
+import { COLORS, GRID_UNIT } from '../tokens';
+import minutesToHeight from '../utils/minutesToHeight';
+import { strToHoursAndMinutes } from '../utils/strToHoursAndMinutes';
 import TaskCard from './TaskCard';
 import TimelineDropZone from './TimelineDropZone';
-import { strToHoursAndMinutes } from '../utils/strToHoursAndMinutes';
-import {
-    COLOR_PRIMARY,
-    GRID_UNIT,
-    HOURS_AT_ONCE,
-    MIN_SLOT_HEIGHT,
-} from '../tokens';
+
+const HALF_HOUR_LABEL_WIDTH = '80px';
 
 const Container = styled.div`
-    position: relative;
     height: 100vh;
     overflow: auto;
+    position: relative;
+    user-select: none;
 `;
 
-const TimelineMarker = styled.div(
-    ({ hoursAtOnce, isFaded }) => `
-        position: relative;
-        height: calc(100vh / ${hoursAtOnce * 2});
-        min-height: ${MIN_SLOT_HEIGHT};
-        opacity: ${isFaded ? 0.25 : 0.5};
-    `
-);
+const HalfHourRow = styled.div`
+    position: relative;
+    height: ${minutesToHeight(30)};
+`;
 
-const TimelineMarkerLabel = styled.div(
-    ({ hideLabel }) => `
+const HalfHourLabel = styled.div(
+    ({ hideLabel, isFaded, theme }) => `
+        color: ${
+            hideLabel
+                ? 'transparent'
+                : transparentize(isFaded ? 1 : 0, COLORS[theme.name].TEXT_FADED)
+        };
+        padding-right: calc(100% - ${HALF_HOUR_LABEL_WIDTH} + (${GRID_UNIT} * 0.5));
         position: absolute;
-        top: 0;
-        width: 100%;
-        transform: translateY(-50%);
-        background: white;
         text-align: right;
-        padding-right: calc(100% - 60px);
-        color: ${hideLabel ? 'transparent' : 'inherit'}
+        top: 0;
+        transform: translateY(-50%);
+        width: 100%;
     
         &:before {
+            background-color: ${transparentize(
+                isFaded ? 0.8 : 0.5,
+                COLORS[theme.name].BORDER_NEUTRAL
+            )};
             content: '';
+            height: 1px;
+            left: ${HALF_HOUR_LABEL_WIDTH};
             position: absolute;
             right: 0;
-            left: 70px;
             top: 50%;
-            height: 1px;
-            background-color: ${COLOR_PRIMARY};
         }
     `
 );
 
-const StyledScheduledTaskCard = styled(TaskCard)(
+const ScheduledTaskCard = styled(TaskCard)(
     ({ offsetMinutes }) => `
         position: absolute;
         left: calc(${GRID_UNIT} * 3);
         right: ${GRID_UNIT};
-        top: max(
-            100vh / (${HOURS_AT_ONCE} * 60) * ${offsetMinutes},
-            ${MIN_SLOT_HEIGHT} * 2 * ${offsetMinutes} / 60
-        );
+        top: ${minutesToHeight(offsetMinutes)};
         z-index: 2;
     `
 );
 
-const ScheduledTaskCard = ({ offsetMinutes, task, ...otherProps }) => (
-    <StyledScheduledTaskCard
-        offsetMinutes={offsetMinutes}
-        task={task}
-        {...otherProps}
-    />
+const CurrentTimeMarker = styled.div(
+    ({ offsetMinutes }) => `
+        background-color: red;
+        height: 1px;
+        left: 0;
+        pointer-events: none;
+        position: absolute;
+        right: 0;
+        top: ${minutesToHeight(offsetMinutes)};
+        z-index: 10;
+    `
 );
 
 const Timeline = ({
-    activeTaskId,
+    appActions,
+    selectedTaskId,
     from,
-    hoursAtOnce,
     tasks,
     to,
     onClickTask,
-    onUpdateState,
     ...otherProps
 }) => {
     const [currentTime, setCurrentTime] = useState(null);
-    const [isLoaded, setIsLoaded] = useState(false);
-    const [fromHour, fromMinutes] = strToHoursAndMinutes(from);
-    const [toHour, toMinutes] = strToHoursAndMinutes(to);
     const [currentHour, currentMinute] = strToHoursAndMinutes(currentTime);
+    const [fromHour, fromMinutes] = strToHoursAndMinutes(from);
+    const [isLoaded, setIsLoaded] = useState(false);
+    const [toHour, toMinutes] = strToHoursAndMinutes(to);
     const totalHours = toHour - fromHour;
     const totalMinutes =
         toHour * 60 + toMinutes - (fromHour * 60 + fromMinutes);
-    const timelineContainerRef = useRef(null);
     const currentTimeMarkerRef = useRef(null);
+    const timelineContainerRef = useRef(null);
 
     useEffect(() => {
         const updateTime = () => {
@@ -98,6 +100,7 @@ const Timeline = ({
             setCurrentTime(`${now.getHours()}:${now.getMinutes()}`);
             setIsLoaded(true);
         };
+        updateTime();
         const timer = setInterval(updateTime, 500);
         return () => clearInterval(timer);
     }, []);
@@ -110,7 +113,7 @@ const Timeline = ({
         ) {
             timelineContainerRef.current.scrollTo(
                 0,
-                currentTimeMarkerRef.current.offsetTop - 30
+                currentTimeMarkerRef.current.offsetTop - 150
             );
         }
     }, [isLoaded, currentTimeMarkerRef, timelineContainerRef]);
@@ -118,16 +121,17 @@ const Timeline = ({
     return (
         <Container ref={timelineContainerRef} {...otherProps}>
             {tasks.map(task => {
-                const [hours, mins] = strToHoursAndMinutes(task.schedule.time);
+                const [hours, mins] = strToHoursAndMinutes(task.scheduled_time);
                 const offsetMinutes =
                     hours * 60 + mins - (fromHour * 60 + fromMinutes);
+
                 return (
                     <ScheduledTaskCard
                         key={task.id}
-                        isActive={activeTaskId === task.id}
+                        appActions={appActions}
+                        isActive={selectedTaskId === task.id}
                         offsetMinutes={offsetMinutes}
                         task={task}
-                        onClick={onClickTask.bind(this, task.id)}
                     />
                 );
             })}
@@ -140,21 +144,21 @@ const Timeline = ({
                 }
             />
             <TimelineDropZone
+                appActions={appActions}
                 totalMinutes={totalMinutes}
-                onUpdateState={onUpdateState}
             />
             {range(totalHours).map(hour => (
                 <Fragment key={hour}>
-                    <TimelineMarker hoursAtOnce={hoursAtOnce}>
-                        <TimelineMarkerLabel hideLabel={hour === 0}>
-                            {fromHour + hour}:00
-                        </TimelineMarkerLabel>
-                    </TimelineMarker>
-                    <TimelineMarker isFaded hoursAtOnce={hoursAtOnce}>
-                        <TimelineMarkerLabel>
-                            {fromHour + hour}:30
-                        </TimelineMarkerLabel>
-                    </TimelineMarker>
+                    <HalfHourRow>
+                        <HalfHourLabel hideLabel={hour === 0}>
+                            {(fromHour + hour) % 12 || 12}:00
+                        </HalfHourLabel>
+                    </HalfHourRow>
+                    <HalfHourRow>
+                        <HalfHourLabel isFaded>
+                            {(fromHour + hour) % 12 || 12}:30
+                        </HalfHourLabel>
+                    </HalfHourRow>
                 </Fragment>
             ))}
         </Container>

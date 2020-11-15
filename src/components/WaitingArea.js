@@ -1,17 +1,20 @@
 import React from 'react';
 import styled from 'styled-components';
-import useDrop from './hooks/useDrop';
+import useDrop from '../hooks/useDrop';
+import minutesToHeight from '../utils/minutesToHeight';
+import { GhostButton } from './atoms/Button';
 import TaskCard from './TaskCard';
-import { COLOR_BORDER_HOVER, COLOR_SHADED, GRID_UNIT } from '../tokens';
+import { COLORS, GRID_UNIT } from '../tokens';
 
 const Container = styled.div(
-    ({ isTargetedForDrop }) => `
-        background-color: ${COLOR_SHADED};
+    ({ isTargetedForDrop, theme }) => `
+        background-color: ${COLORS[theme.name].SHADED};
         box-shadow: ${
             isTargetedForDrop
-                ? `0 0 0 5px ${COLOR_BORDER_HOVER} inset`
+                ? `0 0 0 5px ${COLORS[theme.name].BORDER_HOVER} inset`
                 : 'initial'
         };
+        flex-grow: 1;
         padding: ${GRID_UNIT};
 
         & > * + * {
@@ -21,33 +24,56 @@ const Container = styled.div(
 );
 
 const WaitingArea = ({
-    activeTaskId,
+    appActions,
+    selectedTaskId,
     tasks,
     onClickTask,
-    onUpdateState,
     ...otherProps
 }) => {
-    const [dropProps] = useDrop('task-id', taskId => {
-        onUpdateState({
-            tasks: {
-                [taskId]: {
-                    schedule: {
-                        active: false,
-                    },
-                },
+    const { onSelectTask, onUpdateTask, onUpdateTasks } = appActions;
+    const [dropProps] = useDrop('task-id', taskId =>
+        onUpdateTask(taskId, {
+            scheduled: false,
+        })
+    );
+
+    const handleClickNewTask = () => {
+        const newTaskId = Date.now();
+        const now = new Date();
+        const currentHour = now.getHours();
+        const currentMinute = now.getMinutes();
+
+        onUpdateTasks({
+            [newTaskId]: {
+                icon: '📌',
+                id: newTaskId,
+                isComplete: false,
+                label: 'New Task',
+                notes: '',
+                scheduled: false,
+                scheduled_minutes: 30,
+                scheduled_time: `${currentHour}:${currentMinute}`,
             },
         });
-    });
+        onSelectTask(newTaskId);
+    };
 
     return (
         <Container {...dropProps} {...otherProps}>
+            <GhostButton
+                style={{
+                    height: minutesToHeight(30),
+                }}
+                onClick={handleClickNewTask}
+            >
+                New Task
+            </GhostButton>
             {tasks.map(task => (
                 <TaskCard
-                    draggable
                     key={task.id}
-                    isActive={activeTaskId === task.id}
+                    appActions={appActions}
+                    isActive={selectedTaskId === task.id}
                     task={task}
-                    onClick={onClickTask.bind(this, task.id)}
                 />
             ))}
         </Container>

@@ -1,85 +1,106 @@
 import React from 'react';
 import styled from 'styled-components';
-import useDrag from './hooks/useDrag';
+import useDrag from '../hooks/useDrag';
 import {
     BORDER_RADIUS,
-    COLOR_BORDER,
-    COLOR_BORDER_HOVER,
-    COLOR_PRIMARY,
+    COLORS,
     GRID_UNIT,
-    HOURS_AT_ONCE,
+    HOURS_PER_SCREEN,
     MIN_SLOT_HEIGHT,
     UNIFIED_TRANSITION,
 } from '../tokens';
+import minutesToHeight from '../utils/minutesToHeight';
 
 const LABEL_STRIP_WIDTH = '5px';
 
 const Container = styled.div(
-    ({ duration, isActive, isDragging, isDraggingOver }) => `
+    ({ duration, isActive, isDragging, isDraggingOver, theme }) => `
         align-items: center;
-        background-color: white;
+        background-color: ${COLORS[theme.name].BACKGROUND};
         border-radius: ${BORDER_RADIUS};
-        box-shadow: ${
-            isActive
-                ? `0 0 0 2px ${COLOR_PRIMARY} !important`
-                : `0 0 0 1px ${COLOR_BORDER}`
-        };
+        box-shadow: ${`0 0 0 2px ${
+            COLORS[theme.name][isActive ? 'PRIMARY' : 'BORDER_IDLE']
+        }`};
         cursor: pointer;
-        height: calc((100vh / (${HOURS_AT_ONCE} * 60)) * ${duration});
-        height: max(
-            100vh / (${HOURS_AT_ONCE} * 60) * ${duration},
-            ${MIN_SLOT_HEIGHT} * 2 * ${duration} / 60
-        );
+        height: ${minutesToHeight(duration)};
         opacity: ${isDragging ? 0.5 : 1};
         padding: 0 calc(${GRID_UNIT} / 2) 0
             calc(${GRID_UNIT} / 2 + ${LABEL_STRIP_WIDTH});
-        pointerEvents: ${isDraggingOver ? 'none' : 'auto'};
+        pointer-events: ${isDraggingOver ? 'none' : 'auto'};
         position: relative;
         z-index: ${isActive ? 10 : 'initial'};
         ${UNIFIED_TRANSITION};
+        transition-property: opacity, top;
 
         &:before {
-            background-color: ${COLOR_PRIMARY};
+            background-color: ${COLORS[theme.name].PRIMARY};
+            border-bottom-left-radius: ${BORDER_RADIUS};
+            border-top-left-radius: ${BORDER_RADIUS};
             bottom: 1px;
             content: '';
             left: 1px;
+            opacity: ${isActive ? 1 : 0.5};
             position: absolute;
             top: 1px;
             width: ${LABEL_STRIP_WIDTH};
+            ${UNIFIED_TRANSITION};
         }
-
+        
         &:hover {
-            box-shadow: 0 0 0 2px ${COLOR_BORDER_HOVER};
+            box-shadow: 0 0 0 2px ${COLORS[theme.name].BORDER_HOVER};
         }
+        
         &:focus {
-            box-shadow: 0 0 0 2px ${COLOR_PRIMARY};
+            box-shadow: 0 0 0 2px ${COLORS[theme.name].PRIMARY};
+        }
+        
+        &:active {
+            box-shadow: 0 0 0 2px ${COLORS[theme.name].PRIMARY} inset;
         }
     `
 );
 
-const Label = styled.div`
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    height: 100%;
-    min-height: ${MIN_SLOT_HEIGHT};
-    max-height: calc((100vh / (${HOURS_AT_ONCE} * 60)) * 30);
-`;
+const Label = styled.div(
+    ({ isActive, theme }) => `
+        align-items: center;
+        color: ${COLORS[theme.name][isActive ? 'TEXT' : 'TEXT_FADED']};
+        display: flex;
+        height: 100%;
+        justify-content: space-between;
+        max-height: calc((100vh / (${HOURS_PER_SCREEN} * 60)) * 30);
+        min-height: ${MIN_SLOT_HEIGHT};
+        ${UNIFIED_TRANSITION};
+        
+        ${Container}:hover > & {
+            color: ${COLORS[theme.name].TEXT};
+        }
+    `
+);
 
-const TaskCard = ({ isActive, task, ...otherProps }) => {
-    const { icon, id, label, schedule } = task;
-    const { duration } = schedule;
+const TaskCard = ({ appActions, isActive, task, ...otherProps }) => {
+    const { onSelectTask } = appActions;
+    const { icon, id, label, scheduled_minutes } = task;
     const [dragProps] = useDrag('task-id', id);
+
+    const handleClick = () => onSelectTask(id);
 
     return (
         <Container
-            duration={duration}
+            duration={scheduled_minutes}
             isActive={isActive}
+            onClick={handleClick}
             {...dragProps}
             {...otherProps}
         >
-            <Label>
-                <span>{label}</span>
+            <Label isActive={isActive}>
+                <div
+                    style={{
+                        maxHeight: '100%',
+                        overflow: 'auto',
+                    }}
+                >
+                    {label}
+                </div>
                 <span>{icon}</span>
             </Label>
         </Container>

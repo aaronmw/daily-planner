@@ -1,237 +1,137 @@
-import React, { useEffect, useRef, useState } from 'react';
-import marked from 'marked';
+import React, { useLayoutEffect, useState } from 'react';
 import styled from 'styled-components';
-import Button from './atoms/Button';
+import marked from 'marked';
+import Box from './atoms/Box';
+import EditInPlace from './EditInPlace';
+import OptionBar from './OptionBar';
 import FlexBox from './atoms/FlexBox';
-import {
-    BORDER_RADIUS,
-    BULLET_SIZE,
-    COLOR_BORDER,
-    COLOR_BORDER_HOVER,
-    COLOR_PRIMARY,
-    COLOR_SHADED,
-    GRID_UNIT,
-    UNIFIED_TRANSITION,
-} from '../tokens';
+import { COLORS, DURATION_OPTIONS } from '../tokens';
 
-const Container = styled.div`
-    display: flex;
-    flex-direction: column;
-    position: relative;
-    box-shadow: 0 0 0 10px rgba(0, 0, 0, 0.1);
-    border-left: 2px solid ${COLOR_BORDER};
-    border-right: 2px solid ${COLOR_BORDER};
-    z-index: 1;
-`;
+const ANIMATION_DURATION = 200;
 
-const TaskHeader = styled.h1(
-    ({ icon }) => `
-        background-color: ${COLOR_SHADED};
-        font-size: 1.4rem;
-        padding: calc(${GRID_UNIT}) ${GRID_UNIT};
+const Container = styled.div(
+    ({ isLoading, theme }) => `
+        display: flex;
+        flex-direction: column;
         position: relative;
-    
-        &:before {
-            content: '${icon}';
-            font-size: 3rem;
-            position: absolute;
-            right: ${GRID_UNIT};
-            top: 50%;
-            transform: translateY(-50%);
-        }
-    `
-);
-
-const StyledTaskNotesViewer = styled.div(
-    ({ isEmpty }) => `
-        cursor: pointer;
-        padding: calc(${GRID_UNIT}) ${GRID_UNIT};
-        position: relative;
-        height: 100%;
+        box-shadow: 0 0 0 10px rgba(0, 0, 0, 0.1);
+        border-left: 2px solid ${COLORS[theme.name].BORDER_NEUTRAL};
+        border-right: 2px solid ${COLORS[theme.name].BORDER_NEUTRAL};
+        z-index: 1;
         
-        ${
-            isEmpty
-                ? `
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    color: ${COLOR_BORDER};
-                `
-                : ''
-        }
-    
-        & > * + * {
-            margin-top: calc(${GRID_UNIT} / 2);
-        }
-    
-        &:hover {
-            &:before {
-                opacity: 1;
-            }
-    
-            &:after {
-                opacity: 1;
-                transform: translateX(0) rotateY(-180deg);
-            }
-        }
-    
-        // Tracing element
         &:before {
-            border: 2px dashed ${COLOR_BORDER_HOVER};
-            border-radius: ${BORDER_RADIUS};
+            background-color: ${COLORS[theme.name].BACKGROUND};
+            bottom: 0;
             content: '';
-            opacity: 0;
+            left: 0;
+            opacity: ${isLoading ? 1 : 0};
+            pointer-events: none;
             position: absolute;
-            top: calc(${GRID_UNIT} / 2);
-            right: calc(${GRID_UNIT} / 2);
-            bottom: calc(${GRID_UNIT} / 2);
-            left: calc(${GRID_UNIT} / 2);
-            ${UNIFIED_TRANSITION};
-        }
-    
-        // Pencil
-        &:after {
-            content: '✏️';
-            position: absolute;
-            top: calc(${GRID_UNIT});
-            right: calc(${GRID_UNIT} * 1.1);
-            transform: translateX(200%) rotateY(-180deg);
-            filter: saturate(0);
-            opacity: 0;
-            ${UNIFIED_TRANSITION};
-        }
-        
-        blockquote {
-            border-left: 5px solid ${COLOR_BORDER};
-            font-style: italic;
-            padding: calc(${GRID_UNIT} * 0.5) ${GRID_UNIT};
-        }
-    
-        li {
-            margin-top: calc(${GRID_UNIT} / 4);
-            padding-left: ${GRID_UNIT};
-            position: relative;
-    
-            &:before {
-                content: '';
-                box-sizing: border-box;
-                position: absolute;
-                top: 5px;
-                left: 0;
-                border: 2px solid ${COLOR_BORDER};
-                border-radius: 100px;
-                width: ${BULLET_SIZE};
-                height: ${BULLET_SIZE};
-            }
+            right: 0;
+            top: 0;
+            transition: opacity ${ANIMATION_DURATION / 2 / 1000}s ease-in-out;
+            z-index: 10;
         }
     `
 );
 
-const TaskNotesViewer = ({ notes, ...otherProps }) => {
-    const isEmpty = notes.trim() === '';
+const TaskHeader = styled(FlexBox).attrs({
+    as: 'h1',
+    align: 'flex-start',
+    spacing: 1.5,
+    paddingX: 1,
+    paddingY: 0.75,
+})(
+    ({ theme }) => `
+        background-color: ${COLORS[theme.name].SHADED};
+        font-size: 1.4rem;
+        font-weight: 900;
+        position: relative;
+    `
+);
 
-    return (
-        <StyledTaskNotesViewer
-            dangerouslySetInnerHTML={{
-                __html: !isEmpty ? marked(notes) : 'No notes',
-            }}
-            isEmpty={isEmpty}
-            {...otherProps}
-        />
-    );
-};
-
-const TaskNotesEditorTextarea = styled.textarea`
-    border-radius: ${BORDER_RADIUS};
-    box-shadow: 0 0 0 1px ${COLOR_BORDER}, 0 0 5px ${COLOR_BORDER} inset;
+const TaskHeaderLabel = styled(Box).attrs({
+    role: 'image',
+})`
     flex-grow: 1;
-    margin: calc(${GRID_UNIT} / 2);
-    padding: calc(${GRID_UNIT} / 2);
-    outline: none;
-
-    &:hover {
-        box-shadow: 0 0 0 2px ${COLOR_BORDER_HOVER},
-            0 0 5px ${COLOR_BORDER} inset;
-    }
-    &:focus,
-    &:active {
-        box-shadow: 0 0 0 2px ${COLOR_PRIMARY}, 0 0 5px ${COLOR_BORDER} inset;
-    }
+    justify-self: stretch;
 `;
 
-const TaskNotesEditor = ({ task, onCancel, onUpdateState, ...otherProps }) => {
-    const { id: taskId, notes } = task;
-    const [notesBuffer, setNotesBuffer] = useState(notes);
-    const editorTextareaRef = useRef(null);
+const TaskHeaderIcon = styled(Box).attrs({
+    role: 'img',
+})`
+    flex-shrink: 0;
+    font-size: 3rem;
+    line-height: 1.4rem;
+    width: 3rem;
+`;
 
-    useEffect(() => {
-        if (editorTextareaRef.current) {
-            editorTextareaRef.current.select();
-            editorTextareaRef.current.focus();
-        }
-    }, [editorTextareaRef]);
+const TaskDetails = ({ appActions, task = {}, ...otherProps }) => {
+    const [isLoading, setIsLoading] = useState(false);
+    const { onUpdateTask } = appActions;
+    const { icon, id, label, notes, scheduled_minutes } = task;
+    const isEmpty = !task.id;
+    const handleUpdateTask = (field, value) =>
+        onUpdateTask(id, { [field]: value });
+    const handleSaveDuration = newDuration =>
+        handleUpdateTask('scheduled_minutes', newDuration);
+    const handleSaveIcon = newNotes => handleUpdateTask('icon', newNotes);
+    const handleSaveLabel = newLabel => handleUpdateTask('label', newLabel);
+    const handleSaveNotes = newNotes => handleUpdateTask('notes', newNotes);
 
-    const handleChange = evt => setNotesBuffer(evt.target.value);
-
-    const handleClickCancel = onCancel;
-
-    const handleClickSave = () => {
-        onUpdateState({
-            tasks: {
-                [taskId]: {
-                    notes: notesBuffer,
-                },
-            },
-        });
-    };
-
-    const handleKeyDown = evt => {
-        if (evt.key === 'Enter' && evt.shiftKey) {
-            handleClickSave();
-        }
-    };
-
-    return (
-        <>
-            <TaskNotesEditorTextarea
-                ref={editorTextareaRef}
-                value={notesBuffer}
-                onChange={handleChange}
-                onKeyDown={handleKeyDown}
-                {...otherProps}
-            />
-            <FlexBox justify="flex-end" margin={0.5} spacing={0.25}>
-                <Button onClick={handleClickCancel}>Cancel</Button>
-                <Button onClick={handleClickSave}>Save</Button>
-            </FlexBox>
-        </>
-    );
-};
-
-const TaskDetails = ({ task, onUpdateState, ...otherProps }) => {
-    const [isEditingNotes, setIsEditingNotes] = useState(false);
-    const { icon, label, notes } = task;
-
-    useEffect(() => {
-        setIsEditingNotes(false);
-    }, [task]);
-
-    const handleCancel = () => setIsEditingNotes(false);
+    useLayoutEffect(() => {
+        setIsLoading(true);
+        const newTimer = setTimeout(
+            () => setIsLoading(false),
+            ANIMATION_DURATION / 2
+        );
+        return () => clearTimeout(newTimer);
+    }, [task.id]);
 
     return (
-        <Container {...otherProps}>
-            <TaskHeader icon={icon}>{label}</TaskHeader>
-            {isEditingNotes ? (
-                <TaskNotesEditor
-                    task={task}
-                    onCancel={handleCancel}
-                    onUpdateState={onUpdateState}
-                />
-            ) : (
-                <TaskNotesViewer
-                    notes={notes}
-                    onClick={() => setIsEditingNotes(true)}
-                />
+        <Container isLoading={isLoading} {...otherProps}>
+            {!isEmpty && !isLoading && (
+                <>
+                    <OptionBar
+                        renderSelectedOption={option => `${option} mins`}
+                        selectedOption={scheduled_minutes}
+                        options={DURATION_OPTIONS}
+                        onChange={handleSaveDuration}
+                    />
+
+                    <TaskHeader>
+                        <TaskHeaderLabel>
+                            <EditInPlace
+                                placeholder="Untitled"
+                                value={label}
+                                onSave={handleSaveLabel}
+                            />
+                        </TaskHeaderLabel>
+                        <TaskHeaderIcon>
+                            <EditInPlace
+                                placeholder="📌"
+                                value={icon}
+                                onSave={handleSaveIcon}
+                            />
+                        </TaskHeaderIcon>
+                    </TaskHeader>
+
+                    <EditInPlace
+                        isMultiLine
+                        margin={1}
+                        placeholder="Double-click to add notes"
+                        render={rawNotes => (
+                            <div
+                                className="markdown"
+                                dangerouslySetInnerHTML={{
+                                    __html: marked(rawNotes),
+                                }}
+                            />
+                        )}
+                        value={notes}
+                        onSave={handleSaveNotes}
+                    />
+                </>
             )}
         </Container>
     );
