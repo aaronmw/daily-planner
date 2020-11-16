@@ -1,4 +1,3 @@
-import { toInt } from './toInt';
+import toInt from './toInt';
 
-export const strToHoursAndMinutes = str =>
-    str ? str.split(':').map(val => toInt(val)) : [0, 0];
+export default str => (str ? str.split(':').map(val => toInt(val)) : [0, 0]);

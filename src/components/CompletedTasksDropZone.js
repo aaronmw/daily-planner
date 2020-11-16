@@ -1,8 +1,8 @@
-import { transparentize } from 'polished';
 import React from 'react';
+import { lighten, transparentize } from 'polished';
 import styled, { css, keyframes } from 'styled-components';
 import useDrop from '../hooks/useDrop';
-import { COLORS, UNIFIED_TRANSITION } from '../tokens';
+import { COLORS, UNIFIED_TRANSITION } from './atoms/tokens';
 
 const DROP_ZONE_RADIUS = '20vw';
 
@@ -25,7 +25,7 @@ const Container = styled.div(
         animation-name: ${isTargetedForDrop ? pulsingAnimation : 'unset'};
         animation-timing-function: ease-in-out;
         background: ${transparentize(
-            isTargetedForDrop ? 0 : isDragging ? 0.75 : 0.9,
+            isTargetedForDrop ? 0 : isDragging ? 0.35 : 0.8,
             COLORS[theme.name].PRIMARY
         )};
         bottom: calc(${DROP_ZONE_RADIUS} * -1);
@@ -54,14 +54,13 @@ const Container = styled.div(
     `
 );
 
-const CompletedTasksDropZone = ({ appActions, isDragging, ...otherProps }) => {
+const CompletedTaskDropZone = ({ appActions, isDragging, ...otherProps }) => {
     const { onSelectTask, onUpdateTask } = appActions;
     const [dropProps] = useDrop('task-id', taskId => {
         onUpdateTask(taskId, {
             isComplete: true,
         });
         onSelectTask(currentSelectedTaskId => {
-            console.log(currentSelectedTaskId, 'v', taskId);
             return currentSelectedTaskId === taskId
                 ? null
                 : currentSelectedTaskId;
@@ -71,4 +70,4 @@ const CompletedTasksDropZone = ({ appActions, isDragging, ...otherProps }) => {
     return <Container isDragging={isDragging} {...dropProps} {...otherProps} />;
 };
 
-export default CompletedTasksDropZone;
+export default CompletedTaskDropZone;

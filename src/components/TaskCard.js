@@ -1,6 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
 import useDrag from '../hooks/useDrag';
+import FlexBox from './atoms/FlexBox';
 import {
     BORDER_RADIUS,
     COLORS,
@@ -8,14 +9,15 @@ import {
     HOURS_PER_SCREEN,
     MIN_SLOT_HEIGHT,
     UNIFIED_TRANSITION,
-} from '../tokens';
+} from './atoms/tokens';
 import minutesToHeight from '../utils/minutesToHeight';
 
 const LABEL_STRIP_WIDTH = '5px';
 
-const Container = styled.div(
+const Container = styled(FlexBox).attrs({
+    isFlexible: true,
+})(
     ({ duration, isActive, isDragging, isDraggingOver, theme }) => `
-        align-items: center;
         background-color: ${COLORS[theme.name].BACKGROUND};
         border-radius: ${BORDER_RADIUS};
         box-shadow: ${`0 0 0 2px ${
@@ -29,7 +31,7 @@ const Container = styled.div(
         pointer-events: ${isDraggingOver ? 'none' : 'auto'};
         position: relative;
         transition-property: opacity, top;
-        width: auto;
+        width: 100%;
         z-index: ${isActive ? 10 : 'initial'};
         ${UNIFIED_TRANSITION};
 
@@ -61,7 +63,9 @@ const Container = styled.div(
     `
 );
 
-const Label = styled.div(
+const Label = styled(FlexBox).attrs({
+    spacing: 0.5,
+})(
     ({ isActive, theme }) => `
         align-items: center;
         color: ${COLORS[theme.name][isActive ? 'TEXT' : 'TEXT_FADED']};

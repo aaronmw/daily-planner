@@ -1,19 +1,23 @@
 import React, { useEffect, useRef, useState } from 'react';
 import styled from 'styled-components';
+import Box from './atoms/Box';
 import {
     BORDER_RADIUS,
     COLORS,
     GRID_UNIT,
     UNIFIED_TRANSITION,
-} from '../tokens';
-import Box from './atoms/Box';
+} from './atoms/tokens';
 
-const Container = styled(Box)(
+const Container = styled(Box).attrs({
+    isFlexible: true,
+})(
     ({ isEditing, isEmpty, theme }) => `
         cursor: ${isEditing ? 'text' : 'pointer'};
         position: relative;
         opacity: ${isEmpty ? 0.5 : 1};
         user-select: ${isEditing ? 'text' : 'none'};
+        width: auto;
+        height: auto;
     
         // Tracing element
         &:before {
@@ -43,6 +47,7 @@ const EditInPlace = ({
     placeholder = 'Empty',
     render = value => value,
     value = '',
+    wrapperStyles = {},
     onSave = () => {},
     ...otherProps
 }) => {
@@ -71,7 +76,7 @@ const EditInPlace = ({
         }
     }, [bufferedValue, isEditing, measuringElementRef]);
 
-    const handleDoubleClick = () => {
+    const handleClick = () => {
         setBufferedValue(value);
         setIsEditing(true);
     };
@@ -107,42 +112,44 @@ const EditInPlace = ({
         <Container
             isEditing={isEditing}
             isEmpty={isEmpty}
-            onDoubleClick={handleDoubleClick}
+            onClick={handleClick}
             {...otherProps}
         >
-            {isEditing ? (
-                <>
-                    <div
-                        ref={measuringElementRef}
-                        style={{
-                            position: 'absolute',
-                            pointerEvents: 'none',
-                            opacity: 0,
-                            outline: '2px dotted red',
-                            whiteSpace: 'pre-wrap',
-                            width: '100%',
-                        }}
-                    >
-                        {bufferedValue}.
-                    </div>
-                    <textarea
-                        disabled={!isEditing}
-                        ref={inputRef}
-                        rows={1}
-                        style={{
-                            display: 'block',
-                            height: `${measuringElementHeight}px`,
-                            width: '100%',
-                        }}
-                        value={bufferedValue}
-                        onBlur={handleBlur}
-                        onChange={handleChange}
-                        onKeyDown={handleKeyDown}
-                    />
-                </>
-            ) : (
-                render(isEmpty ? placeholder : value)
-            )}
+            <Box style={wrapperStyles}>
+                {isEditing ? (
+                    <>
+                        <div
+                            ref={measuringElementRef}
+                            style={{
+                                position: 'absolute',
+                                pointerEvents: 'none',
+                                opacity: 0,
+                                outline: '2px dotted red',
+                                whiteSpace: 'pre-wrap',
+                                width: '100%',
+                            }}
+                        >
+                            {bufferedValue}.
+                        </div>
+                        <textarea
+                            disabled={!isEditing}
+                            ref={inputRef}
+                            rows={1}
+                            style={{
+                                display: 'block',
+                                height: `${measuringElementHeight}px`,
+                                width: '100%',
+                            }}
+                            value={bufferedValue}
+                            onBlur={handleBlur}
+                            onChange={handleChange}
+                            onKeyDown={handleKeyDown}
+                        />
+                    </>
+                ) : (
+                    render(isEmpty ? placeholder : value)
+                )}
+            </Box>
         </Container>
     );
 };

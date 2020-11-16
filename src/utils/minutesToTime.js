@@ -1,2 +1,1 @@
-export const minutesToTime = minutes =>
-    `${Math.floor(minutes / 60)}:${minutes % 60}`;
+export default minutes => `${Math.floor(minutes / 60)}:${minutes % 60}`;

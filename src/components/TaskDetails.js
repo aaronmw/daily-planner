@@ -1,24 +1,24 @@
 import React, { useLayoutEffect, useState } from 'react';
 import styled from 'styled-components';
 import marked from 'marked';
-import Box from './atoms/Box';
+import AppColumn from './AppColumn';
 import EditInPlace from './EditInPlace';
 import OptionBar from './OptionBar';
+import Box from './atoms/Box';
 import FlexBox from './atoms/FlexBox';
-import { COLORS, DURATION_OPTIONS } from '../tokens';
+import { COLORS, DURATION_OPTIONS, GRID_UNIT } from './atoms/tokens';
 
 const ANIMATION_DURATION = 200;
 
-const Container = styled.div(
+const Container = styled(AppColumn)(
     ({ isLoading, theme }) => `
-        display: flex;
-        flex-direction: column;
-        position: relative;
         box-shadow: 0 0 0 10px rgba(0, 0, 0, 0.1);
         border-left: 2px solid ${COLORS[theme.name].BORDER_NEUTRAL};
         border-right: 2px solid ${COLORS[theme.name].BORDER_NEUTRAL};
+        overflow: unset;
         z-index: 1;
         
+        // Blackout curtain
         &:before {
             background-color: ${COLORS[theme.name].BACKGROUND};
             bottom: 0;
@@ -89,7 +89,11 @@ const TaskDetails = ({ appActions, task = {}, ...otherProps }) => {
     }, [task.id]);
 
     return (
-        <Container isLoading={isLoading} {...otherProps}>
+        <Container
+            isLoading={isLoading}
+            label="Selected Task Details"
+            {...otherProps}
+        >
             {!isEmpty && !isLoading && (
                 <>
                     <OptionBar
@@ -117,6 +121,7 @@ const TaskDetails = ({ appActions, task = {}, ...otherProps }) => {
                     </TaskHeader>
 
                     <EditInPlace
+                        isFlexible
                         isMultiLine
                         margin={1}
                         placeholder="Double-click to add notes"
@@ -128,6 +133,14 @@ const TaskDetails = ({ appActions, task = {}, ...otherProps }) => {
                                 }}
                             />
                         )}
+                        wrapperStyles={{
+                            overflow: 'auto',
+                            position: 'absolute',
+                            top: 0,
+                            right: 0,
+                            bottom: 0,
+                            left: 0,
+                        }}
                         value={notes}
                         onSave={handleSaveNotes}
                     />

@@ -1,94 +1,20 @@
 import React, { useEffect, useState } from 'react';
 import ReactDOM from 'react-dom';
-import styled, { createGlobalStyle, ThemeProvider } from 'styled-components';
+import { ThemeProvider } from 'styled-components';
 import values from 'lodash/values';
-import FlexBox from './components/atoms/FlexBox';
+import AppColumn from './components/AppColumn';
+import Backlog from './components/Backlog';
 import CompletedTasksDropZone from './components/CompletedTasksDropZone';
-import OptionBar from './components/OptionBar';
 import TaskDetails from './components/TaskDetails';
 import Timeline from './components/Timeline';
-import WaitingArea from './components/WaitingArea';
+import FlexBox from './components/atoms/FlexBox';
+import GlobalStyle from './components/atoms/GlobalStyles';
 import usePersistentState from './hooks/usePersistentState';
 import {
-    BULLET_SIZE,
-    COLORS,
-    GRID_UNIT,
     INITIAL_TASKS,
     TIMELINE_FROM,
     TIMELINE_TO,
-} from './tokens';
-
-const GlobalStyle = createGlobalStyle(
-    ({ theme }) => `
-        * {
-            background: unset;
-            border: unset;
-            box-sizing: border-box;
-            color: unset;
-            font: unset;
-            line-height: 1.4em;
-            list-style-type: none;
-            margin: 0;
-            outline: unset;
-            padding: 0;
-        }
-        :root {
-            background: ${COLORS[theme.name].BACKGROUND};
-            color: ${COLORS[theme.name].TEXT};
-            font-family: 'Operator Mono', monospace;
-            font-weight: 300;
-            height: 100%;
-            overflow: hidden;
-        }
-        strong {
-            font-weight: 900;
-        }
-        em {
-            font-style: italic;
-        }
-        
-        .markdown {
-            * + * {
-                margin-top: calc(${GRID_UNIT} * 0.5);
-            }
-            
-            h1 {
-                color: ${COLORS[theme.name].TEXT_FADED};
-                font-size: 1.4rem;
-                font-weight: 500;
-                border-bottom: 2px dotted ${COLORS[theme.name].TEXT_FADED};
-                padding-bottom: calc(${GRID_UNIT} * 0.25);
-                
-                & + * {
-                    margin-top: ${GRID_UNIT};
-                } 
-            }
-        
-            blockquote {
-                border-left: 2px dotted ${COLORS[theme.name].TEXT_FADED};
-                font-style: italic;
-                padding: calc(${GRID_UNIT} * 0.5) ${GRID_UNIT};
-            }
-        
-            li {
-                padding-left: ${GRID_UNIT};
-                position: relative;
-        
-                &:before {
-                    content: '';
-                    box-sizing: border-box;
-                    position: absolute;
-                    top: 5px;
-                    left: 0;
-                    border: 2px dotted ${COLORS[theme.name].TEXT_FADED};
-                    border-radius: 100px;
-                    width: ${BULLET_SIZE};
-                    height: ${BULLET_SIZE};
-                }
-            }
-        }
-    `
-);
+} from './components/atoms/tokens';
 
 /*
     tasks: {
@@ -108,7 +34,7 @@ const GlobalStyle = createGlobalStyle(
 
 function App() {
     const [tasks, setTasks] = usePersistentState('tasks', INITIAL_TASKS);
-    const [theme, setTheme] = usePersistentState('theme', { name: 'DARK' });
+    const [themeName, setThemeName] = usePersistentState('theme-name', 'DARK');
     const [selectedTaskId, setSelectedTaskId] = usePersistentState(
         'selected-task-id',
         null
@@ -125,11 +51,6 @@ function App() {
     useEffect(() => {
         handleDragEnd();
     }, [tasks]);
-
-    const onChangeTheme = newTheme => {
-        console.log('Setting theme:', newTheme);
-        setTheme({ name: newTheme });
-    };
 
     const onUpdateTask = (taskId = Date.now(), updates) => {
         setTasks(prevState => ({
@@ -149,14 +70,20 @@ function App() {
     };
 
     const appActions = {
-        onChangeTheme,
+        onChangeTheme: setThemeName,
         onSelectTask: setSelectedTaskId,
         onUpdateTask,
         onUpdateTasks,
     };
 
+    const appData = {
+        selectedTaskId,
+        tasks,
+        theme: themeName,
+    };
+
     return (
-        <ThemeProvider theme={theme}>
+        <ThemeProvider theme={{ name: themeName }}>
             <GlobalStyle />
             <CompletedTasksDropZone
                 appActions={appActions}
@@ -185,30 +112,18 @@ function App() {
                     task={activeTask}
                     style={{
                         width: '40vw',
-                        height: '100vh',
                         opacity: hasIncompleteTasks ? 1 : 0.25,
-                        overflow: 'auto',
                     }}
                 />
-                <FlexBox
-                    direction="column"
+                <Backlog
+                    appActions={appActions}
+                    appData={appData}
+                    selectedTaskId={selectedTaskId}
                     style={{
                         width: '30vw',
                     }}
-                >
-                    <OptionBar
-                        options={['DARK', 'LIGHT']}
-                        renderOption={option => option.toLowerCase()}
-                        renderSelectedOption={option => `${option} mode`}
-                        selectedOption={theme.name}
-                        onChange={onChangeTheme}
-                    />
-                    <WaitingArea
-                        appActions={appActions}
-                        selectedTaskId={selectedTaskId}
-                        tasks={incompleteTasks}
-                    />
-                </FlexBox>
+                    tasks={incompleteTasks}
+                />
             </FlexBox>
         </ThemeProvider>
     );

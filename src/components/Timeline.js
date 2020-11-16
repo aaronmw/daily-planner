@@ -1,20 +1,29 @@
-import range from 'lodash/range';
-import { transparentize } from 'polished';
 import React, { Fragment, useEffect, useRef, useState } from 'react';
 import styled from 'styled-components';
-import { COLORS, GRID_UNIT } from '../tokens';
-import minutesToHeight from '../utils/minutesToHeight';
-import { strToHoursAndMinutes } from '../utils/strToHoursAndMinutes';
+import { transparentize } from 'polished';
+import range from 'lodash/range';
+import AppColumn from './AppColumn';
 import TaskCard from './TaskCard';
 import TimelineDropZone from './TimelineDropZone';
+import strToHoursAndMinutes from '../utils/strToHoursAndMinutes';
+import minutesToHeight from '../utils/minutesToHeight';
+import { COLORS, GRID_UNIT } from './atoms/tokens';
 
-const HALF_HOUR_LABEL_WIDTH = '80px';
+const LINE_LABEL_WIDTH = '80px';
 
-const Container = styled.div`
-    height: 100vh;
-    overflow: auto;
-    position: relative;
+const Container = styled(AppColumn).attrs({
+    label: "Today's Plan",
+})`
     user-select: none;
+`;
+
+const TimelineContainer = styled.div`
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    overflow: auto;
 `;
 
 const HalfHourRow = styled.div`
@@ -29,7 +38,7 @@ const HalfHourLabel = styled.div(
                 ? 'transparent'
                 : transparentize(isFaded ? 1 : 0, COLORS[theme.name].TEXT_FADED)
         };
-        padding-right: calc(100% - ${HALF_HOUR_LABEL_WIDTH} + (${GRID_UNIT} * 0.5));
+        padding-right: calc(100% - ${LINE_LABEL_WIDTH} + (${GRID_UNIT} * 0.5));
         position: absolute;
         text-align: right;
         top: 0;
@@ -43,7 +52,7 @@ const HalfHourLabel = styled.div(
             )};
             content: '';
             height: 1px;
-            left: ${HALF_HOUR_LABEL_WIDTH};
+            left: ${LINE_LABEL_WIDTH};
             position: absolute;
             right: 0;
             top: 50%;
@@ -57,6 +66,7 @@ const ScheduledTaskCard = styled(TaskCard)(
         left: calc(${GRID_UNIT} * 3);
         right: ${GRID_UNIT};
         top: ${minutesToHeight(offsetMinutes)};
+        width: auto;
         z-index: 2;
     `
 );
@@ -120,48 +130,52 @@ const Timeline = ({
     }, [isLoaded, currentTimeMarkerRef, timelineContainerRef]);
 
     return (
-        <Container ref={timelineContainerRef} {...otherProps}>
-            {scheduledTasks.map(task => {
-                const [hours, mins] = strToHoursAndMinutes(task.scheduled_time);
-                const offsetMinutes =
-                    hours * 60 + mins - (fromHour * 60 + fromMinutes);
+        <Container {...otherProps}>
+            <TimelineContainer ref={timelineContainerRef}>
+                {scheduledTasks.map(task => {
+                    const [hours, mins] = strToHoursAndMinutes(
+                        task.scheduled_time
+                    );
+                    const offsetMinutes =
+                        hours * 60 + mins - (fromHour * 60 + fromMinutes);
 
-                return (
-                    <ScheduledTaskCard
-                        key={task.id}
-                        appActions={appActions}
-                        isActive={selectedTaskId === task.id}
-                        offsetMinutes={offsetMinutes}
-                        task={task}
-                    />
-                );
-            })}
-            <CurrentTimeMarker
-                ref={currentTimeMarkerRef}
-                offsetMinutes={
-                    currentHour * 60 +
-                    currentMinute -
-                    (fromHour * 60 + fromMinutes)
-                }
-            />
-            <TimelineDropZone
-                appActions={appActions}
-                totalMinutes={totalMinutes}
-            />
-            {range(totalHours).map(hour => (
-                <Fragment key={hour}>
-                    <HalfHourRow>
-                        <HalfHourLabel hideLabel={hour === 0}>
-                            {(fromHour + hour) % 12 || 12}:00
-                        </HalfHourLabel>
-                    </HalfHourRow>
-                    <HalfHourRow>
-                        <HalfHourLabel isFaded>
-                            {(fromHour + hour) % 12 || 12}:30
-                        </HalfHourLabel>
-                    </HalfHourRow>
-                </Fragment>
-            ))}
+                    return (
+                        <ScheduledTaskCard
+                            key={task.id}
+                            appActions={appActions}
+                            isActive={selectedTaskId === task.id}
+                            offsetMinutes={offsetMinutes}
+                            task={task}
+                        />
+                    );
+                })}
+                <CurrentTimeMarker
+                    ref={currentTimeMarkerRef}
+                    offsetMinutes={
+                        currentHour * 60 +
+                        currentMinute -
+                        (fromHour * 60 + fromMinutes)
+                    }
+                />
+                <TimelineDropZone
+                    appActions={appActions}
+                    totalMinutes={totalMinutes}
+                />
+                {range(totalHours).map(hour => (
+                    <Fragment key={hour}>
+                        <HalfHourRow>
+                            <HalfHourLabel hideLabel={hour === 0}>
+                                {(fromHour + hour) % 12 || 12}:00
+                            </HalfHourLabel>
+                        </HalfHourRow>
+                        <HalfHourRow>
+                            <HalfHourLabel isFaded>
+                                {(fromHour + hour) % 12 || 12}:30
+                            </HalfHourLabel>
+                        </HalfHourRow>
+                    </Fragment>
+                ))}
+            </TimelineContainer>
         </Container>
     );
 };

@@ -1,9 +1,10 @@
 import styled from 'styled-components';
-import { BORDER_RADIUS, COLORS, UNIFIED_TRANSITION } from '../../tokens';
-import Box from './Box';
+import { BORDER_RADIUS, COLORS, UNIFIED_TRANSITION } from './tokens';
+import FlexBox from './FlexBox';
 
-const Button = styled(Box).attrs({
+const Button = styled(FlexBox).attrs({
     as: 'button',
+    justify: 'center',
     paddingX: 0.5,
     paddingY: 0.25,
 })(
@@ -26,7 +27,7 @@ const Button = styled(Box).attrs({
     `
 );
 
-const GhostButton = styled(Button)(
+export const GhostButton = styled(Button)(
     ({ theme }) => `
         background: unset; 
         border-radius: ${BORDER_RADIUS};
@@ -39,7 +40,5 @@ const GhostButton = styled(Button)(
         }
     `
 );
-
-export { GhostButton };
 
 export default Button;

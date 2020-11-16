@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-const usePersistentState = (key, initialState) => {
+export default (key, initialState) => {
     const [isLoaded, setIsLoaded] = useState(false);
     const [state, setState] = useState(initialState);
 
@@ -20,5 +20,3 @@ const usePersistentState = (key, initialState) => {
 
     return [state, setState];
 };
-
-export default usePersistentState;

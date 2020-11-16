@@ -1,1 +1,1 @@
-export const toInt = str => parseInt(str, 10);
+export default str => parseInt(str, 10);

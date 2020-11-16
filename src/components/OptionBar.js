@@ -3,7 +3,7 @@ import { transparentize } from 'polished';
 import styled from 'styled-components';
 import Button from './atoms/Button';
 import FlexBox from './atoms/FlexBox';
-import { COLORS, UNIFIED_TRANSITION } from '../tokens';
+import { COLORS, UNIFIED_TRANSITION } from './atoms/tokens';
 
 const Container = styled(FlexBox).attrs({
     justify: 'space-between',
@@ -12,8 +12,9 @@ const Container = styled(FlexBox).attrs({
     spacing: 0.5,
 })(
     ({ theme }) => `
-        background: ${transparentize(0.5, COLORS[theme.name].SHADED)};
+        background-color: ${COLORS[theme.name].BACKGROUND};
         color: ${COLORS[theme.name].TEXT_FADED};
+        width: 100%;
         
         &:hover {
             color: ${COLORS[theme.name].TEXT};
@@ -27,6 +28,7 @@ const OptionButton = styled(Button)(
         color: inherit;
         font-weight: ${isSelected ? 900 : 100};
         opacity: ${isSelected ? 1 : 0};
+        width: auto;
         ${UNIFIED_TRANSITION};
         
         ${Container}:hover > & {

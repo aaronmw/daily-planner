@@ -1,7 +1,7 @@
 import styled from 'styled-components';
-import { COLORS, GRID_UNIT } from '../../tokens';
+import { COLORS, GRID_UNIT } from './tokens';
 
-const Box = styled.div(
+export default styled.div(
     ({
         border = false,
         isFlexible = false,
@@ -66,5 +66,3 @@ const Box = styled.div(
         }
     `
 );
-
-export default Box;

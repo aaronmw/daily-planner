@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-const useDrag = (type, payload) => {
+export default (type, payload) => {
     const [isDragging, setIsDragging] = useState(false);
     const [isDraggingOver, setIsDraggingOver] = useState(false);
 
@@ -30,5 +30,3 @@ const useDrag = (type, payload) => {
 
     return [dragProps];
 };
-
-export default useDrag;

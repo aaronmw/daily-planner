@@ -1,10 +1,10 @@
 import React from 'react';
 import styled from 'styled-components';
 import range from 'lodash/range';
-import { COLORS, TIMELINE_FROM } from '../tokens';
+import { COLORS, TIMELINE_FROM } from './atoms/tokens';
 import minutesToHeight from '../utils/minutesToHeight';
-import { minutesToTime } from '../utils/minutesToTime';
-import { strToHoursAndMinutes } from '../utils/strToHoursAndMinutes';
+import minutesToTime from '../utils/minutesToTime';
+import strToHoursAndMinutes from '../utils/strToHoursAndMinutes';
 import useDrop from '../hooks/useDrop';
 
 const Container = styled.div`
