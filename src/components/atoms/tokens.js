@@ -2,14 +2,20 @@ import { lighten, rgba, setLightness, transparentize } from 'polished';
 
 export const BORDER_RADIUS = '3px';
 export const BULLET_SIZE = '10px';
+export const DEFAULT_TASK_ICON = '📌';
+export const END_ZONE_ICON = '🗑';
 export const DURATION_OPTIONS = [15, 30, 45, 60, 90, 120];
 export const GRID_UNIT = '30px';
 export const HOURS_PER_SCREEN = 8;
 export const INITIAL_TASKS = {};
-export const MIN_SLOT_HEIGHT = `20px`;
+export const MIN_SLOT_HEIGHT = GRID_UNIT;
 export const TIMELINE_FROM = '7:00';
 export const TIMELINE_TO = '24:00';
 export const UNIFIED_TRANSITION = 'transition: all 0.15s ease-in-out';
+
+export const COPY = {
+    empty_notes: 'Add task notes',
+};
 
 const PRIMARY = '#0094FF';
 

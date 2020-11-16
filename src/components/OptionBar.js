@@ -1,5 +1,4 @@
 import React from 'react';
-import { transparentize } from 'polished';
 import styled from 'styled-components';
 import Button from './atoms/Button';
 import FlexBox from './atoms/FlexBox';
@@ -15,6 +14,7 @@ const Container = styled(FlexBox).attrs({
         background-color: ${COLORS[theme.name].BACKGROUND};
         color: ${COLORS[theme.name].TEXT_FADED};
         width: 100%;
+        z-index: 10;
         
         &:hover {
             color: ${COLORS[theme.name].TEXT};

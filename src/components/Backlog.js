@@ -8,7 +8,7 @@ import { GhostButton } from './atoms/Button';
 import FlexBox from './atoms/FlexBox';
 import OptionBar from './OptionBar';
 import TaskCard from './TaskCard';
-import { COLORS, GRID_UNIT } from './atoms/tokens';
+import { COLORS, DEFAULT_TASK_ICON, GRID_UNIT } from './atoms/tokens';
 
 const Container = styled(AppColumn).attrs({
     label: 'Backlog',
@@ -62,7 +62,7 @@ export default ({
 
         onUpdateTasks({
             [newTaskId]: {
-                icon: '📌',
+                icon: DEFAULT_TASK_ICON,
                 id: newTaskId,
                 isComplete: false,
                 label: 'New Task',
@@ -84,34 +84,57 @@ export default ({
                 selectedOption={theme}
                 onChange={onChangeTheme}
             />
-            <FlexBox direction="column" spacing={1} padding={1}>
-                <div style={{ position: 'relative', width: '100%' }}>
-                    {tasks.length === 0 && (
-                        <CreateFirstTaskTip>
-                            <span role="img" aria-label="left-pointing hand">
-                                👈
-                            </span>{' '}
-                            Create your first task
-                        </CreateFirstTaskTip>
-                    )}
-                    <GhostButton
-                        style={{
-                            height: minutesToHeight(30),
-                        }}
-                        onClick={handleClickNewTask}
-                    >
-                        New Task
-                    </GhostButton>
-                </div>
-                {incompleteTasks.map(task => (
-                    <TaskCard
-                        key={task.id}
-                        appActions={appActions}
-                        isActive={selectedTaskId === task.id}
-                        task={task}
-                    />
-                ))}
-            </FlexBox>
+            <Box
+                isFlexible
+                style={{
+                    position: 'relative',
+                }}
+            >
+                <FlexBox
+                    justify="flex-start"
+                    direction="column"
+                    spacing={1}
+                    padding={1}
+                    style={{
+                        bottom: 0,
+                        left: 0,
+                        overflow: 'auto',
+                        position: 'absolute',
+                        right: 0,
+                        top: 0,
+                    }}
+                >
+                    <div style={{ position: 'relative', width: '100%' }}>
+                        {tasks.length === 0 && (
+                            <CreateFirstTaskTip>
+                                <span
+                                    role="img"
+                                    aria-label="left-pointing hand"
+                                >
+                                    👈
+                                </span>{' '}
+                                Create your first task
+                            </CreateFirstTaskTip>
+                        )}
+                        <GhostButton
+                            style={{
+                                height: minutesToHeight(30),
+                            }}
+                            onClick={handleClickNewTask}
+                        >
+                            New Task
+                        </GhostButton>
+                    </div>
+                    {incompleteTasks.map(task => (
+                        <TaskCard
+                            key={task.id}
+                            appActions={appActions}
+                            isActive={selectedTaskId === task.id}
+                            task={task}
+                        />
+                    ))}
+                </FlexBox>
+            </Box>
         </Container>
     );
 };

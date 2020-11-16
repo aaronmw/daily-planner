@@ -6,8 +6,6 @@ import {
     BORDER_RADIUS,
     COLORS,
     GRID_UNIT,
-    HOURS_PER_SCREEN,
-    MIN_SLOT_HEIGHT,
     UNIFIED_TRANSITION,
 } from './atoms/tokens';
 import minutesToHeight from '../utils/minutesToHeight';
@@ -15,7 +13,7 @@ import minutesToHeight from '../utils/minutesToHeight';
 const LABEL_STRIP_WIDTH = '5px';
 
 const Container = styled(FlexBox).attrs({
-    isFlexible: true,
+    align: 'flex-start',
 })(
     ({ duration, isActive, isDragging, isDraggingOver, theme }) => `
         background-color: ${COLORS[theme.name].BACKGROUND};
@@ -25,6 +23,7 @@ const Container = styled(FlexBox).attrs({
         }`};
         cursor: pointer;
         height: ${minutesToHeight(duration)};
+        min-height: ${minutesToHeight(20)};
         opacity: ${isDragging ? 0.5 : 1};
         padding: 0 calc(${GRID_UNIT} / 2) 0
             calc(${GRID_UNIT} / 2 + ${LABEL_STRIP_WIDTH});
@@ -70,10 +69,9 @@ const Label = styled(FlexBox).attrs({
         align-items: center;
         color: ${COLORS[theme.name][isActive ? 'TEXT' : 'TEXT_FADED']};
         display: flex;
-        height: 100%;
         justify-content: space-between;
-        max-height: calc((100vh / (${HOURS_PER_SCREEN} * 60)) * 30);
-        min-height: ${MIN_SLOT_HEIGHT};
+        height: 100%;
+        max-height: ${minutesToHeight(20)};
         ${UNIFIED_TRANSITION};
         
         ${Container}:hover > & {

@@ -28,11 +28,13 @@ const ContentContainer = styled(FlexBox).attrs({
 );
 
 const ColumnHeader = styled(FlexBox).attrs({
+    justify: 'center',
     paddingX: 0.5,
 })(
     ({ theme }) => `
-        background: ${COLORS[theme.name].HIGH_CONTRAST_BACKGROUND};
-        color: ${COLORS[theme.name].HIGH_CONTRAST_TEXT};
+        background: ${COLORS[theme.name].BACKGROUND};
+        color: ${COLORS[theme.name].TEXT_FADED};
+        border-bottom: 2px solid ${COLORS[theme.name].BORDER_NEUTRAL};
         font-size: 0.75rem;
         height: ${GRID_UNIT};
         position: sticky;

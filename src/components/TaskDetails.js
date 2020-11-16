@@ -6,7 +6,12 @@ import EditInPlace from './EditInPlace';
 import OptionBar from './OptionBar';
 import Box from './atoms/Box';
 import FlexBox from './atoms/FlexBox';
-import { COLORS, DURATION_OPTIONS, GRID_UNIT } from './atoms/tokens';
+import {
+    COLORS,
+    COPY,
+    DEFAULT_TASK_ICON,
+    DURATION_OPTIONS,
+} from './atoms/tokens';
 
 const ANIMATION_DURATION = 200;
 
@@ -113,7 +118,7 @@ const TaskDetails = ({ appActions, task = {}, ...otherProps }) => {
                         </TaskHeaderLabel>
                         <TaskHeaderIcon>
                             <EditInPlace
-                                placeholder="📌"
+                                placeholder={DEFAULT_TASK_ICON}
                                 value={icon}
                                 onSave={handleSaveIcon}
                             />
@@ -124,7 +129,7 @@ const TaskDetails = ({ appActions, task = {}, ...otherProps }) => {
                         isFlexible
                         isMultiLine
                         margin={1}
-                        placeholder="Double-click to add notes"
+                        placeholder={COPY.empty_notes}
                         render={rawNotes => (
                             <div
                                 className="markdown"
@@ -134,12 +139,12 @@ const TaskDetails = ({ appActions, task = {}, ...otherProps }) => {
                             />
                         )}
                         wrapperStyles={{
-                            overflow: 'auto',
-                            position: 'absolute',
-                            top: 0,
-                            right: 0,
                             bottom: 0,
                             left: 0,
+                            overflow: 'auto',
+                            position: 'absolute',
+                            right: 0,
+                            top: 0,
                         }}
                         value={notes}
                         onSave={handleSaveNotes}

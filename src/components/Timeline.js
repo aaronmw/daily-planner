@@ -13,9 +13,7 @@ const LINE_LABEL_WIDTH = '80px';
 
 const Container = styled(AppColumn).attrs({
     label: "Today's Plan",
-})`
-    user-select: none;
-`;
+})``;
 
 const TimelineContainer = styled.div`
     position: absolute;
@@ -24,6 +22,7 @@ const TimelineContainer = styled.div`
     bottom: 0;
     left: 0;
     overflow: auto;
+    user-select: none;
 `;
 
 const HalfHourRow = styled.div`

@@ -2,7 +2,7 @@ import React from 'react';
 import { lighten, transparentize } from 'polished';
 import styled, { css, keyframes } from 'styled-components';
 import useDrop from '../hooks/useDrop';
-import { COLORS, UNIFIED_TRANSITION } from './atoms/tokens';
+import { COLORS, END_ZONE_ICON, UNIFIED_TRANSITION } from './atoms/tokens';
 
 const DROP_ZONE_RADIUS = '20vw';
 
@@ -41,7 +41,7 @@ const Container = styled.div(
 
         &:before {
             align-items: center;
-            content: '🏁';
+            content: '${END_ZONE_ICON}';
             display: flex;
             font-size: 8rem;
             justify-content: center;
