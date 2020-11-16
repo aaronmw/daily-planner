@@ -9,6 +9,7 @@ export default createGlobalStyle(
             box-sizing: border-box;
             color: unset;
             font: unset;
+            font-size: 1rem;
             line-height: 1.4em;
             list-style-type: none;
             margin: 0;
@@ -19,6 +20,7 @@ export default createGlobalStyle(
             background: ${COLORS[theme.name].BACKGROUND};
             color: ${COLORS[theme.name].TEXT};
             font-family: 'Operator Mono', monospace;
+            font-size: 15px;
             font-weight: 300;
             height: 100%;
             overflow: hidden;

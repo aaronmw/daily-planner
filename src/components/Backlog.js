@@ -13,7 +13,7 @@ import { COLORS, DEFAULT_TASK_ICON, GRID_UNIT } from './atoms/tokens';
 const Container = styled(AppColumn).attrs({
     label: 'Backlog',
 })(
-    ({ isTargetedForDrop, theme }) => `
+    ({ hasTasks, isTargetedForDrop, theme }) => `
         background-color: ${COLORS[theme.name].SHADED};
         box-shadow: ${
             isTargetedForDrop
@@ -21,6 +21,7 @@ const Container = styled(AppColumn).attrs({
                 : 'initial'
         };
         flex-grow: 1;
+        overflow: ${hasTasks ? 'auto' : 'visible'};
     `
 );
 
@@ -52,7 +53,8 @@ export default ({
             scheduled: false,
         })
     );
-    const incompleteTasks = tasks.filter(task => !task.scheduled);
+    const unscheduledTasks = tasks.filter(task => !task.scheduled);
+    const hasTasks = tasks.length;
 
     const handleClickNewTask = () => {
         const newTaskId = Date.now();
@@ -98,14 +100,14 @@ export default ({
                     style={{
                         bottom: 0,
                         left: 0,
-                        overflow: 'auto',
+                        overflow: hasTasks ? 'auto' : 'visible',
                         position: 'absolute',
                         right: 0,
                         top: 0,
                     }}
                 >
                     <div style={{ position: 'relative', width: '100%' }}>
-                        {tasks.length === 0 && (
+                        {!hasTasks && (
                             <CreateFirstTaskTip>
                                 <span
                                     role="img"
@@ -125,7 +127,7 @@ export default ({
                             New Task
                         </GhostButton>
                     </div>
-                    {incompleteTasks.map(task => (
+                    {unscheduledTasks.map(task => (
                         <TaskCard
                             key={task.id}
                             appActions={appActions}
