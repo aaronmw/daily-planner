@@ -14,7 +14,7 @@
 importScripts("https://storage.googleapis.com/workbox-cdn/releases/4.3.1/workbox-sw.js");
 
 importScripts(
-  "/daily-planner/precache-manifest.901516cb004b3d5c7c6027c1eea2f093.js"
+  "/daily-planner/precache-manifest.002d47b8070fab8e9373956c36af6dbb.js"
 );
 
 self.addEventListener('message', (event) => {
