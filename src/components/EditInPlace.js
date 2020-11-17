@@ -44,6 +44,7 @@ const Container = styled(Box).attrs({
 
 const EditInPlace = ({
     isMultiLine = false,
+    isRemotelyActivated = false,
     placeholder = 'Empty',
     render = value => value,
     value = '',
@@ -56,7 +57,13 @@ const EditInPlace = ({
     const [measuringElementHeight, setMeasuringElementHeight] = useState(null);
     const inputRef = useRef(null);
     const measuringElementRef = useRef(null);
-    const isEmpty = value.trim() === '';
+    const isEmpty = bufferedValue.trim() === '';
+
+    useEffect(() => {
+        if (isRemotelyActivated === true) {
+            handleClick();
+        }
+    }, [isRemotelyActivated]);
 
     useEffect(() => {
         setBufferedValue(value);

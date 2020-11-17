@@ -1,5 +1,5 @@
 import React from 'react';
-import { lighten, transparentize } from 'polished';
+import { transparentize } from 'polished';
 import styled, { css, keyframes } from 'styled-components';
 import useDrop from '../hooks/useDrop';
 import { COLORS, END_ZONE_ICON, UNIFIED_TRANSITION } from './atoms/tokens';

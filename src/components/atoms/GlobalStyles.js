@@ -9,7 +9,7 @@ export default createGlobalStyle(
             box-sizing: border-box;
             color: unset;
             font: unset;
-            font-size: 1rem;
+            font-size: inherit;
             line-height: 1.4em;
             list-style-type: none;
             margin: 0;

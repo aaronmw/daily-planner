@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import ReactDOM from 'react-dom';
 import { ThemeProvider } from 'styled-components';
+import sample from 'lodash/sample';
 import values from 'lodash/values';
-import AppColumn from './components/AppColumn';
 import Backlog from './components/Backlog';
 import CompletedTasksDropZone from './components/CompletedTasksDropZone';
 import TaskDetails from './components/TaskDetails';
@@ -11,6 +11,8 @@ import FlexBox from './components/atoms/FlexBox';
 import GlobalStyle from './components/atoms/GlobalStyles';
 import usePersistentState from './hooks/usePersistentState';
 import {
+    COPY,
+    DEFAULT_TASK_ICON,
     INITIAL_TASKS,
     TIMELINE_FROM,
     TIMELINE_TO,
@@ -39,20 +41,29 @@ function App() {
         'selected-task-id',
         null
     );
-    const [isDragging, setIsDragging] = useState(false);
+    const [isCreatingTask, setIsCreatingTask] = useState(false);
+    const [isDraggingTask, setIsDraggingTask] = useState(false);
+    const taskLabelElementRef = useRef(null);
     const activeTask = tasks[selectedTaskId];
     const incompleteTasks = values(tasks).filter(task => !task.isComplete);
     const hasIncompleteTasks = incompleteTasks.length;
 
-    const handleDragOver = () => setIsDragging(true);
+    const handleDragOver = () => setIsDraggingTask(true);
 
-    const handleDragEnd = () => setIsDragging(false);
+    const handleDragEnd = () => setIsDraggingTask(false);
 
     useEffect(() => {
         handleDragEnd();
     }, [tasks]);
 
-    const onUpdateTask = (taskId = Date.now(), updates) => {
+    const onUpdateTasks = updates => {
+        setTasks(prevState => ({
+            ...prevState,
+            ...updates,
+        }));
+    };
+
+    const onUpdateTask = (taskId, updates) => {
         setTasks(prevState => ({
             ...prevState,
             [taskId]: {
@@ -62,15 +73,38 @@ function App() {
         }));
     };
 
-    const onUpdateTasks = updates => {
-        setTasks(prevState => ({
-            ...prevState,
-            ...updates,
-        }));
+    const onCreateTask = (overrides = {}) => {
+        const newTaskId = Date.now();
+        const now = new Date();
+        const currentHour = now.getHours();
+        const currentMinute = now.getMinutes();
+
+        onUpdateTasks({
+            [newTaskId]: {
+                icon: DEFAULT_TASK_ICON,
+                id: newTaskId,
+                isComplete: false,
+                label: `${sample(COPY.motivational_descriptors)} ${
+                    COPY.new_task_label
+                }`,
+                notes: COPY.new_task_notes,
+                scheduled: false,
+                scheduled_minutes: 30,
+                scheduled_time: `${currentHour}:${currentMinute}`,
+                ...overrides,
+            },
+        });
+
+        setSelectedTaskId(newTaskId);
+
+        setIsCreatingTask(true);
+
+        // setTimeout(() => setIsCreatingTask(false), 1000);
     };
 
     const appActions = {
         onChangeTheme: setThemeName,
+        onCreateTask,
         onSelectTask: setSelectedTaskId,
         onUpdateTask,
         onUpdateTasks,
@@ -78,6 +112,7 @@ function App() {
 
     const appData = {
         selectedTaskId,
+        taskLabelElementRef,
         tasks,
         theme: themeName,
     };
@@ -87,7 +122,7 @@ function App() {
             <GlobalStyle />
             <CompletedTasksDropZone
                 appActions={appActions}
-                isDragging={isDragging}
+                isDragging={isDraggingTask}
             />
             <FlexBox
                 align="stretch"
@@ -109,7 +144,9 @@ function App() {
                 />
                 <TaskDetails
                     appActions={appActions}
+                    appData={appData}
                     task={activeTask}
+                    isCreatingTask={isCreatingTask}
                     style={{
                         width: '40vw',
                         opacity: hasIncompleteTasks ? 1 : 0.25,

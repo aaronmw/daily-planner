@@ -71,7 +71,6 @@ const Label = styled(FlexBox).attrs({
         display: flex;
         justify-content: space-between;
         height: 100%;
-        max-height: ${minutesToHeight(20)};
         ${UNIFIED_TRANSITION};
         
         ${Container}:hover > & {

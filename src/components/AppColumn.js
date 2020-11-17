@@ -1,8 +1,7 @@
 import React from 'react';
-import { transparentize } from 'polished';
 import styled from 'styled-components';
 import FlexBox from './atoms/FlexBox';
-import { COLORS, GRID_UNIT, UNIFIED_TRANSITION } from './atoms/tokens';
+import { COLORS, GRID_UNIT } from './atoms/tokens';
 
 const Container = styled(FlexBox).attrs({
     direction: 'column',

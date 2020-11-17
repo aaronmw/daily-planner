@@ -8,11 +8,13 @@ import strToHoursAndMinutes from '../utils/strToHoursAndMinutes';
 import useDrop from '../hooks/useDrop';
 
 const Container = styled.div`
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
+    bottom: 0;
     height: 100%;
+    left: 0;
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: 100%;
 `;
 
 const StyledTimelineDropTarget = styled.div(
@@ -47,18 +49,16 @@ const TimelineDropTarget = ({
     return <StyledTimelineDropTarget {...dropProps} {...otherProps} />;
 };
 
-const TimelineDropZone = ({ appActions, totalMinutes, ...otherProps }) => {
-    return (
-        <Container {...otherProps}>
-            {range(totalMinutes / 15).map(quarterInMinutes => (
-                <TimelineDropTarget
-                    key={quarterInMinutes}
-                    appActions={appActions}
-                    quarterInMinutes={quarterInMinutes}
-                />
-            ))}
-        </Container>
-    );
-};
+const TimelineDropZone = ({ appActions, totalMinutes, ...otherProps }) => (
+    <Container {...otherProps}>
+        {range(totalMinutes / 15).map(quarterInMinutes => (
+            <TimelineDropTarget
+                key={quarterInMinutes}
+                appActions={appActions}
+                quarterInMinutes={quarterInMinutes}
+            />
+        ))}
+    </Container>
+);
 
 export default TimelineDropZone;

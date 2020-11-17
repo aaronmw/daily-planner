@@ -21,7 +21,7 @@ const Container = styled(AppColumn)(
         border-left: 2px solid ${COLORS[theme.name].BORDER_NEUTRAL};
         border-right: 2px solid ${COLORS[theme.name].BORDER_NEUTRAL};
         overflow: unset;
-        z-index: 1;
+        z-index: 11;
         
         // Blackout curtain
         &:before {
@@ -55,33 +55,44 @@ const TaskHeader = styled(FlexBox).attrs({
     `
 );
 
-const TaskHeaderLabel = styled(Box).attrs({
-    role: 'image',
-})`
+const TaskHeaderLabel = styled(Box)`
     flex-grow: 1;
+    flex-shrink: 1;
     justify-self: stretch;
 `;
 
 const TaskHeaderIcon = styled(Box).attrs({
     role: 'img',
 })`
+    flex-grow: 0;
     flex-shrink: 0;
     font-size: 3rem;
     line-height: 1.4rem;
     width: 3rem;
 `;
 
-const TaskDetails = ({ appActions, task = {}, ...otherProps }) => {
+const TaskDetails = ({
+    appActions = {},
+    appData = {},
+    isCreatingTask = false,
+    task = {},
+    ...otherProps
+}) => {
     const [isLoading, setIsLoading] = useState(false);
     const { onUpdateTask } = appActions;
     const { icon, id, label, notes, scheduled_minutes } = task;
     const isEmpty = !task.id;
+
     const handleUpdateTask = (field, value) =>
         onUpdateTask(id, { [field]: value });
+
     const handleSaveDuration = newDuration =>
         handleUpdateTask('scheduled_minutes', newDuration);
+
     const handleSaveIcon = newNotes => handleUpdateTask('icon', newNotes);
+
     const handleSaveLabel = newLabel => handleUpdateTask('label', newLabel);
+
     const handleSaveNotes = newNotes => handleUpdateTask('notes', newNotes);
 
     useLayoutEffect(() => {
@@ -111,7 +122,8 @@ const TaskDetails = ({ appActions, task = {}, ...otherProps }) => {
                     <TaskHeader>
                         <TaskHeaderLabel>
                             <EditInPlace
-                                placeholder="Untitled"
+                                isRemotelyActivated={isCreatingTask}
+                                placeholder={COPY.empty_label}
                                 value={label}
                                 onSave={handleSaveLabel}
                             />

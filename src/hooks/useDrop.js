@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-export default (type, callback) => {
+const useDrop = (type, callback = () => {}) => {
     const [isTargetedForDrop, setIsTargetedForDrop] = useState(false);
 
     const onDragEnter = evt => {
@@ -10,6 +10,7 @@ export default (type, callback) => {
 
     const onDragOver = evt => {
         evt.preventDefault();
+        setIsTargetedForDrop(true);
     };
 
     const onDragLeave = () => {
@@ -35,3 +36,5 @@ export default (type, callback) => {
 
     return [dropProps];
 };
+
+export default useDrop;

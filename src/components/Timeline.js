@@ -15,15 +15,22 @@ const Container = styled(AppColumn).attrs({
     label: "Today's Plan",
 })``;
 
-const TimelineContainer = styled.div`
-    position: absolute;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    left: 0;
-    overflow: auto;
-    user-select: none;
-`;
+const TimelineContainer = styled.div(
+    ({ isTargetedForDrop, theme }) => `
+        bottom: 0;
+        box-shadow: ${
+            isTargetedForDrop
+                ? `0 0 0 5px ${COLORS[theme.name].BORDER_HOVER} inset`
+                : 'initial'
+        };
+        left: 0;
+        overflow: auto;
+        position: absolute;
+        right: 0;
+        top: 0;
+        user-select: none;
+    `
+);
 
 const HalfHourRow = styled.div`
     position: relative;
@@ -43,7 +50,7 @@ const HalfHourLabel = styled.div(
         top: 0;
         transform: translateY(-50%);
         width: 100%;
-    
+
         &:before {
             background-color: ${transparentize(
                 isFaded ? 0.8 : 0.5,
@@ -128,9 +135,20 @@ const Timeline = ({
         }
     }, [isLoaded, currentTimeMarkerRef, timelineContainerRef]);
 
+    const [isTargetedForDrop, setIsTargetedForDrop] = useState(false);
+    const handleDragOver = () => setIsTargetedForDrop(true);
+    const handleDragLeave = () => setIsTargetedForDrop(false);
+    const handleDragEnd = () => setIsTargetedForDrop(false);
+
     return (
         <Container {...otherProps}>
-            <TimelineContainer ref={timelineContainerRef}>
+            <TimelineContainer
+                ref={timelineContainerRef}
+                isTargetedForDrop={isTargetedForDrop}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDragEnd={handleDragEnd}
+            >
                 {scheduledTasks.map(task => {
                     const [hours, mins] = strToHoursAndMinutes(
                         task.scheduled_time

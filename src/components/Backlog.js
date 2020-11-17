@@ -15,13 +15,21 @@ const Container = styled(AppColumn).attrs({
 })(
     ({ hasTasks, isTargetedForDrop, theme }) => `
         background-color: ${COLORS[theme.name].SHADED};
+        flex-grow: 1;
+        overflow: ${hasTasks ? 'auto' : 'visible'};
+    `
+);
+
+const BacklogDropZone = styled(Box).attrs({
+    isFlexible: true,
+})(
+    ({ isTargetedForDrop, theme }) => `
         box-shadow: ${
             isTargetedForDrop
                 ? `0 0 0 5px ${COLORS[theme.name].BORDER_HOVER} inset`
                 : 'initial'
         };
-        flex-grow: 1;
-        overflow: ${hasTasks ? 'auto' : 'visible'};
+        position: relative;
     `
 );
 
@@ -33,7 +41,7 @@ const CreateFirstTaskTip = styled(Box)`
     white-space: nowrap;
 `;
 
-export default ({
+const Backlog = ({
     appActions,
     appData,
     selectedTaskId,
@@ -41,12 +49,7 @@ export default ({
     onClickTask,
     ...otherProps
 }) => {
-    const {
-        onChangeTheme,
-        onSelectTask,
-        onUpdateTask,
-        onUpdateTasks,
-    } = appActions;
+    const { onChangeTheme, onCreateTask, onUpdateTask } = appActions;
     const { theme } = appData;
     const [dropProps] = useDrop('task-id', taskId =>
         onUpdateTask(taskId, {
@@ -56,29 +59,10 @@ export default ({
     const unscheduledTasks = tasks.filter(task => !task.scheduled);
     const hasTasks = tasks.length;
 
-    const handleClickNewTask = () => {
-        const newTaskId = Date.now();
-        const now = new Date();
-        const currentHour = now.getHours();
-        const currentMinute = now.getMinutes();
-
-        onUpdateTasks({
-            [newTaskId]: {
-                icon: DEFAULT_TASK_ICON,
-                id: newTaskId,
-                isComplete: false,
-                label: 'New Task',
-                notes: '',
-                scheduled: false,
-                scheduled_minutes: 30,
-                scheduled_time: `${currentHour}:${currentMinute}`,
-            },
-        });
-        onSelectTask(newTaskId);
-    };
+    const handleClickNewTask = () => onCreateTask();
 
     return (
-        <Container {...dropProps} {...otherProps}>
+        <Container {...otherProps}>
             <OptionBar
                 options={['DARK', 'LIGHT']}
                 renderOption={option => option.toLowerCase()}
@@ -86,12 +70,7 @@ export default ({
                 selectedOption={theme}
                 onChange={onChangeTheme}
             />
-            <Box
-                isFlexible
-                style={{
-                    position: 'relative',
-                }}
-            >
+            <BacklogDropZone {...dropProps}>
                 <FlexBox
                     justify="flex-start"
                     direction="column"
@@ -136,7 +115,9 @@ export default ({
                         />
                     ))}
                 </FlexBox>
-            </Box>
+            </BacklogDropZone>
         </Container>
     );
 };
+
+export default Backlog;
