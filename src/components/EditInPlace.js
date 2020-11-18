@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import styled from 'styled-components';
+import useKeyboardShortcuts from '../hooks/useKeyboardShortcuts';
 import Box from './atoms/Box';
 import {
     BORDER_RADIUS,
@@ -58,6 +59,7 @@ const EditInPlace = ({
     const inputRef = useRef(null);
     const measuringElementRef = useRef(null);
     const isEmpty = bufferedValue.trim() === '';
+    const isSingleLine = !isMultiLine;
 
     useEffect(() => {
         if (isRemotelyActivated === true) {
@@ -84,8 +86,10 @@ const EditInPlace = ({
     }, [bufferedValue, isEditing, measuringElementRef]);
 
     const handleClick = () => {
-        setBufferedValue(value);
-        setIsEditing(true);
+        if (!isEditing) {
+            setBufferedValue(value);
+            setIsEditing(true);
+        }
     };
 
     const handleBlur = () => {
@@ -97,28 +101,40 @@ const EditInPlace = ({
         setBufferedValue(evt.target.value);
     };
 
-    const handleKeyDown = evt => {
-        if (evt.key === 'Escape') {
-            setBufferedValue(value);
-            setIsEditing(false);
-            return;
-        }
-        if (evt.key === 'Enter') {
-            if (evt.metaKey || evt.shiftKey || !isMultiLine) {
-                onSave(bufferedValue);
-                setIsEditing(false);
-            }
-            if (!isMultiLine) {
-                evt.preventDefault();
-                return false;
-            }
-        }
+    const saveAndClose = () => {
+        onSave(bufferedValue);
+        setIsEditing(false);
     };
+
+    const close = () => {
+        setBufferedValue(value);
+        setIsEditing(false);
+    };
+
+    const ignoreKey = evt => {
+        evt.preventDefault();
+        return false;
+    };
+
+    const [onKeyDown] = useKeyboardShortcuts({
+        'cmd+escape': close,
+        'shift+escape': close,
+        'cmd+enter': saveAndClose,
+        'shift+enter': saveAndClose,
+        escape: saveAndClose,
+        enter: evt => {
+            if (isSingleLine) {
+                saveAndClose();
+                ignoreKey(evt);
+            }
+        },
+    });
 
     return (
         <Container
             isEditing={isEditing}
             isEmpty={isEmpty}
+            tabIndex={0}
             onClick={handleClick}
             {...otherProps}
         >
@@ -150,7 +166,7 @@ const EditInPlace = ({
                             value={bufferedValue}
                             onBlur={handleBlur}
                             onChange={handleChange}
-                            onKeyDown={handleKeyDown}
+                            onKeyDown={onKeyDown}
                         />
                     </>
                 ) : (

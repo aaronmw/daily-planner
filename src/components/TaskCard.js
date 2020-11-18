@@ -90,6 +90,7 @@ const TaskCard = ({ appActions, isActive, task, ...otherProps }) => {
         <Container
             duration={scheduled_minutes}
             isActive={isActive}
+            tabIndex={0}
             onClick={handleClick}
             {...dragProps}
             {...otherProps}
