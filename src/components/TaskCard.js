@@ -1,6 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
 import useDrag from '../hooks/useDrag';
+import useDrop from '../hooks/useDrop';
 import FlexBox from './atoms/FlexBox';
 import {
     BORDER_RADIUS,
@@ -79,7 +80,7 @@ const Label = styled(FlexBox).attrs({
     `
 );
 
-const TaskCard = ({ appActions, isActive, task, ...otherProps }) => {
+const TaskCard = ({ appActions, appData, isActive, task, ...otherProps }) => {
     const { onSelectTask } = appActions;
     const { icon, id, label, scheduled_minutes } = task;
     const [dragProps] = useDrag('task-id', id);
@@ -88,6 +89,7 @@ const TaskCard = ({ appActions, isActive, task, ...otherProps }) => {
 
     return (
         <Container
+            data-task-id={id}
             duration={scheduled_minutes}
             isActive={isActive}
             tabIndex={0}

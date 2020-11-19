@@ -2,6 +2,7 @@ import React from 'react';
 import styled from 'styled-components';
 import useDrop from '../hooks/useDrop';
 import minutesToHeight from '../utils/minutesToHeight';
+import toInt from '../utils/toInt';
 import AppColumn from './AppColumn';
 import Box from './atoms/Box';
 import { GhostButton } from './atoms/Button';
@@ -49,13 +50,26 @@ const Backlog = ({
     onClickTask,
     ...otherProps
 }) => {
-    const { onChangeTheme, onCreateTask, onUpdateTask } = appActions;
+    const {
+        onChangeTaskPosition,
+        onChangeTheme,
+        onCreateTask,
+        onUpdateTask,
+    } = appActions;
     const { theme } = appData;
-    const [dropProps] = useDrop('task-id', taskId =>
+    const [backlogDropProps] = useDrop('task-id', taskId => {
         onUpdateTask(taskId, {
             scheduled: false,
-        })
-    );
+        });
+        onChangeTaskPosition(taskId, 0);
+    });
+    const [taskCardDropProps] = useDrop('task-id', (taskId, evt) => {
+        const idOfTargetTask = toInt(evt.currentTarget.dataset.taskId);
+        const indexOfTarget = appData.tasks.findIndex(
+            task => task.id === idOfTargetTask
+        );
+        onChangeTaskPosition(taskId, indexOfTarget);
+    });
     const unscheduledTasks = tasks.filter(task => !task.scheduled);
     const hasTasks = tasks.length;
 
@@ -70,7 +84,7 @@ const Backlog = ({
                 selectedOption={theme}
                 onChange={onChangeTheme}
             />
-            <BacklogDropZone {...dropProps}>
+            <BacklogDropZone {...backlogDropProps}>
                 <FlexBox
                     justify="flex-start"
                     direction="column"
@@ -110,8 +124,10 @@ const Backlog = ({
                         <TaskCard
                             key={task.id}
                             appActions={appActions}
+                            appData={appData}
                             isActive={selectedTaskId === task.id}
                             task={task}
+                            {...taskCardDropProps}
                         />
                     ))}
                 </FlexBox>

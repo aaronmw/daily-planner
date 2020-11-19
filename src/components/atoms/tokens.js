@@ -8,7 +8,13 @@ export const END_ZONE_ICON = '🗑';
 export const DURATION_OPTIONS = [15, 30, 45, 60, 90, 120];
 export const GRID_UNIT = '30px';
 export const HOURS_PER_SCREEN = 8;
-export const INITIAL_TASKS = {};
+export const INITIAL_LISTS = [
+    {
+        id: 1,
+        label: 'Default List',
+    },
+];
+export const INITIAL_TASKS = [];
 export const MIN_SLOT_HEIGHT = GRID_UNIT;
 export const TIMELINE_FROM = '7:00';
 export const TIMELINE_TO = '24:00';

@@ -20,7 +20,7 @@ const useDrop = (type, callback = () => {}) => {
     const onDrop = evt => {
         const payload = evt.dataTransfer.getData(type);
         if (payload) {
-            callback(isNaN(payload) ? payload : parseFloat(payload));
+            callback(isNaN(payload) ? payload : parseFloat(payload), evt);
         }
         setIsTargetedForDrop(false);
     };

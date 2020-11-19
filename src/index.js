@@ -13,15 +13,24 @@ import usePersistentState from './hooks/usePersistentState';
 import {
     COPY,
     DEFAULT_TASK_ICON,
+    INITIAL_LISTS,
     INITIAL_TASKS,
     TIMELINE_FROM,
     TIMELINE_TO,
 } from './components/atoms/tokens';
 
 /*
-    tasks: {
-        1: {
+    activeListId: 123,
+    lists: [
+        {
+            id: 123,
+            label: 'Default List',
+        }
+    ],
+    tasks: [
+        {
             id: 1,
+            list_id: 123,
             icon: '🧺',
             isComplete: false,
             label: 'Take out the laundry',
@@ -31,21 +40,26 @@ import {
             scheduled_minutes: 30,
             scheduled_time: '14:00',
         },
-    },
+    ],
 */
 
 function App() {
+    const [lists, setLists] = usePersistentState('lists', INITIAL_LISTS);
     const [tasks, setTasks] = usePersistentState('tasks', INITIAL_TASKS);
     const [themeName, setThemeName] = usePersistentState('theme-name', 'DARK');
+    const [selectedListId, setSelectedListId] = usePersistentState(
+        'selected-list-id',
+        1
+    );
     const [selectedTaskId, setSelectedTaskId] = usePersistentState(
         'selected-task-id',
         null
     );
     const [isCreatingTask, setIsCreatingTask] = useState(false);
     const [isDraggingTask, setIsDraggingTask] = useState(false);
-    const taskLabelElementRef = useRef(null);
-    const activeTask = tasks[selectedTaskId];
-    const incompleteTasks = values(tasks).filter(task => !task.isComplete);
+    const selectedList = lists.find(list => list.id === selectedListId);
+    const selectedTask = tasks.find(task => task.id === selectedTaskId);
+    const incompleteTasks = tasks.filter(task => !task.isComplete);
     const hasIncompleteTasks = incompleteTasks.length;
 
     const handleDragOver = () => setIsDraggingTask(true);
@@ -56,21 +70,18 @@ function App() {
         handleDragEnd();
     }, [tasks]);
 
-    const onUpdateTasks = updates => {
-        setTasks(prevState => ({
-            ...prevState,
-            ...updates,
-        }));
-    };
-
     const onUpdateTask = (taskId, updates) => {
-        setTasks(prevState => ({
-            ...prevState,
-            [taskId]: {
-                ...prevState[taskId],
-                ...updates,
-            },
-        }));
+        setTasks(prevTasks =>
+            prevTasks.map(task => {
+                if (task.id === taskId) {
+                    return {
+                        ...task,
+                        ...updates,
+                    };
+                }
+                return task;
+            })
+        );
     };
 
     const onCreateTask = (overrides = {}) => {
@@ -79,40 +90,57 @@ function App() {
         const currentHour = now.getHours();
         const currentMinute = now.getMinutes();
 
-        onUpdateTasks({
-            [newTaskId]: {
-                icon: DEFAULT_TASK_ICON,
-                id: newTaskId,
-                isComplete: false,
-                label: `${sample(COPY.motivational_descriptors)} ${
-                    COPY.new_task_label
-                }`,
-                notes: COPY.new_task_notes,
-                scheduled: false,
-                scheduled_minutes: 30,
-                scheduled_time: `${currentHour}:${currentMinute}`,
-                ...overrides,
-            },
-        });
+        setTasks(currentTasks =>
+            currentTasks.concat([
+                {
+                    icon: DEFAULT_TASK_ICON,
+                    id: newTaskId,
+                    list_id: selectedListId,
+                    isComplete: false,
+                    label: `${sample(COPY.motivational_descriptors)} ${
+                        COPY.new_task_label
+                    }`,
+                    notes: COPY.new_task_notes,
+                    scheduled: false,
+                    scheduled_minutes: 30,
+                    scheduled_time: `${currentHour}:${currentMinute}`,
+                    ...overrides,
+                },
+            ])
+        );
 
         setSelectedTaskId(newTaskId);
 
         setIsCreatingTask(true);
 
-        // setTimeout(() => setIsCreatingTask(false), 1000);
+        setTimeout(() => setIsCreatingTask(false), 1000);
+    };
+
+    const onChangeTaskPosition = (taskId, newIndex) => {
+        setTasks(prevTasks => {
+            const tasksMinusTarget = prevTasks.filter(
+                task => task.id !== taskId
+            );
+            const task = prevTasks.find(task => task.id === taskId);
+
+            return [].concat(
+                tasksMinusTarget.slice(0, newIndex),
+                [task],
+                tasksMinusTarget.slice(newIndex)
+            );
+        });
     };
 
     const appActions = {
+        onChangeTaskPosition,
         onChangeTheme: setThemeName,
         onCreateTask,
         onSelectTask: setSelectedTaskId,
         onUpdateTask,
-        onUpdateTasks,
     };
 
     const appData = {
         selectedTaskId,
-        taskLabelElementRef,
         tasks,
         theme: themeName,
     };
@@ -145,7 +173,7 @@ function App() {
                 <TaskDetails
                     appActions={appActions}
                     appData={appData}
-                    task={activeTask}
+                    task={selectedTask}
                     isCreatingTask={isCreatingTask}
                     style={{
                         width: '40vw',
