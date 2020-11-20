@@ -18,23 +18,23 @@ const pulsingAnimation = ({ theme }) => keyframes`
 `;
 
 const Container = styled.div(
-    ({ isDragging, isTargetedForDrop, theme }) => css`
+    ({ isDraggingTask, isTargetedForDrop, theme }) => css`
         animation-direction: alternate;
         animation-duration: 300ms;
         animation-iteration-count: infinite;
         animation-name: ${isTargetedForDrop ? pulsingAnimation : 'unset'};
         animation-timing-function: ease-in-out;
         background: ${transparentize(
-            isTargetedForDrop ? 0 : isDragging ? 0.35 : 0.8,
+            isTargetedForDrop ? 0 : isDraggingTask ? 0.35 : 0.8,
             COLORS[theme.name].PRIMARY
         )};
         bottom: calc(${DROP_ZONE_RADIUS} * -1);
         border-radius: calc(${DROP_ZONE_RADIUS} * 2);
         height: calc(${DROP_ZONE_RADIUS} * 2);
-        pointer-events: ${isDragging ? 'all' : 'none'};
+        pointer-events: ${isDraggingTask ? 'all' : 'none'};
         position: fixed;
         right: calc(${DROP_ZONE_RADIUS} * -1);
-        transform: scale(${isDragging ? 0.5 : 0.25});
+        transform: scale(${isDraggingTask ? 0.5 : 0.25});
         width: calc(${DROP_ZONE_RADIUS} * 2);
         z-index: 100;
         ${UNIFIED_TRANSITION};
@@ -54,8 +54,9 @@ const Container = styled.div(
     `
 );
 
-const CompletedTaskDropZone = ({ appActions, isDragging, ...otherProps }) => {
+const CompletedTaskDropZone = ({ appActions, appData, ...otherProps }) => {
     const { onSelectTask, onUpdateTask } = appActions;
+    const { isDraggingTask } = appData;
     const [dropProps] = useDrop('task-id', taskId => {
         onUpdateTask(taskId, {
             isComplete: true,
@@ -67,7 +68,13 @@ const CompletedTaskDropZone = ({ appActions, isDragging, ...otherProps }) => {
         });
     });
 
-    return <Container isDragging={isDragging} {...dropProps} {...otherProps} />;
+    return (
+        <Container
+            isDraggingTask={isDraggingTask}
+            {...dropProps}
+            {...otherProps}
+        />
+    );
 };
 
 export default CompletedTaskDropZone;

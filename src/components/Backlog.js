@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import styled from 'styled-components';
 import useDrop from '../hooks/useDrop';
 import minutesToHeight from '../utils/minutesToHeight';
@@ -14,7 +14,7 @@ import { COLORS, DEFAULT_TASK_ICON, GRID_UNIT } from './atoms/tokens';
 const Container = styled(AppColumn).attrs({
     label: 'Backlog',
 })(
-    ({ hasTasks, isTargetedForDrop, theme }) => `
+    ({ hasTasks, theme }) => `
         background-color: ${COLORS[theme.name].SHADED};
         flex-grow: 1;
         overflow: ${hasTasks ? 'auto' : 'visible'};
@@ -64,6 +64,7 @@ const Backlog = ({
         onChangeTaskPosition(taskId, 0);
     });
     const [taskCardDropProps] = useDrop('task-id', (taskId, evt) => {
+        evt.stopPropagation();
         const idOfTargetTask = toInt(evt.currentTarget.dataset.taskId);
         const indexOfTarget = appData.tasks.findIndex(
             task => task.id === idOfTargetTask
@@ -136,4 +137,4 @@ const Backlog = ({
     );
 };
 
-export default Backlog;
+export default memo(Backlog);

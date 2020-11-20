@@ -1,7 +1,11 @@
-import React, { Fragment, useEffect, useRef, useState } from 'react';
+import React, { Fragment, memo, useEffect, useRef, useState } from 'react';
 import styled from 'styled-components';
 import { transparentize } from 'polished';
 import range from 'lodash/range';
+import useDrop from '../hooks/useDrop';
+import minutesToTime from '../utils/minutesToTime';
+import strToMinutes from '../utils/strToMinutes';
+import toInt from '../utils/toInt';
 import AppColumn from './AppColumn';
 import TaskCard from './TaskCard';
 import TimelineDropZone from './TimelineDropZone';
@@ -92,6 +96,7 @@ const CurrentTimeMarker = styled.div(
 
 const Timeline = ({
     appActions,
+    appData,
     selectedTaskId,
     from,
     tasks,
@@ -99,6 +104,7 @@ const Timeline = ({
     onClickTask,
     ...otherProps
 }) => {
+    const [timelineDropProps] = useDrop('task-id', () => {});
     const [currentTime, setCurrentTime] = useState(null);
     const [currentHour, currentMinute] = strToHoursAndMinutes(currentTime);
     const [fromHour, fromMinutes] = strToHoursAndMinutes(from);
@@ -118,7 +124,7 @@ const Timeline = ({
             setIsLoaded(true);
         };
         updateTime();
-        const timer = setInterval(updateTime, 500);
+        const timer = setInterval(updateTime, 1000);
         return () => clearInterval(timer);
     }, []);
 
@@ -135,19 +141,11 @@ const Timeline = ({
         }
     }, [isLoaded, currentTimeMarkerRef, timelineContainerRef]);
 
-    const [isTargetedForDrop, setIsTargetedForDrop] = useState(false);
-    const handleDragOver = () => setIsTargetedForDrop(true);
-    const handleDragLeave = () => setIsTargetedForDrop(false);
-    const handleDragEnd = () => setIsTargetedForDrop(false);
-
     return (
         <Container {...otherProps}>
             <TimelineContainer
                 ref={timelineContainerRef}
-                isTargetedForDrop={isTargetedForDrop}
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                onDragEnd={handleDragEnd}
+                {...timelineDropProps}
             >
                 {scheduledTasks.map(task => {
                     const [hours, mins] = strToHoursAndMinutes(
@@ -160,6 +158,7 @@ const Timeline = ({
                         <ScheduledTaskCard
                             key={task.id}
                             appActions={appActions}
+                            appData={appData}
                             isActive={selectedTaskId === task.id}
                             offsetMinutes={offsetMinutes}
                             task={task}
@@ -197,4 +196,4 @@ const Timeline = ({
     );
 };
 
-export default Timeline;
+export default memo(Timeline);

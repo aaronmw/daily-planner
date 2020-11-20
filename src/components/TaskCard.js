@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import styled from 'styled-components';
 import useDrag from '../hooks/useDrag';
 import useDrop from '../hooks/useDrop';
@@ -16,7 +16,7 @@ const LABEL_STRIP_WIDTH = '5px';
 const Container = styled(FlexBox).attrs({
     align: 'flex-start',
 })(
-    ({ duration, isActive, isDragging, isDraggingOver, theme }) => `
+    ({ duration, isActive, isDragging, isDraggingTask, theme }) => `
         background-color: ${COLORS[theme.name].BACKGROUND};
         border-radius: ${BORDER_RADIUS};
         box-shadow: ${`0 0 0 2px ${
@@ -28,8 +28,8 @@ const Container = styled(FlexBox).attrs({
         opacity: ${isDragging ? 0.5 : 1};
         padding: 0 calc(${GRID_UNIT} / 2) 0
             calc(${GRID_UNIT} / 2 + ${LABEL_STRIP_WIDTH});
-        pointer-events: ${isDraggingOver ? 'none' : 'auto'};
         position: relative;
+        pointer-events: ${isDraggingTask ? 'none' : 'all'};
         transition-property: opacity, top;
         width: 100%;
         z-index: ${isActive ? 10 : 'initial'};
@@ -82,6 +82,7 @@ const Label = styled(FlexBox).attrs({
 
 const TaskCard = ({ appActions, appData, isActive, task, ...otherProps }) => {
     const { onSelectTask } = appActions;
+    const { isDraggingTask } = appData;
     const { icon, id, label, scheduled_minutes } = task;
     const [dragProps] = useDrag('task-id', id);
 
@@ -92,6 +93,7 @@ const TaskCard = ({ appActions, appData, isActive, task, ...otherProps }) => {
             data-task-id={id}
             duration={scheduled_minutes}
             isActive={isActive}
+            isDraggingTask={isDraggingTask}
             tabIndex={0}
             onClick={handleClick}
             {...dragProps}
@@ -112,4 +114,4 @@ const TaskCard = ({ appActions, appData, isActive, task, ...otherProps }) => {
     );
 };
 
-export default TaskCard;
+export default memo(TaskCard);

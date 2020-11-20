@@ -1,4 +1,11 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, {
+    memo,
+    useCallback,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+} from 'react';
 import styled from 'styled-components';
 import useKeyboardShortcuts from '../hooks/useKeyboardShortcuts';
 import Box from './atoms/Box';
@@ -177,4 +184,4 @@ const EditInPlace = ({
     );
 };
 
-export default EditInPlace;
+export default memo(EditInPlace);

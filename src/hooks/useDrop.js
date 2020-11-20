@@ -1,20 +1,25 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 
 const useDrop = (type, callback = () => {}) => {
     const [isTargetedForDrop, setIsTargetedForDrop] = useState(false);
+    const targetedElement = useRef(null);
 
     const onDragEnter = evt => {
         evt.preventDefault();
-        setIsTargetedForDrop(true);
+        targetedElement.current = evt.target;
+        if (!isTargetedForDrop) {
+            setIsTargetedForDrop(true);
+        }
     };
 
     const onDragOver = evt => {
         evt.preventDefault();
-        setIsTargetedForDrop(true);
     };
 
-    const onDragLeave = () => {
-        setIsTargetedForDrop(false);
+    const onDragLeave = evt => {
+        if (evt.target === targetedElement.current) {
+            setIsTargetedForDrop(false);
+        }
     };
 
     const onDrop = evt => {

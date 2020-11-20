@@ -1,8 +1,13 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, {
+    useCallback,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+} from 'react';
 import ReactDOM from 'react-dom';
 import { ThemeProvider } from 'styled-components';
 import sample from 'lodash/sample';
-import values from 'lodash/values';
 import Backlog from './components/Backlog';
 import CompletedTasksDropZone from './components/CompletedTasksDropZone';
 import TaskDetails from './components/TaskDetails';
@@ -57,9 +62,18 @@ function App() {
     );
     const [isCreatingTask, setIsCreatingTask] = useState(false);
     const [isDraggingTask, setIsDraggingTask] = useState(false);
-    const selectedList = lists.find(list => list.id === selectedListId);
-    const selectedTask = tasks.find(task => task.id === selectedTaskId);
-    const incompleteTasks = tasks.filter(task => !task.isComplete);
+    const selectedList = useMemo(
+        () => lists.find(list => list.id === selectedListId),
+        [lists, selectedListId]
+    );
+    const selectedTask = useMemo(
+        () => tasks.find(task => task.id === selectedTaskId),
+        [tasks, selectedTaskId]
+    );
+    const incompleteTasks = useMemo(
+        () => tasks.filter(task => !task.isComplete),
+        [tasks]
+    );
     const hasIncompleteTasks = incompleteTasks.length;
 
     const handleDragOver = () => setIsDraggingTask(true);
@@ -70,76 +84,91 @@ function App() {
         handleDragEnd();
     }, [tasks]);
 
-    const onUpdateTask = (taskId, updates) => {
-        setTasks(prevTasks =>
-            prevTasks.map(task => {
-                if (task.id === taskId) {
-                    return {
-                        ...task,
-                        ...updates,
-                    };
-                }
-                return task;
-            })
-        );
-    };
+    const getTaskById = taskId => tasks.find(task => task.id === taskId);
 
-    const onCreateTask = (overrides = {}) => {
-        const newTaskId = Date.now();
-        const now = new Date();
-        const currentHour = now.getHours();
-        const currentMinute = now.getMinutes();
-
-        setTasks(currentTasks =>
-            currentTasks.concat([
-                {
-                    icon: DEFAULT_TASK_ICON,
-                    id: newTaskId,
-                    list_id: selectedListId,
-                    isComplete: false,
-                    label: `${sample(COPY.motivational_descriptors)} ${
-                        COPY.new_task_label
-                    }`,
-                    notes: COPY.new_task_notes,
-                    scheduled: false,
-                    scheduled_minutes: 30,
-                    scheduled_time: `${currentHour}:${currentMinute}`,
-                    ...overrides,
-                },
-            ])
-        );
-
-        setSelectedTaskId(newTaskId);
-
-        setIsCreatingTask(true);
-
-        setTimeout(() => setIsCreatingTask(false), 1000);
-    };
-
-    const onChangeTaskPosition = (taskId, newIndex) => {
-        setTasks(prevTasks => {
-            const tasksMinusTarget = prevTasks.filter(
-                task => task.id !== taskId
+    const onUpdateTask = useCallback(
+        (taskId, updates) => {
+            setTasks(prevTasks =>
+                prevTasks.map(task => {
+                    if (task.id === taskId) {
+                        return {
+                            ...task,
+                            ...updates,
+                        };
+                    }
+                    return task;
+                })
             );
-            const task = prevTasks.find(task => task.id === taskId);
+        },
+        [setTasks]
+    );
 
-            return [].concat(
-                tasksMinusTarget.slice(0, newIndex),
-                [task],
-                tasksMinusTarget.slice(newIndex)
+    const onCreateTask = useCallback(
+        (overrides = {}) => {
+            const newTaskId = Date.now();
+            const now = new Date();
+            const currentHour = now.getHours();
+            const currentMinute = now.getMinutes();
+
+            setTasks(currentTasks =>
+                currentTasks.concat([
+                    {
+                        icon: DEFAULT_TASK_ICON,
+                        id: newTaskId,
+                        list_id: selectedListId,
+                        isComplete: false,
+                        label: `${sample(COPY.motivational_descriptors)} ${
+                            COPY.new_task_label
+                        }`,
+                        notes: COPY.new_task_notes,
+                        scheduled: false,
+                        scheduled_minutes: 30,
+                        scheduled_time: `${currentHour}:${currentMinute}`,
+                        ...overrides,
+                    },
+                ])
             );
-        });
-    };
+
+            setSelectedTaskId(newTaskId);
+
+            setIsCreatingTask(true);
+
+            setTimeout(() => setIsCreatingTask(false), 1000);
+        },
+        [selectedListId, setSelectedTaskId, setTasks]
+    );
+
+    const onSelectTask = setSelectedTaskId;
+
+    const onChangeTaskPosition = useCallback(
+        (taskId, newIndex) => {
+            setTasks(prevTasks => {
+                const tasksMinusTarget = prevTasks.filter(
+                    task => task.id !== taskId
+                );
+                const task = prevTasks.find(task => task.id === taskId);
+
+                return [].concat(
+                    tasksMinusTarget.slice(0, newIndex),
+                    [task],
+                    tasksMinusTarget.slice(newIndex)
+                );
+            });
+        },
+        [setTasks]
+    );
 
     const appActions = {
+        getTaskById,
         onChangeTaskPosition,
         onChangeTheme: setThemeName,
         onCreateTask,
-        onSelectTask: setSelectedTaskId,
+        onSelectTask,
         onUpdateTask,
     };
 
     const appData = {
+        isDraggingTask,
         selectedTaskId,
         tasks,
         theme: themeName,
@@ -148,10 +177,7 @@ function App() {
     return (
         <ThemeProvider theme={{ name: themeName }}>
             <GlobalStyle />
-            <CompletedTasksDropZone
-                appActions={appActions}
-                isDragging={isDraggingTask}
-            />
+            <CompletedTasksDropZone appActions={appActions} appData={appData} />
             <FlexBox
                 align="stretch"
                 direction="row-reverse"
@@ -160,6 +186,7 @@ function App() {
             >
                 <Timeline
                     appActions={appActions}
+                    appData={appData}
                     selectedTaskId={selectedTaskId}
                     from={TIMELINE_FROM}
                     style={{

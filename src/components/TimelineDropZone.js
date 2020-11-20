@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import styled from 'styled-components';
 import range from 'lodash/range';
 import { COLORS, TIMELINE_FROM } from './atoms/tokens';
@@ -29,27 +29,25 @@ const StyledTimelineDropTarget = styled.div(
     `
 );
 
-const TimelineDropTarget = ({
-    appActions,
-    quarterInMinutes,
-    ...otherProps
-}) => {
-    const { onUpdateTask } = appActions;
-    const [fromHours, fromMinutes] = strToHoursAndMinutes(TIMELINE_FROM);
-    const newOffsetMinutes =
-        fromHours * 60 + fromMinutes + quarterInMinutes * 15;
-    const newTime = minutesToTime(newOffsetMinutes);
-    const [dropProps] = useDrop('task-id', taskId =>
-        onUpdateTask(taskId, {
-            scheduled: true,
-            scheduled_time: newTime,
-        })
-    );
+const TimelineDropTarget = memo(
+    ({ appActions, quarterInMinutes, ...otherProps }) => {
+        const { onUpdateTask } = appActions;
+        const [fromHours, fromMinutes] = strToHoursAndMinutes(TIMELINE_FROM);
+        const newOffsetMinutes =
+            fromHours * 60 + fromMinutes + quarterInMinutes * 15;
+        const newTime = minutesToTime(newOffsetMinutes);
+        const [dropProps] = useDrop('task-id', taskId =>
+            onUpdateTask(taskId, {
+                scheduled: true,
+                scheduled_time: newTime,
+            })
+        );
 
-    return <StyledTimelineDropTarget {...dropProps} {...otherProps} />;
-};
+        return <StyledTimelineDropTarget {...dropProps} {...otherProps} />;
+    }
+);
 
-const TimelineDropZone = ({ appActions, totalMinutes, ...otherProps }) => (
+const TimelineDropZone = memo(({ appActions, totalMinutes, ...otherProps }) => (
     <Container {...otherProps}>
         {range(totalMinutes / 15).map(quarterInMinutes => (
             <TimelineDropTarget
@@ -59,6 +57,6 @@ const TimelineDropZone = ({ appActions, totalMinutes, ...otherProps }) => (
             />
         ))}
     </Container>
-);
+));
 
 export default TimelineDropZone;
