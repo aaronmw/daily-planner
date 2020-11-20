@@ -123,7 +123,7 @@ const EditInPlace = ({
         return false;
     };
 
-    const [onKeyDown] = useKeyboardShortcuts({
+    useKeyboardShortcuts({
         'cmd+escape': close,
         'shift+escape': close,
         'cmd+enter': saveAndClose,
@@ -132,7 +132,7 @@ const EditInPlace = ({
         enter: evt => {
             if (isSingleLine) {
                 saveAndClose();
-                ignoreKey(evt);
+                evt.preventDefault();
             }
         },
     });
@@ -173,7 +173,6 @@ const EditInPlace = ({
                             value={bufferedValue}
                             onBlur={handleBlur}
                             onChange={handleChange}
-                            onKeyDown={onKeyDown}
                         />
                     </>
                 ) : (

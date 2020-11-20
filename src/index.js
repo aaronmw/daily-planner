@@ -14,6 +14,7 @@ import TaskDetails from './components/TaskDetails';
 import Timeline from './components/Timeline';
 import FlexBox from './components/atoms/FlexBox';
 import GlobalStyle from './components/atoms/GlobalStyles';
+import useKeyboardShortcuts from './hooks/useKeyboardShortcuts';
 import usePersistentState from './hooks/usePersistentState';
 import {
     COPY,
@@ -156,6 +157,24 @@ function App() {
             });
         },
         [setTasks]
+    );
+
+    useKeyboardShortcuts(
+        {
+            'cmd + arrowRight': evt => {
+                evt.preventDefault();
+                onUpdateTask(selectedTaskId, {
+                    scheduled: true,
+                });
+            },
+            'cmd + arrowLeft': evt => {
+                evt.preventDefault();
+                onUpdateTask(selectedTaskId, {
+                    scheduled: false,
+                });
+            },
+        },
+        [onUpdateTask, selectedTaskId]
     );
 
     const appActions = {
