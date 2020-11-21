@@ -7,7 +7,9 @@ export default (key, initialState) => {
     useEffect(() => {
         if (!isLoaded) {
             const savedState = window.localStorage.getItem(key);
-            setState(JSON.parse(savedState) || initialState);
+            setState(
+                savedState !== null ? JSON.parse(savedState) : initialState
+            );
             setIsLoaded(true);
         }
     }, [key, initialState, isLoaded]);

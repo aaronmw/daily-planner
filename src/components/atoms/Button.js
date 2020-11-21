@@ -1,6 +1,6 @@
 import styled from 'styled-components';
-import { BORDER_RADIUS, COLORS, UNIFIED_TRANSITION } from './tokens';
 import FlexBox from './FlexBox';
+import { BORDER_RADIUS, COLORS, UNIFIED_TRANSITION } from './tokens';
 
 const Button = styled(FlexBox).attrs({
     as: 'button',
@@ -30,7 +30,6 @@ const Button = styled(FlexBox).attrs({
 export const GhostButton = styled(Button)(
     ({ theme }) => `
         background: unset; 
-        border-radius: ${BORDER_RADIUS};
         border: 2px dashed ${COLORS[theme.name].BORDER_IDLE};
         width: 100%;
         
@@ -38,6 +37,13 @@ export const GhostButton = styled(Button)(
         &:hover {
             border-color: ${COLORS[theme.name].BORDER_HOVER};
         }
+    `
+);
+
+export const ToggleButton = styled(Button)(
+    ({ isActive, theme }) => `
+        background: unset;
+        width: auto;
     `
 );
 

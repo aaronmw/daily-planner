@@ -1,14 +1,13 @@
 import React from 'react';
 import styled from 'styled-components';
 import FlexBox from './atoms/FlexBox';
-import { COLORS, GRID_UNIT } from './atoms/tokens';
+import { COLORS, GRID_UNIT, UNIFIED_TRANSITION } from './atoms/tokens';
 
 const Container = styled(FlexBox).attrs({
     direction: 'column',
     isFlexible: true,
 })(
     ({ theme }) => `
-        
     `
 );
 
@@ -19,6 +18,7 @@ const ContentContainer = styled(FlexBox).attrs({
         height: calc(100vh - ${GRID_UNIT});
         overflow: auto;
         position: relative;
+        ${UNIFIED_TRANSITION};
         
         & > * {
             align-self: stretch;
@@ -28,7 +28,6 @@ const ContentContainer = styled(FlexBox).attrs({
 
 const ColumnHeader = styled(FlexBox).attrs({
     justify: 'center',
-    paddingX: 0.5,
 })(
     ({ theme }) => `
         background: ${COLORS[theme.name].BACKGROUND};

@@ -55,10 +55,14 @@ COPY.motivational_descriptors = [
     'Thoughtful',
     'Wonderful',
 ];
+COPY.backlog_hide = 'Hide Backlog';
+COPY.backlog_show = 'Show Backlog';
 COPY.empty_label = '...label?';
 COPY.empty_notes = '...notes?';
 COPY.new_task_label = `New Task`;
 COPY.new_task_notes = '';
+COPY.toggle_dark_mode = 'Switch to Dark Mode (⌘D)';
+COPY.toggle_light_mode = 'Turn off Dark Mode (⌘D)';
 
 export { COPY };
 

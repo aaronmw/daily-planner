@@ -19,6 +19,7 @@ import usePersistentState from './hooks/usePersistentState';
 import {
     COPY,
     DEFAULT_TASK_ICON,
+    GRID_UNIT,
     INITIAL_LISTS,
     INITIAL_TASKS,
     TIMELINE_FROM,
@@ -50,9 +51,11 @@ import {
 */
 
 function App() {
+    const [isBacklogVisible, setIsBacklogVisible] = usePersistentState(
+        'is-backlog-visible',
+        true
+    );
     const [lists, setLists] = usePersistentState('lists', INITIAL_LISTS);
-    const [tasks, setTasks] = usePersistentState('tasks', INITIAL_TASKS);
-    const [themeName, setThemeName] = usePersistentState('theme-name', 'DARK');
     const [selectedListId, setSelectedListId] = usePersistentState(
         'selected-list-id',
         1
@@ -61,8 +64,11 @@ function App() {
         'selected-task-id',
         null
     );
+    const [tasks, setTasks] = usePersistentState('tasks', INITIAL_TASKS);
+    const [themeName, setThemeName] = usePersistentState('theme-name', 'DARK');
     const [isCreatingTask, setIsCreatingTask] = useState(false);
     const [isDraggingTask, setIsDraggingTask] = useState(false);
+    const isBacklogVisibleOrDraggingTask = isBacklogVisible || isDraggingTask;
     const selectedList = useMemo(
         () => lists.find(list => list.id === selectedListId),
         [lists, selectedListId]
@@ -141,6 +147,10 @@ function App() {
 
     const onSelectTask = setSelectedTaskId;
 
+    const onChangeBacklogVisibility = setIsBacklogVisible;
+
+    const onChangeTheme = setThemeName;
+
     const onChangeTaskPosition = useCallback(
         (taskId, newIndex) => {
             setTasks(prevTasks => {
@@ -173,27 +183,55 @@ function App() {
                     scheduled: false,
                 });
             },
+            'cmd + b': evt => {
+                evt.preventDefault();
+                onChangeBacklogVisibility(!isBacklogVisible);
+            },
+            'cmd + d': evt => {
+                evt.preventDefault();
+                onChangeTheme(themeName === 'LIGHT' ? 'DARK' : 'LIGHT');
+            },
         }),
-        [selectedTaskId]
+        [isBacklogVisible, selectedTaskId, themeName]
     );
 
     useGlobalKeyboardShortcuts(keyMap);
 
     const appActions = {
         getTaskById,
+        onChangeBacklogVisibility,
         onChangeTaskPosition,
-        onChangeTheme: setThemeName,
+        onChangeTheme,
         onCreateTask,
         onSelectTask,
         onUpdateTask,
     };
 
     const appData = {
+        isBacklogVisibleOrDraggingTask,
         isDraggingTask,
         selectedTaskId,
         tasks,
         theme: themeName,
     };
+
+    console.log({
+        isBacklogVisible,
+        isDraggingTask,
+        isBacklogVisibleOrDraggingTask,
+    });
+
+    const columnWidths = isBacklogVisibleOrDraggingTask
+        ? {
+              backlog: '30vw',
+              taskDetails: '40vw',
+              timeline: '30vw',
+          }
+        : {
+              backlog: `calc(${GRID_UNIT} * 2)`,
+              taskDetails: `calc(60vw - ${GRID_UNIT} * 2)`,
+              timeline: '40vw',
+          };
 
     return (
         <ThemeProvider theme={{ name: themeName }}>
@@ -212,7 +250,7 @@ function App() {
                     from={TIMELINE_FROM}
                     style={{
                         opacity: hasIncompleteTasks ? 1 : 0.25,
-                        width: '30vw',
+                        width: columnWidths.timeline,
                         pointerEvents: hasIncompleteTasks ? 'all' : 'none',
                     }}
                     tasks={incompleteTasks}
@@ -224,7 +262,7 @@ function App() {
                     task={selectedTask}
                     isCreatingTask={isCreatingTask}
                     style={{
-                        width: '40vw',
+                        width: columnWidths.taskDetails,
                         opacity: hasIncompleteTasks ? 1 : 0.25,
                     }}
                 />
@@ -233,7 +271,7 @@ function App() {
                     appData={appData}
                     selectedTaskId={selectedTaskId}
                     style={{
-                        width: '30vw',
+                        width: columnWidths.backlog,
                     }}
                     tasks={incompleteTasks}
                 />
