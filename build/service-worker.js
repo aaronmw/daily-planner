@@ -11,18 +11,16 @@
  * See https://goo.gl/2aRDsh
  */
 
-importScripts(
-    'https://storage.googleapis.com/workbox-cdn/releases/4.3.1/workbox-sw.js'
-);
+importScripts("https://storage.googleapis.com/workbox-cdn/releases/4.3.1/workbox-sw.js");
 
 importScripts(
-    '/daily-planner/precache-manifest.1321ca716c9a989cfae16d4725d9c967.js'
+  "/daily-planner/precache-manifest.331dfc47ed8b2e6b387ff59adc3d697c.js"
 );
 
-self.addEventListener('message', event => {
-    if (event.data && event.data.type === 'SKIP_WAITING') {
-        self.skipWaiting();
-    }
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });
 
 workbox.core.clientsClaim();
@@ -35,9 +33,7 @@ workbox.core.clientsClaim();
 self.__precacheManifest = [].concat(self.__precacheManifest || []);
 workbox.precaching.precacheAndRoute(self.__precacheManifest, {});
 
-workbox.routing.registerNavigationRoute(
-    workbox.precaching.getCacheKeyForURL('/daily-planner/index.html'),
-    {
-        blacklist: [/^\/_/, /\/[^\/]+\.[^\/]+$/],
-    }
-);
+workbox.routing.registerNavigationRoute(workbox.precaching.getCacheKeyForURL("/daily-planner/index.html"), {
+  
+  blacklist: [/^\/_/,/\/[^\/]+\.[^\/]+$/],
+});
