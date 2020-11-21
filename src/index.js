@@ -14,7 +14,7 @@ import TaskDetails from './components/TaskDetails';
 import Timeline from './components/Timeline';
 import FlexBox from './components/atoms/FlexBox';
 import GlobalStyle from './components/atoms/GlobalStyles';
-import useKeyboardShortcuts from './hooks/useKeyboardShortcuts';
+import useGlobalKeyboardShortcuts from './hooks/useKeyboardShortcuts';
 import usePersistentState from './hooks/usePersistentState';
 import {
     COPY,
@@ -159,8 +159,8 @@ function App() {
         [setTasks]
     );
 
-    useKeyboardShortcuts(
-        {
+    const keyMap = useMemo(
+        () => ({
             'cmd + arrowRight': evt => {
                 evt.preventDefault();
                 onUpdateTask(selectedTaskId, {
@@ -173,9 +173,11 @@ function App() {
                     scheduled: false,
                 });
             },
-        },
-        [onUpdateTask, selectedTaskId]
+        }),
+        [selectedTaskId]
     );
+
+    useGlobalKeyboardShortcuts(keyMap);
 
     const appActions = {
         getTaskById,

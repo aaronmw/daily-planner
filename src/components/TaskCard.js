@@ -2,6 +2,7 @@ import React, { memo } from 'react';
 import styled from 'styled-components';
 import useDrag from '../hooks/useDrag';
 import useDrop from '../hooks/useDrop';
+import Box from './atoms/Box';
 import FlexBox from './atoms/FlexBox';
 import {
     BORDER_RADIUS,
@@ -15,25 +16,33 @@ const LABEL_STRIP_WIDTH = '5px';
 
 const Container = styled(FlexBox).attrs({
     align: 'flex-start',
+    justify: 'space-between',
+    spacing: 0.5,
+    paddingX: 0.5,
 })(
-    ({ duration, isActive, isDragging, isDraggingTask, theme }) => `
+    ({ duration, isActive, isDragging, theme }) => `
         background-color: ${COLORS[theme.name].BACKGROUND};
         border-radius: ${BORDER_RADIUS};
-        box-shadow: ${`0 0 0 2px ${
+        box-shadow: 0 0 0 2px ${
             COLORS[theme.name][isActive ? 'PRIMARY' : 'BORDER_IDLE']
-        }`};
+        };
         cursor: pointer;
         height: ${minutesToHeight(duration)};
-        min-height: ${minutesToHeight(20)};
-        opacity: ${isDragging ? 0.5 : 1};
-        padding: 0 calc(${GRID_UNIT} / 2) 0
-            calc(${GRID_UNIT} / 2 + ${LABEL_STRIP_WIDTH});
+        opacity: ${isDragging ? 0 : 1};
+        overflow: hidden;
+        padding-left: calc(${GRID_UNIT} * 0.5 + ${LABEL_STRIP_WIDTH});
         position: relative;
-        pointer-events: ${isDraggingTask ? 'none' : 'all'};
         transition-property: opacity, top;
         width: 100%;
         z-index: ${isActive ? 10 : 'initial'};
         ${UNIFIED_TRANSITION};
+        transition-property:
+            background-color,
+            box-shadow,
+            height,
+            min-height,
+            opacity,
+            width;
 
         &:before {
             background-color: ${COLORS[theme.name].PRIMARY};
@@ -60,18 +69,25 @@ const Container = styled(FlexBox).attrs({
         &:active {
             box-shadow: 0 0 0 2px ${COLORS[theme.name].PRIMARY} inset;
         }
+        
+        ${CardLabel} {
+            color: ${COLORS[theme.name][isActive ? 'TEXT' : 'TEXT_FADED']};
+            min-height: ${minutesToHeight(Math.min(30, duration))};
+        }
+
+        ${CardIcon} {
+            height: ${minutesToHeight(Math.min(30, duration))};
+        }
     `
 );
 
-const Label = styled(FlexBox).attrs({
-    spacing: 0.5,
+const CardLabel = styled(FlexBox).attrs({
+    align: 'center',
+    isFlexible: true,
 })(
-    ({ isActive, theme }) => `
-        align-items: center;
-        color: ${COLORS[theme.name][isActive ? 'TEXT' : 'TEXT_FADED']};
-        display: flex;
-        justify-content: space-between;
-        height: 100%;
+    ({ theme }) => `
+        position: relative;
+        width: auto;
         ${UNIFIED_TRANSITION};
         
         ${Container}:hover > & {
@@ -80,9 +96,17 @@ const Label = styled(FlexBox).attrs({
     `
 );
 
-const TaskCard = ({ appActions, appData, isActive, task, ...otherProps }) => {
+const CardIcon = styled(FlexBox).attrs({
+    align: 'center',
+    justify: 'center',
+})(
+    ({ theme }) => `
+        width: auto;
+    `
+);
+
+const TaskCard = ({ appActions, isActive, task, ...otherProps }) => {
     const { onSelectTask } = appActions;
-    const { isDraggingTask } = appData;
     const { icon, id, label, scheduled_minutes } = task;
     const [dragProps] = useDrag('task-id', id);
 
@@ -93,23 +117,13 @@ const TaskCard = ({ appActions, appData, isActive, task, ...otherProps }) => {
             data-task-id={id}
             duration={scheduled_minutes}
             isActive={isActive}
-            isDraggingTask={isDraggingTask}
             tabIndex={0}
             onClick={handleClick}
             {...dragProps}
             {...otherProps}
         >
-            <Label isActive={isActive}>
-                <div
-                    style={{
-                        maxHeight: '100%',
-                        overflow: 'auto',
-                    }}
-                >
-                    {label}
-                </div>
-                <span>{icon}</span>
-            </Label>
+            <CardLabel>{label}</CardLabel>
+            <CardIcon>{icon}</CardIcon>
         </Container>
     );
 };

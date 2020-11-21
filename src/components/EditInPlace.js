@@ -7,7 +7,7 @@ import React, {
     useState,
 } from 'react';
 import styled from 'styled-components';
-import useKeyboardShortcuts from '../hooks/useKeyboardShortcuts';
+import useGlobalKeyboardShortcuts from '../hooks/useKeyboardShortcuts';
 import Box from './atoms/Box';
 import {
     BORDER_RADIUS,
@@ -42,6 +42,7 @@ const Container = styled(Box).attrs({
             ${UNIFIED_TRANSITION};
         }
         
+        &:focus,
         &:hover {
             &:before {
                 opacity: 1;
@@ -118,24 +119,25 @@ const EditInPlace = ({
         setIsEditing(false);
     };
 
-    const ignoreKey = evt => {
-        evt.preventDefault();
-        return false;
-    };
+    const keyMap = useMemo(
+        () => ({
+            'cmd + escape': close,
+            'shift + escape': close,
+            'cmd + enter': saveAndClose,
+            'shift + enter': saveAndClose,
+            escape: saveAndClose,
+            enter: evt => {
+                if (isSingleLine) {
+                    saveAndClose();
+                    evt.preventDefault();
+                    return false;
+                }
+            },
+        }),
+        [close, isSingleLine, saveAndClose]
+    );
 
-    useKeyboardShortcuts({
-        'cmd+escape': close,
-        'shift+escape': close,
-        'cmd+enter': saveAndClose,
-        'shift+enter': saveAndClose,
-        escape: saveAndClose,
-        enter: evt => {
-            if (isSingleLine) {
-                saveAndClose();
-                evt.preventDefault();
-            }
-        },
-    });
+    useGlobalKeyboardShortcuts(keyMap, inputRef);
 
     return (
         <Container

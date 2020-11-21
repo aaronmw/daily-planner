@@ -57,19 +57,17 @@ const Backlog = ({
         onUpdateTask,
     } = appActions;
     const { theme } = appData;
-    const [backlogDropProps] = useDrop('task-id', taskId => {
+    const [backlogDropProps] = useDrop('task-id', (taskId, evt) => {
         onUpdateTask(taskId, {
             scheduled: false,
         });
-        onChangeTaskPosition(taskId, 0);
     });
     const [taskCardDropProps] = useDrop('task-id', (taskId, evt) => {
-        evt.stopPropagation();
-        const idOfTargetTask = toInt(evt.currentTarget.dataset.taskId);
-        const indexOfTarget = appData.tasks.findIndex(
-            task => task.id === idOfTargetTask
+        const droppedOnTaskId = toInt(evt.currentTarget.dataset.taskId);
+        const droppedOnTaskIndex = appData.tasks.findIndex(
+            task => task.id === droppedOnTaskId
         );
-        onChangeTaskPosition(taskId, indexOfTarget);
+        onChangeTaskPosition(taskId, droppedOnTaskIndex);
     });
     const unscheduledTasks = tasks.filter(task => !task.scheduled);
     const hasTasks = tasks.length;

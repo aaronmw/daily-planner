@@ -71,9 +71,10 @@ const HalfHourLabel = styled.div(
 );
 
 const ScheduledTaskCard = styled(TaskCard)(
-    ({ offsetMinutes }) => `
-        position: absolute;
+    ({ isAnotherTaskBeingDragged, offsetMinutes }) => `
         left: calc(${GRID_UNIT} * 3);
+        pointer-events: ${isAnotherTaskBeingDragged ? 'none' : 'all'};
+        position: absolute;
         right: ${GRID_UNIT};
         top: ${minutesToHeight(offsetMinutes)};
         width: auto;
@@ -108,6 +109,7 @@ const Timeline = ({
     const [currentTime, setCurrentTime] = useState(null);
     const [currentHour, currentMinute] = strToHoursAndMinutes(currentTime);
     const [fromHour, fromMinutes] = strToHoursAndMinutes(from);
+    const { isDraggingTask } = appData;
     const [isLoaded, setIsLoaded] = useState(false);
     const scheduledTasks = tasks.filter(task => task.scheduled);
     const [toHour, toMinutes] = strToHoursAndMinutes(to);
@@ -158,7 +160,7 @@ const Timeline = ({
                         <ScheduledTaskCard
                             key={task.id}
                             appActions={appActions}
-                            appData={appData}
+                            isAnotherTaskBeingDragged={isDraggingTask}
                             isActive={selectedTaskId === task.id}
                             offsetMinutes={offsetMinutes}
                             task={task}

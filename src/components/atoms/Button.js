@@ -18,7 +18,7 @@ const Button = styled(FlexBox).attrs({
         
         &:focus,
         &:hover {
-            transform: scale(1.1);
+            box-shadow: 0 0 0 2px ${COLORS[theme.name].PRIMARY};
         }
         &:active {
             transform: scale(0.9);

@@ -16,6 +16,7 @@ const Container = styled(FlexBox).attrs({
         width: 100%;
         z-index: 10;
         
+        &:focus-within,
         &:hover {
             color: ${COLORS[theme.name].TEXT};
         }
@@ -31,6 +32,7 @@ const OptionButton = styled(Button)(
         width: auto;
         ${UNIFIED_TRANSITION};
         
+        ${Container}:focus-within > &,
         ${Container}:hover > & {
             opacity: 1;
         }

@@ -42,7 +42,7 @@ const Container = styled(AppColumn)(
 
 const TaskHeader = styled(FlexBox).attrs({
     as: 'h1',
-    align: 'flex-start',
+    align: 'center',
     spacing: 1.5,
     paddingX: 1,
     paddingY: 0.75,
@@ -64,6 +64,7 @@ const TaskHeaderLabel = styled(Box)`
 const TaskHeaderIcon = styled(Box).attrs({
     role: 'img',
 })`
+    align-self: flex-start;
     flex-grow: 0;
     flex-shrink: 0;
     font-size: 3rem;
