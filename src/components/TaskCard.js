@@ -1,8 +1,6 @@
-import React, { memo } from 'react';
+import React, { memo, useState } from 'react';
 import styled from 'styled-components';
 import useDrag from '../hooks/useDrag';
-import useDrop from '../hooks/useDrop';
-import Box from './atoms/Box';
 import FlexBox from './atoms/FlexBox';
 import {
     BORDER_RADIUS,
@@ -105,12 +103,20 @@ const CardIcon = styled(FlexBox).attrs({
     `
 );
 
-const TaskCard = ({ appActions, isActive, task, ...otherProps }) => {
-    const { onSelectTask } = appActions;
+const TaskCard = ({ appActions, appData, isActive, task, ...otherProps }) => {
+    const { onImmediatelySelectTask, onTransitionToTask } = appActions;
+    const { isShowingListManager } = appData;
     const { icon, id, label, scheduled_minutes } = task;
     const [dragProps] = useDrag('task-id', id);
 
-    const handleClick = () => onSelectTask(id);
+    const handleClick = () => {
+        if (isShowingListManager) {
+            onImmediatelySelectTask(id);
+            return;
+        }
+
+        onTransitionToTask(id);
+    };
 
     return (
         <Container

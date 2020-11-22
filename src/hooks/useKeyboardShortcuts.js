@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import mapKeys from 'lodash/mapKeys';
 import uniq from 'lodash/uniq';
 
@@ -70,7 +70,7 @@ const useGlobalKeyboardShortcuts = (
         document.addEventListener('keydown', onKeyDown);
 
         return () => document.removeEventListener('keydown', onKeyDown);
-    }, [keyMap]);
+    }, [keyMap, targetElementRef]);
 };
 
 export default useGlobalKeyboardShortcuts;

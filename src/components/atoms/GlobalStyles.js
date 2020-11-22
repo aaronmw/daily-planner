@@ -1,5 +1,11 @@
 import { createGlobalStyle } from 'styled-components';
-import { BULLET_SIZE, COLORS, GRID_UNIT } from './tokens';
+import {
+    BULLET_SIZE,
+    COLORS,
+    FONT_SIZE_NORMAL,
+    FONTS,
+    GRID_UNIT,
+} from './tokens';
 
 export default createGlobalStyle(
     ({ theme }) => `
@@ -10,7 +16,7 @@ export default createGlobalStyle(
             color: unset;
             font: unset;
             font-size: inherit;
-            line-height: 1.4em;
+            line-height: ${FONTS.NORMAL.LINE_HEIGHT};
             list-style-type: none;
             margin: 0;
             outline: unset;
@@ -20,7 +26,7 @@ export default createGlobalStyle(
             background: ${COLORS[theme.name].BACKGROUND};
             color: ${COLORS[theme.name].TEXT};
             font-family: 'Operator Mono', monospace;
-            font-size: 15px;
+            font-size: ${FONTS.NORMAL.SIZE};
             font-weight: 300;
             height: 100%;
             overflow: hidden;

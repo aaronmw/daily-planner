@@ -19,7 +19,7 @@ import {
 const Container = styled(Box).attrs({
     isFlexible: true,
 })(
-    ({ isEditing, isEmpty, theme }) => `
+    ({ isEditing, isEmpty, theme, tracingElementStyles = () => {} }) => `
         cursor: ${isEditing ? 'text' : 'pointer'};
         position: relative;
         opacity: ${isEmpty ? 0.5 : 1};
@@ -35,11 +35,12 @@ const Container = styled(Box).attrs({
             opacity: ${isEditing ? 1 : 0};
             pointer-events: none;
             position: absolute;
-            top: calc(${GRID_UNIT} * 0.5 * -1);
+            top: calc(${GRID_UNIT} * 0.25 * -1);
             right: calc(${GRID_UNIT} * 0.5 * -1);
-            bottom: calc(${GRID_UNIT} * 0.5 * -1);
+            bottom: calc(${GRID_UNIT} * 0.25 * -1);
             left: calc(${GRID_UNIT} * 0.5 * -1);
             ${UNIFIED_TRANSITION};
+            ${tracingElementStyles(theme)}
         }
         
         &:focus,
@@ -56,6 +57,7 @@ const EditInPlace = ({
     isRemotelyActivated = false,
     placeholder = 'Empty',
     render = value => value,
+    tracingElementStyles = () => {},
     value = '',
     wrapperStyles = {},
     onSave = () => {},
@@ -68,12 +70,6 @@ const EditInPlace = ({
     const measuringElementRef = useRef(null);
     const isEmpty = bufferedValue.trim() === '';
     const isSingleLine = !isMultiLine;
-
-    useEffect(() => {
-        if (isRemotelyActivated === true) {
-            handleClick();
-        }
-    }, [isRemotelyActivated]);
 
     useEffect(() => {
         setBufferedValue(value);
@@ -93,12 +89,18 @@ const EditInPlace = ({
         }
     }, [bufferedValue, isEditing, measuringElementRef]);
 
-    const handleClick = () => {
+    const handleClick = useCallback(() => {
         if (!isEditing) {
             setBufferedValue(value);
             setIsEditing(true);
         }
-    };
+    }, [isEditing, setBufferedValue, setIsEditing, value]);
+
+    useEffect(() => {
+        if (isRemotelyActivated === true) {
+            handleClick();
+        }
+    }, [handleClick, isRemotelyActivated]);
 
     const handleBlur = () => {
         onSave(bufferedValue);
@@ -109,18 +111,18 @@ const EditInPlace = ({
         setBufferedValue(evt.target.value);
     };
 
-    const saveAndClose = () => {
-        onSave(bufferedValue);
-        setIsEditing(false);
-    };
+    const keyMap = useMemo(() => {
+        const saveAndClose = () => {
+            onSave(bufferedValue);
+            setIsEditing(false);
+        };
 
-    const close = () => {
-        setBufferedValue(value);
-        setIsEditing(false);
-    };
+        const close = () => {
+            setBufferedValue(value);
+            setIsEditing(false);
+        };
 
-    const keyMap = useMemo(
-        () => ({
+        return {
             'cmd + escape': close,
             'shift + escape': close,
             'cmd + enter': saveAndClose,
@@ -133,9 +135,8 @@ const EditInPlace = ({
                     return false;
                 }
             },
-        }),
-        [close, isSingleLine, saveAndClose]
-    );
+        };
+    }, [bufferedValue, onSave, isSingleLine, value]);
 
     useGlobalKeyboardShortcuts(keyMap, inputRef);
 
@@ -144,6 +145,7 @@ const EditInPlace = ({
             isEditing={isEditing}
             isEmpty={isEmpty}
             tabIndex={0}
+            tracingElementStyles={tracingElementStyles}
             onClick={handleClick}
             {...otherProps}
         >
@@ -156,7 +158,6 @@ const EditInPlace = ({
                                 position: 'absolute',
                                 pointerEvents: 'none',
                                 opacity: 0,
-                                outline: '2px dotted red',
                                 whiteSpace: 'pre-wrap',
                                 width: '100%',
                             }}

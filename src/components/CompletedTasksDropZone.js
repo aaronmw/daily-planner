@@ -2,17 +2,15 @@ import React from 'react';
 import { transparentize } from 'polished';
 import styled, { css, keyframes } from 'styled-components';
 import useDrop from '../hooks/useDrop';
-import { COLORS, END_ZONE_ICON, UNIFIED_TRANSITION } from './atoms/tokens';
+import { COLORS, ICONS, UNIFIED_TRANSITION } from './atoms/tokens';
 
 const DROP_ZONE_RADIUS = '20vw';
 
 const pulsingAnimation = ({ theme }) => keyframes`
     0% {
-        box-shadow: 0 0 0 0 ${COLORS[theme.name].PRIMARY};
         transform: scale(1);
     }
     100% {
-        box-shadow: 0 0 50px 0 ${COLORS[theme.name].PRIMARY};
         transform: scale(1.2);
     }
 `;
@@ -25,7 +23,7 @@ const Container = styled.div(
         animation-name: ${isTargetedForDrop ? pulsingAnimation : 'unset'};
         animation-timing-function: ease-in-out;
         background: ${transparentize(
-            isTargetedForDrop ? 0 : isDraggingTask ? 0.35 : 0.8,
+            isTargetedForDrop || isDraggingTask ? 1 : 0.75,
             COLORS[theme.name].PRIMARY
         )};
         bottom: calc(${DROP_ZONE_RADIUS} * -1);
@@ -41,7 +39,7 @@ const Container = styled.div(
 
         &:before {
             align-items: center;
-            content: '${END_ZONE_ICON}';
+            content: '${ICONS.END_ZONE}';
             display: flex;
             font-size: 8rem;
             justify-content: center;
@@ -55,13 +53,13 @@ const Container = styled.div(
 );
 
 const CompletedTaskDropZone = ({ appActions, appData, ...otherProps }) => {
-    const { onSelectTask, onUpdateTask } = appActions;
+    const { onTransitionToTask, onUpdateTask } = appActions;
     const { isDraggingTask } = appData;
     const [dropProps] = useDrop('task-id', taskId => {
         onUpdateTask(taskId, {
             isComplete: true,
         });
-        onSelectTask(currentSelectedTaskId => {
+        onTransitionToTask(currentSelectedTaskId => {
             return currentSelectedTaskId === taskId
                 ? null
                 : currentSelectedTaskId;

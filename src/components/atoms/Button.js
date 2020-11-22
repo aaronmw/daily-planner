@@ -30,7 +30,8 @@ const Button = styled(FlexBox).attrs({
 export const GhostButton = styled(Button)(
     ({ theme }) => `
         background: unset; 
-        border: 2px dashed ${COLORS[theme.name].BORDER_IDLE};
+        border: 2px dashed ${COLORS[theme.name].BORDER_NEUTRAL};
+        color: ${COLORS[theme.name].TEXT_FADED};
         width: 100%;
         
         &:focus,

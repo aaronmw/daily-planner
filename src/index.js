@@ -1,54 +1,37 @@
 import React, {
     useCallback,
     useEffect,
+    useLayoutEffect,
     useMemo,
-    useRef,
     useState,
 } from 'react';
 import ReactDOM from 'react-dom';
 import { ThemeProvider } from 'styled-components';
 import sample from 'lodash/sample';
+import { PrimaryAppColumn } from './components/AppColumn';
+import { ToggleButton } from './components/atoms/Button';
 import Backlog from './components/Backlog';
 import CompletedTasksDropZone from './components/CompletedTasksDropZone';
+import ListManager from './components/ListManager';
 import TaskDetails from './components/TaskDetails';
 import Timeline from './components/Timeline';
 import FlexBox from './components/atoms/FlexBox';
 import GlobalStyle from './components/atoms/GlobalStyles';
+import ToolBar from './components/ToolBar';
 import useGlobalKeyboardShortcuts from './hooks/useKeyboardShortcuts';
 import usePersistentState from './hooks/usePersistentState';
 import {
     COPY,
-    DEFAULT_TASK_ICON,
     GRID_UNIT,
+    ICONS,
     INITIAL_LISTS,
+    INITIAL_SELECTED_LIST_ID,
+    INITIAL_SELECTED_TASK_ID,
     INITIAL_TASKS,
+    ROUTE_TRANSITION_ANIMATION_DURATION,
     TIMELINE_FROM,
     TIMELINE_TO,
 } from './components/atoms/tokens';
-
-/*
-    activeListId: 123,
-    lists: [
-        {
-            id: 123,
-            label: 'Default List',
-        }
-    ],
-    tasks: [
-        {
-            id: 1,
-            list_id: 123,
-            icon: '🧺',
-            isComplete: false,
-            label: 'Take out the laundry',
-            notes:
-                'This is a note. **This is bold, I think?**\n\nWith two lines!\n\n- And a list\n\n- Of things\n\n- Like this!\n\n> Look, a blockquote! Oooh',
-            scheduled: false,
-            scheduled_minutes: 30,
-            scheduled_time: '14:00',
-        },
-    ],
-*/
 
 function App() {
     const [isBacklogVisible, setIsBacklogVisible] = usePersistentState(
@@ -58,30 +41,39 @@ function App() {
     const [lists, setLists] = usePersistentState('lists', INITIAL_LISTS);
     const [selectedListId, setSelectedListId] = usePersistentState(
         'selected-list-id',
-        1
+        INITIAL_SELECTED_LIST_ID
     );
-    const [selectedTaskId, setSelectedTaskId] = usePersistentState(
-        'selected-task-id',
-        null
+    const [isShowingListManager, setIsShowingListManager] = usePersistentState(
+        'is-showing-list-manager',
+        true
     );
     const [tasks, setTasks] = usePersistentState('tasks', INITIAL_TASKS);
+    const [selectedTaskId, setSelectedTaskId] = usePersistentState(
+        'selected-task-id',
+        INITIAL_SELECTED_TASK_ID
+    );
     const [themeName, setThemeName] = usePersistentState('theme-name', 'DARK');
+    const [isCreatingList, setIsCreatingList] = useState(false);
     const [isCreatingTask, setIsCreatingTask] = useState(false);
     const [isDraggingTask, setIsDraggingTask] = useState(false);
+    const [isTransitioning, setIsTransitioning] = useState(false);
     const isBacklogVisibleOrDraggingTask = isBacklogVisible || isDraggingTask;
-    const selectedList = useMemo(
-        () => lists.find(list => list.id === selectedListId),
-        [lists, selectedListId]
-    );
-    const selectedTask = useMemo(
-        () => tasks.find(task => task.id === selectedTaskId),
-        [tasks, selectedTaskId]
-    );
     const incompleteTasks = useMemo(
         () => tasks.filter(task => !task.isComplete),
         [tasks]
     );
     const hasIncompleteTasks = incompleteTasks.length;
+
+    useLayoutEffect(() => {
+        setIsTransitioning(true);
+
+        const stopTransitionTimer = setTimeout(
+            () => setIsTransitioning(false),
+            ROUTE_TRANSITION_ANIMATION_DURATION / 2
+        );
+
+        return () => clearTimeout(stopTransitionTimer);
+    }, [selectedTaskId, isShowingListManager]);
 
     const handleDragOver = () => setIsDraggingTask(true);
 
@@ -91,7 +83,50 @@ function App() {
         handleDragEnd();
     }, [tasks]);
 
-    const getTaskById = taskId => tasks.find(task => task.id === taskId);
+    const onCreateList = useCallback(
+        (overrides = {}) => {
+            const newListId = Date.now();
+
+            setLists(currentLists =>
+                currentLists.concat([
+                    {
+                        id: newListId,
+                        label: `${sample(COPY.MOTIVATIONAL_DESCRIPTORS)} ${
+                            COPY.NEW_LIST_LABEL
+                        }`,
+                        ...overrides,
+                    },
+                ])
+            );
+
+            setSelectedListId(newListId);
+
+            // This remotely activates the EditInPlace
+            setIsCreatingList(true);
+
+            setTimeout(() => setIsCreatingList(false), 1000);
+        },
+        [setSelectedListId, setLists]
+    );
+
+    const onUpdateList = useCallback(
+        (listId, updates) => {
+            setLists(prevLists =>
+                prevLists.map(list => {
+                    if (list.id === listId) {
+                        return {
+                            ...list,
+                            ...updates,
+                        };
+                    }
+                    return list;
+                })
+            );
+        },
+        [setLists]
+    );
+
+    const onSelectList = setSelectedListId;
 
     const onUpdateTask = useCallback(
         (taskId, updates) => {
@@ -120,14 +155,14 @@ function App() {
             setTasks(currentTasks =>
                 currentTasks.concat([
                     {
-                        icon: DEFAULT_TASK_ICON,
+                        icon: ICONS.TASK_DEFAULT,
                         id: newTaskId,
                         list_id: selectedListId,
                         isComplete: false,
-                        label: `${sample(COPY.motivational_descriptors)} ${
-                            COPY.new_task_label
+                        label: `${sample(COPY.MOTIVATIONAL_DESCRIPTORS)} ${
+                            COPY.NEW_TASK_LABEL
                         }`,
-                        notes: COPY.new_task_notes,
+                        notes: COPY.NEW_TASK_NOTES,
                         scheduled: false,
                         scheduled_minutes: 30,
                         scheduled_time: `${currentHour}:${currentMinute}`,
@@ -138,6 +173,7 @@ function App() {
 
             setSelectedTaskId(newTaskId);
 
+            // This remotely activates the EditInPlace
             setIsCreatingTask(true);
 
             setTimeout(() => setIsCreatingTask(false), 1000);
@@ -145,9 +181,27 @@ function App() {
         [selectedListId, setSelectedTaskId, setTasks]
     );
 
-    const onSelectTask = setSelectedTaskId;
+    const transition = callback => {
+        setIsTransitioning(true);
+        setTimeout(callback, ROUTE_TRANSITION_ANIMATION_DURATION / 2);
+    };
+
+    const onImmediatelySelectTask = setSelectedTaskId;
+
+    const onTransitionToTask = taskId => {
+        if (isShowingListManager) {
+            setSelectedTaskId(taskId);
+            return;
+        }
+
+        transition(() => setSelectedTaskId(taskId));
+    };
 
     const onChangeBacklogVisibility = setIsBacklogVisible;
+
+    const onChangeIsShowingListManager = newIsShowingListManager => {
+        transition(() => setIsShowingListManager(newIsShowingListManager));
+    };
 
     const onChangeTheme = setThemeName;
 
@@ -192,43 +246,56 @@ function App() {
                 onChangeTheme(themeName === 'LIGHT' ? 'DARK' : 'LIGHT');
             },
         }),
-        [isBacklogVisible, selectedTaskId, themeName]
+        [
+            isBacklogVisible,
+            onChangeBacklogVisibility,
+            onChangeTheme,
+            onUpdateTask,
+            selectedTaskId,
+            themeName,
+        ]
     );
 
     useGlobalKeyboardShortcuts(keyMap);
 
     const appActions = {
-        getTaskById,
         onChangeBacklogVisibility,
         onChangeTaskPosition,
+        onChangeIsShowingListManager,
         onChangeTheme,
+        onCreateList,
         onCreateTask,
-        onSelectTask,
+        onSelectList,
+        onImmediatelySelectTask,
+        onTransitionToTask,
+        onUpdateList,
         onUpdateTask,
     };
 
     const appData = {
+        incompleteTasks,
         isBacklogVisibleOrDraggingTask,
+        isCreatingList,
+        isCreatingTask,
         isDraggingTask,
+        isShowingListManager,
+        lists,
+        selectedListId,
         selectedTaskId,
         tasks,
         theme: themeName,
     };
 
-    console.log({
-        isBacklogVisible,
-        isDraggingTask,
-        isBacklogVisibleOrDraggingTask,
-    });
-
     const columnWidths = isBacklogVisibleOrDraggingTask
         ? {
               backlog: '30vw',
+              listManager: '40vw',
               taskDetails: '40vw',
               timeline: '30vw',
           }
         : {
               backlog: `calc(${GRID_UNIT} * 2)`,
+              listManager: `calc(60vw - ${GRID_UNIT} * 2)`,
               taskDetails: `calc(60vw - ${GRID_UNIT} * 2)`,
               timeline: '40vw',
           };
@@ -256,24 +323,54 @@ function App() {
                     tasks={incompleteTasks}
                     to={TIMELINE_TO}
                 />
-                <TaskDetails
-                    appActions={appActions}
-                    appData={appData}
-                    task={selectedTask}
-                    isCreatingTask={isCreatingTask}
+                <PrimaryAppColumn
+                    isTransitioning={isTransitioning}
+                    label={
+                        isShowingListManager
+                            ? COPY.NAME_OF_LIST_MANAGER
+                            : COPY.NAME_OF_TASK_DETAILS
+                    }
                     style={{
-                        width: columnWidths.taskDetails,
-                        opacity: hasIncompleteTasks ? 1 : 0.25,
+                        width: isShowingListManager
+                            ? columnWidths.listManager
+                            : columnWidths.taskDetails,
                     }}
-                />
+                >
+                    <ToolBar>
+                        <ToggleButton
+                            isActive={isShowingListManager}
+                            onClick={() =>
+                                onChangeIsShowingListManager(
+                                    !isShowingListManager
+                                )
+                            }
+                        >
+                            {isShowingListManager
+                                ? ICONS.TASK_DETAILS
+                                : ICONS.LIST_MANAGER}
+                        </ToggleButton>
+                    </ToolBar>
+                    {isShowingListManager ? (
+                        <ListManager
+                            appActions={appActions}
+                            appData={appData}
+                        />
+                    ) : (
+                        <TaskDetails
+                            appActions={appActions}
+                            appData={appData}
+                            style={{
+                                opacity: hasIncompleteTasks ? 1 : 0.25,
+                            }}
+                        />
+                    )}
+                </PrimaryAppColumn>
                 <Backlog
                     appActions={appActions}
                     appData={appData}
-                    selectedTaskId={selectedTaskId}
                     style={{
                         width: columnWidths.backlog,
                     }}
-                    tasks={incompleteTasks}
                 />
             </FlexBox>
         </ThemeProvider>

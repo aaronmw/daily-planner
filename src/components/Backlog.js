@@ -7,14 +7,11 @@ import AppColumn from './AppColumn';
 import Box from './atoms/Box';
 import { GhostButton, ToggleButton } from './atoms/Button';
 import FlexBox from './atoms/FlexBox';
-import OptionBar from './OptionBar';
 import TaskCard from './TaskCard';
-import { COLORS, COPY, DEFAULT_TASK_ICON, GRID_UNIT } from './atoms/tokens';
+import { COLORS, COPY, GRID_UNIT, ICONS } from './atoms/tokens';
 import ToolBar from './ToolBar';
 
-const Container = styled(AppColumn).attrs({
-    label: 'Backlog',
-})(
+const Container = styled(AppColumn)(
     ({ hasTasks, theme }) => `
         background-color: ${COLORS[theme.name].SHADED};
         flex-grow: 1;
@@ -43,14 +40,14 @@ const BacklogToggleButton = ({
         isActive={isBacklogVisibleOrDraggingTask}
         title={
             isBacklogVisibleOrDraggingTask
-                ? COPY.backlog_hide
-                : COPY.backlog_show
+                ? COPY.BACKLOG_HIDE
+                : COPY.BACKLOG_SHOW
         }
         onClick={() =>
             onChangeBacklogVisibility(!isBacklogVisibleOrDraggingTask)
         }
     >
-        {isBacklogVisibleOrDraggingTask ? '👈' : '👉'}
+        {isBacklogVisibleOrDraggingTask ? ICONS.LEFT : ICONS.RIGHT}
     </ToggleButton>
 );
 
@@ -62,14 +59,7 @@ const CreateFirstTaskTip = styled(Box)`
     white-space: nowrap;
 `;
 
-const Backlog = ({
-    appActions,
-    appData,
-    selectedTaskId,
-    tasks,
-    onClickTask,
-    ...otherProps
-}) => {
+const Backlog = ({ appActions, appData, ...otherProps }) => {
     const {
         onChangeBacklogVisibility,
         onChangeTaskPosition,
@@ -77,12 +67,27 @@ const Backlog = ({
         onCreateTask,
         onUpdateTask,
     } = appActions;
-    const { isBacklogVisibleOrDraggingTask, theme } = appData;
-    const [backlogDropProps] = useDrop('task-id', (taskId, evt) => {
+    const {
+        incompleteTasks,
+        isBacklogVisibleOrDraggingTask,
+        lists,
+        selectedListId,
+        selectedTaskId,
+        theme,
+    } = appData;
+    const unscheduledTasks = incompleteTasks.filter(
+        task => !task.scheduled && task.list_id === selectedListId
+    );
+    const hasTasks = incompleteTasks.length;
+    const selectedListLabel = lists.find(list => list.id === selectedListId)
+        .label;
+
+    const [backlogDropProps] = useDrop('task-id', taskId => {
         onUpdateTask(taskId, {
             scheduled: false,
         });
     });
+
     const [taskCardDropProps] = useDrop('task-id', (taskId, evt) => {
         const droppedOnTaskId = toInt(evt.currentTarget.dataset.taskId);
         const droppedOnTaskIndex = appData.tasks.findIndex(
@@ -90,13 +95,9 @@ const Backlog = ({
         );
         onChangeTaskPosition(taskId, droppedOnTaskIndex);
     });
-    const unscheduledTasks = tasks.filter(task => !task.scheduled);
-    const hasTasks = tasks.length;
-
-    const handleClickNewTask = () => onCreateTask();
 
     return (
-        <Container {...otherProps}>
+        <Container label={selectedListLabel} {...otherProps}>
             {!isBacklogVisibleOrDraggingTask ? (
                 <BacklogToggleButton
                     isBacklogVisibleOrDraggingTask={
@@ -111,8 +112,8 @@ const Backlog = ({
                             isActive={theme === 'DARK'}
                             title={
                                 theme === 'DARK'
-                                    ? COPY.toggle_light_mode
-                                    : COPY.toggle_dark_mode
+                                    ? COPY.TOGGLE_LIGHT_MODE
+                                    : COPY.TOGGLE_DARK_MODE
                             }
                             onClick={() =>
                                 onChangeTheme(
@@ -120,7 +121,9 @@ const Backlog = ({
                                 )
                             }
                         >
-                            {theme === 'LIGHT' ? '🌚' : '🌞'}
+                            {theme === 'LIGHT'
+                                ? ICONS.DARK_MODE
+                                : ICONS.LIGHT_MODE}
                         </ToggleButton>
                         <BacklogToggleButton
                             isBacklogVisibleOrDraggingTask={
@@ -155,7 +158,7 @@ const Backlog = ({
                                             role="img"
                                             aria-label="left-pointing hand"
                                         >
-                                            👈
+                                            {ICONS.LEFT}
                                         </span>{' '}
                                         Create your first task
                                     </CreateFirstTaskTip>
@@ -164,9 +167,9 @@ const Backlog = ({
                                     style={{
                                         height: minutesToHeight(30),
                                     }}
-                                    onClick={handleClickNewTask}
+                                    onClick={() => onCreateTask()}
                                 >
-                                    New Task
+                                    {COPY.CREATE_TASK_LABEL}
                                 </GhostButton>
                             </div>
                             {unscheduledTasks.map(task => (

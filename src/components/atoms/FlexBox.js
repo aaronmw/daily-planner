@@ -9,12 +9,14 @@ export default styled(Box)(
         isFlexible = false,
         justify = 'stretch',
         spacing = 0,
+        wrapped = false,
     }) => `
         align-items: ${align};
         display: flex;
         flex-direction: ${direction};
         flex-grow: ${isFlexible ? 1 : 0};
         flex-shrink: ${isFlexible ? 1 : 0};
+        flex-wrap: ${wrapped ? 'wrap' : 'nowrap'}; 
         justify-content: ${justify};
         width: 100%;
         

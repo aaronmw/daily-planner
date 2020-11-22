@@ -3,9 +3,6 @@ import styled from 'styled-components';
 import { transparentize } from 'polished';
 import range from 'lodash/range';
 import useDrop from '../hooks/useDrop';
-import minutesToTime from '../utils/minutesToTime';
-import strToMinutes from '../utils/strToMinutes';
-import toInt from '../utils/toInt';
 import AppColumn from './AppColumn';
 import TaskCard from './TaskCard';
 import TimelineDropZone from './TimelineDropZone';
@@ -160,6 +157,7 @@ const Timeline = ({
                         <ScheduledTaskCard
                             key={task.id}
                             appActions={appActions}
+                            appData={appData}
                             isAnotherTaskBeingDragged={isDraggingTask}
                             isActive={selectedTaskId === task.id}
                             offsetMinutes={offsetMinutes}
