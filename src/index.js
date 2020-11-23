@@ -1,10 +1,4 @@
-import React, {
-    useCallback,
-    useEffect,
-    useLayoutEffect,
-    useMemo,
-    useState,
-} from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import ReactDOM from 'react-dom';
 import { ThemeProvider } from 'styled-components';
 import sample from 'lodash/sample';
@@ -65,13 +59,19 @@ function App() {
     );
     const hasIncompleteTasks = incompleteTasks.length;
 
-    const handleDragOver = () => setIsDraggingTask(true);
-
-    const handleDragEnd = () => setIsDraggingTask(false);
-
     useEffect(() => {
-        handleDragEnd();
-    }, [tasks]);
+        const handleDragOver = () => setIsDraggingTask(true);
+        const handleDragEnd = () => setIsDraggingTask(false);
+        document.addEventListener('dragover', handleDragOver);
+        document.addEventListener('dragend', handleDragEnd);
+        document.addEventListener('drop', handleDragEnd);
+
+        return () => {
+            document.removeEventListener('dragover', handleDragOver);
+            document.removeEventListener('dragend', handleDragEnd);
+            document.removeEventListener('drop', handleDragEnd);
+        };
+    }, []);
 
     const onCreateList = useCallback(
         (overrides = {}) => {
@@ -312,12 +312,7 @@ function App() {
         <ThemeProvider theme={{ name: themeName }}>
             <GlobalStyle />
             <CompletedTasksDropZone appActions={appActions} appData={appData} />
-            <FlexBox
-                align="stretch"
-                direction="row-reverse"
-                onDragOver={handleDragOver}
-                onDragEnd={handleDragEnd}
-            >
+            <FlexBox align="stretch" direction="row-reverse">
                 <Timeline
                     appActions={appActions}
                     appData={appData}

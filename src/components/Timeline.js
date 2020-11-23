@@ -1,6 +1,6 @@
 import React, { Fragment, memo, useEffect, useRef, useState } from 'react';
 import styled from 'styled-components';
-import { opacify, transparentize } from 'polished';
+import { transparentize } from 'polished';
 import range from 'lodash/range';
 import useDrop from '../hooks/useDrop';
 import AppColumn from './AppColumn';
@@ -100,7 +100,7 @@ const Timeline = ({
     onClickTask,
     ...otherProps
 }) => {
-    const [timelineDropProps] = useDrop('task-id', () => {});
+    const [timelineDropProps] = useDrop({ 'task-id': () => {} });
     const [currentTime, setCurrentTime] = useState(null);
     const [currentHour, currentMinute] = strToHoursAndMinutes(currentTime);
     const [fromHour, fromMinutes] = strToHoursAndMinutes(from);

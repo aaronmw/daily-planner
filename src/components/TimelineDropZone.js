@@ -36,12 +36,13 @@ const TimelineDropTarget = memo(
         const newOffsetMinutes =
             fromHours * 60 + fromMinutes + quarterInMinutes * 15;
         const newTime = minutesToTime(newOffsetMinutes);
-        const [dropProps] = useDrop('task-id', taskId =>
-            onUpdateTask(taskId, {
-                scheduled: true,
-                scheduled_time: newTime,
-            })
-        );
+        const [dropProps] = useDrop({
+            'task-id': taskId =>
+                onUpdateTask(taskId, {
+                    scheduled: true,
+                    scheduled_time: newTime,
+                }),
+        });
 
         return <StyledTimelineDropTarget {...dropProps} {...otherProps} />;
     }

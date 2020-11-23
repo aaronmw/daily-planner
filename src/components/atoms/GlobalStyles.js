@@ -1,11 +1,5 @@
 import { createGlobalStyle } from 'styled-components';
-import {
-    BULLET_SIZE,
-    COLORS,
-    FONT_SIZE_NORMAL,
-    FONTS,
-    GRID_UNIT,
-} from './tokens';
+import { BULLET_SIZE, COLORS, FONTS, GRID_UNIT } from './tokens';
 
 export default createGlobalStyle(
     ({ theme }) => `

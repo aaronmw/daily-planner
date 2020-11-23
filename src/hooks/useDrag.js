@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-export default (type, payload) => {
+const useDrag = dataTypes => {
     const [isDragging, setIsDragging] = useState(false);
 
     const onDragEnd = () => {
@@ -8,7 +8,10 @@ export default (type, payload) => {
     };
 
     const onDragStart = evt => {
-        evt.dataTransfer.setData(type, payload);
+        Object.keys(dataTypes).map(dataType => {
+            evt.dataTransfer.setData(dataType, dataTypes[dataType]);
+            return dataType;
+        });
         setIsDragging(true);
     };
 
@@ -21,3 +24,5 @@ export default (type, payload) => {
 
     return [dragProps];
 };
+
+export default useDrag;

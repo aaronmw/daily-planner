@@ -1,10 +1,3 @@
-import {
-    darken,
-    desaturate,
-    lighten,
-    setLightness,
-    transparentize,
-} from 'polished';
 import React from 'react';
 import styled from 'styled-components';
 import sortBy from 'lodash/sortBy';
@@ -15,12 +8,9 @@ import { GhostButton } from './atoms/Button';
 import FlexBox from './atoms/FlexBox';
 import {
     BORDER_RADIUS,
-    BORDER_WIDTH,
     COLORS,
     COPY,
-    FONTS,
     GRID_UNIT,
-    ICONS,
     UNIFIED_TRANSITION,
 } from './atoms/tokens';
 import EditInPlace from './EditInPlace';
@@ -91,15 +81,17 @@ const ListCardTaskIconContainer = styled(FlexBox).attrs({
 const ListCard = ({ appActions, children, listId, ...otherProps }) => {
     const { onUpdateTask } = appActions;
 
-    const [dragProps] = useDrag('list-id', listId);
+    const [dragProps] = useDrag({ 'list-id': listId });
 
-    const [dropProps] = useDrop('task-id', (taskId, evt) => {
-        const targetListId = toInt(evt.currentTarget.dataset.listId);
-        if (targetListId) {
-            onUpdateTask(taskId, {
-                list_id: targetListId,
-            });
-        }
+    const [dropProps] = useDrop({
+        'task-id': (taskId, evt) => {
+            const targetListId = toInt(evt.currentTarget.dataset.listId);
+            if (targetListId) {
+                onUpdateTask(taskId, {
+                    list_id: targetListId,
+                });
+            }
+        },
     });
 
     return (
@@ -126,7 +118,8 @@ const GhostListCard = styled(GhostButton).attrs({
 const ListManager = ({ appActions, appData }) => {
     const { onCreateList, onSelectList, onUpdateList } = appActions;
     const { incompleteTasks, isCreatingList, lists, selectedListId } = appData;
-    const sortedLists = sortBy(lists, [list => list.label]);
+    const unarchivedLists = lists.filter(list => !list.isArchived);
+    const sortedLists = sortBy(unarchivedLists, [list => list.label]);
 
     const tracingElementStyles = theme => `
         border-color: ${COLORS[theme.name].HIGH_CONTRAST_TEXT}
@@ -171,7 +164,7 @@ const ListManager = ({ appActions, appData }) => {
                         {tasksInList.length >= 1 && (
                             <ListCardTaskIconContainer isActive={isActive}>
                                 {tasksInList.map(task => (
-                                    <span>{task.icon}</span>
+                                    <span key={task.id}>{task.icon}</span>
                                 ))}
                             </ListCardTaskIconContainer>
                         )}

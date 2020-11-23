@@ -78,23 +78,30 @@ const Backlog = ({ appActions, appData, ...otherProps }) => {
     const selectedListLabel = lists.find(list => list.id === selectedListId)
         .label;
 
-    const [backlogDropProps] = useDrop('task-id', taskId => {
-        onUpdateTask(taskId, {
-            list_id: selectedListId,
-            scheduled: false,
-        });
+    const [backlogDropProps] = useDrop({
+        'task-id': taskId => {
+            onUpdateTask(taskId, {
+                list_id: selectedListId,
+                scheduled: false,
+            });
+        },
     });
 
-    const [taskCardDropProps] = useDrop('task-id', (taskId, evt) => {
-        const droppedOnTaskId = toInt(evt.currentTarget.dataset.taskId);
-        const droppedOnTaskIndex = appData.tasks.findIndex(
-            task => task.id === droppedOnTaskId
-        );
-        onChangeTaskPosition(taskId, droppedOnTaskIndex);
+    const [taskCardDropProps] = useDrop({
+        'task-id': (taskId, evt) => {
+            const droppedOnTaskId = toInt(evt.currentTarget.dataset.taskId);
+            const droppedOnTaskIndex = appData.tasks.findIndex(
+                task => task.id === droppedOnTaskId
+            );
+            onChangeTaskPosition(taskId, droppedOnTaskIndex);
+        },
     });
 
     return (
-        <Container label={selectedListLabel} {...otherProps}>
+        <Container
+            label={!isBacklogVisibleOrDraggingTask ? '' : selectedListLabel}
+            {...otherProps}
+        >
             {!isBacklogVisibleOrDraggingTask ? (
                 <BacklogToggleButton
                     isBacklogVisibleOrDraggingTask={

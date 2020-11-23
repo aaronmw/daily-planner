@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 
-const useDrop = (type, callback = () => {}) => {
+const useDrop = dataTypeHandlers => {
     const [isTargetedForDrop, setIsTargetedForDrop] = useState(false);
     const targetedElement = useRef(null);
 
@@ -23,10 +23,23 @@ const useDrop = (type, callback = () => {}) => {
     };
 
     const onDrop = evt => {
-        const payload = evt.dataTransfer.getData(type);
-        if (payload) {
-            callback(isNaN(payload) ? payload : parseFloat(payload), evt);
-        }
+        Object.keys(dataTypeHandlers).map(dataType => {
+            const data = evt.dataTransfer.getData(dataType);
+            const payload =
+                data.length === 0
+                    ? null
+                    : isNaN(data)
+                    ? data
+                    : parseFloat(data);
+
+            if (payload !== null) {
+                const dataTypeHandler = dataTypeHandlers[dataType];
+                dataTypeHandler(payload, evt);
+            }
+
+            return dataType;
+        });
+
         setIsTargetedForDrop(false);
     };
 

@@ -1,4 +1,4 @@
-import React, { memo, useState } from 'react';
+import React, { memo } from 'react';
 import styled from 'styled-components';
 import useDrag from '../hooks/useDrag';
 import FlexBox from './atoms/FlexBox';
@@ -106,7 +106,7 @@ const TaskCard = ({ appActions, appData, isActive, task, ...otherProps }) => {
     const { onImmediatelySelectTask, onTransitionToTask } = appActions;
     const { isShowingListManager } = appData;
     const { icon, id, label, scheduled_minutes } = task;
-    const [dragProps] = useDrag('task-id', id);
+    const [dragProps] = useDrag({ 'task-id': id });
 
     const handleClick = () => {
         if (isShowingListManager) {
