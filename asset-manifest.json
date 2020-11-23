@@ -1,13 +1,13 @@
 {
   "files": {
-    "main.js": "/daily-planner/static/js/main.83d0c182.chunk.js",
-    "main.js.map": "/daily-planner/static/js/main.83d0c182.chunk.js.map",
+    "main.js": "/daily-planner/static/js/main.62b99b61.chunk.js",
+    "main.js.map": "/daily-planner/static/js/main.62b99b61.chunk.js.map",
     "runtime~main.js": "/daily-planner/static/js/runtime~main.62d44102.js",
     "runtime~main.js.map": "/daily-planner/static/js/runtime~main.62d44102.js.map",
-    "static/js/2.b506b57c.chunk.js": "/daily-planner/static/js/2.b506b57c.chunk.js",
-    "static/js/2.b506b57c.chunk.js.map": "/daily-planner/static/js/2.b506b57c.chunk.js.map",
+    "static/js/2.c71086e2.chunk.js": "/daily-planner/static/js/2.c71086e2.chunk.js",
+    "static/js/2.c71086e2.chunk.js.map": "/daily-planner/static/js/2.c71086e2.chunk.js.map",
     "index.html": "/daily-planner/index.html",
-    "precache-manifest.5b10d4f3c121934ba24631e824eb9bbf.js": "/daily-planner/precache-manifest.5b10d4f3c121934ba24631e824eb9bbf.js",
+    "precache-manifest.6c6acfb6845a9ac13e14c542526f7dc9.js": "/daily-planner/precache-manifest.6c6acfb6845a9ac13e14c542526f7dc9.js",
     "service-worker.js": "/daily-planner/service-worker.js"
   }
 }
