@@ -21,6 +21,7 @@ const LIST_CARD_WIDTH = `calc((100% - (${LIST_CARD_SPACING} * 2)) / 3)`;
 
 const Container = styled(FlexBox).attrs({
     align: 'flex-start',
+    isFlexible: true,
     justify: 'flex-start',
     padding: 1,
     wrapped: true,
