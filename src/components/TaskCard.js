@@ -18,7 +18,7 @@ const Container = styled(FlexBox).attrs({
     spacing: 0.5,
     paddingX: 0.5,
 })(
-    ({ duration, isActive, isDragging, theme }) => `
+    ({ duration, isActive, isDragging, isTargetedForDrop, theme }) => `
         background-color: ${COLORS[theme.name].BACKGROUND};
         border-radius: ${BORDER_RADIUS};
         box-shadow: 0 0 0 2px ${
@@ -30,7 +30,6 @@ const Container = styled(FlexBox).attrs({
         overflow: hidden;
         padding-left: calc(${GRID_UNIT} * 0.5 + ${LABEL_STRIP_WIDTH});
         position: relative;
-        transition-property: opacity, top;
         width: 100%;
         z-index: ${isActive ? 10 : 'initial'};
         ${UNIFIED_TRANSITION};

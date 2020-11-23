@@ -10,8 +10,9 @@ import { ThemeProvider } from 'styled-components';
 import sample from 'lodash/sample';
 import { PrimaryAppColumn } from './components/AppColumn';
 import { ToggleButton } from './components/atoms/Button';
+import Transition from './components/atoms/Transition';
 import Backlog from './components/Backlog';
-import CompletedTasksDropZone from './components/CompletedTasksDropZone';
+import CompletedTasksDropZone from './components/Trash';
 import ListManager from './components/ListManager';
 import TaskDetails from './components/TaskDetails';
 import Timeline from './components/Timeline';
@@ -63,17 +64,6 @@ function App() {
         [tasks]
     );
     const hasIncompleteTasks = incompleteTasks.length;
-
-    useLayoutEffect(() => {
-        setIsTransitioning(true);
-
-        const stopTransitionTimer = setTimeout(
-            () => setIsTransitioning(false),
-            ROUTE_TRANSITION_ANIMATION_DURATION / 2
-        );
-
-        return () => clearTimeout(stopTransitionTimer);
-    }, [selectedTaskId, isShowingListManager]);
 
     const handleDragOver = () => setIsDraggingTask(true);
 
@@ -183,15 +173,23 @@ function App() {
 
     const transition = callback => {
         setIsTransitioning(true);
-        setTimeout(callback, ROUTE_TRANSITION_ANIMATION_DURATION / 2);
+        setTimeout(() => {
+            callback();
+            setIsTransitioning(false);
+        }, ROUTE_TRANSITION_ANIMATION_DURATION / 2);
     };
 
-    const onImmediatelySelectTask = setSelectedTaskId;
+    const onImmediatelySelectTask = taskId => {
+        if (isShowingListManager) {
+            setIsShowingListManager(false);
+        }
+
+        setSelectedTaskId(taskId);
+    };
 
     const onTransitionToTask = taskId => {
         if (isShowingListManager) {
-            setSelectedTaskId(taskId);
-            return;
+            setIsShowingListManager(false);
         }
 
         transition(() => setSelectedTaskId(taskId));
@@ -225,6 +223,16 @@ function App() {
 
     const keyMap = useMemo(
         () => ({
+            ...[15, 30, 45, 60, 90, 120].reduce((acc, duration, index) => {
+                return {
+                    ...acc,
+                    [index + 1]: () => {
+                        onUpdateTask(selectedTaskId, {
+                            scheduled_minutes: duration,
+                        });
+                    },
+                };
+            }, {}),
             'cmd + arrowRight': evt => {
                 evt.preventDefault();
                 onUpdateTask(selectedTaskId, {
@@ -324,7 +332,6 @@ function App() {
                     to={TIMELINE_TO}
                 />
                 <PrimaryAppColumn
-                    isTransitioning={isTransitioning}
                     label={
                         isShowingListManager
                             ? COPY.NAME_OF_LIST_MANAGER
@@ -350,20 +357,22 @@ function App() {
                                 : ICONS.LIST_MANAGER}
                         </ToggleButton>
                     </ToolBar>
-                    {isShowingListManager ? (
-                        <ListManager
-                            appActions={appActions}
-                            appData={appData}
-                        />
-                    ) : (
-                        <TaskDetails
-                            appActions={appActions}
-                            appData={appData}
-                            style={{
-                                opacity: hasIncompleteTasks ? 1 : 0.25,
-                            }}
-                        />
-                    )}
+                    <Transition isTransitioning={isTransitioning}>
+                        {isShowingListManager ? (
+                            <ListManager
+                                appActions={appActions}
+                                appData={appData}
+                            />
+                        ) : (
+                            <TaskDetails
+                                appActions={appActions}
+                                appData={appData}
+                                style={{
+                                    opacity: hasIncompleteTasks ? 1 : 0.25,
+                                }}
+                            />
+                        )}
+                    </Transition>
                 </PrimaryAppColumn>
                 <Backlog
                     appActions={appActions}

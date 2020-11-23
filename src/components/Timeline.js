@@ -1,6 +1,6 @@
 import React, { Fragment, memo, useEffect, useRef, useState } from 'react';
 import styled from 'styled-components';
-import { transparentize } from 'polished';
+import { opacify, transparentize } from 'polished';
 import range from 'lodash/range';
 import useDrop from '../hooks/useDrop';
 import AppColumn from './AppColumn';
@@ -53,13 +53,11 @@ const HalfHourLabel = styled.div(
         width: 100%;
 
         &:before {
-            background-color: ${transparentize(
-                isFaded ? 0.8 : 0.5,
-                COLORS[theme.name].BORDER_NEUTRAL
-            )};
+            background-color: ${COLORS[theme.name].BORDER_NEUTRAL};
             content: '';
             height: 1px;
             left: ${LINE_LABEL_WIDTH};
+            opacity: ${isFaded ? 0.25 : 1};
             position: absolute;
             right: 0;
             top: 50%;

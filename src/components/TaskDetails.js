@@ -5,7 +5,14 @@ import EditInPlace from './EditInPlace';
 import OptionBar from './OptionBar';
 import Box from './atoms/Box';
 import FlexBox from './atoms/FlexBox';
-import { COLORS, COPY, ICONS, DURATION_OPTIONS } from './atoms/tokens';
+import {
+    COLORS,
+    COPY,
+    ICONS,
+    DURATION_OPTIONS,
+    FONTS,
+    BORDER_WIDTH,
+} from './atoms/tokens';
 
 const TaskHeader = styled(FlexBox).attrs({
     as: 'h1',
@@ -16,7 +23,7 @@ const TaskHeader = styled(FlexBox).attrs({
 })(
     ({ theme }) => `
         background-color: ${COLORS[theme.name].SHADED};
-        font-size: 1.4rem;
+        font-size: ${FONTS.LARGE.SIZE};
         font-weight: 900;
         position: relative;
     `
@@ -38,6 +45,13 @@ const TaskHeaderIcon = styled(Box).attrs({
     line-height: 1.4rem;
     width: 3rem;
 `;
+
+const DurationOptionBar = styled(OptionBar)(
+    ({ theme }) => `
+        background-color: ${COLORS[theme.name].SHADED};
+        border-top: ${BORDER_WIDTH} solid ${COLORS[theme.name].BACKGROUND};
+    `
+);
 
 const TaskDetails = ({ appActions = {}, appData = {} }) => {
     const { onUpdateTask } = appActions;
@@ -92,10 +106,11 @@ const TaskDetails = ({ appActions = {}, appData = {} }) => {
                     </TaskHeaderIcon>
                 </TaskHeader>
 
-                <OptionBar
-                    renderSelectedOption={option => `${option} mins`}
-                    selectedOption={scheduled_minutes}
+                <DurationOptionBar
                     options={DURATION_OPTIONS}
+                    renderSelectedOption={option => <span>{option} mins</span>}
+                    selectedOption={scheduled_minutes}
+                    title={COPY.TIPS.SHORTCUTS_TO_SET_DURATION}
                     onChange={handleSaveDuration}
                 />
 

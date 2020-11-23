@@ -9,7 +9,7 @@ const OptionButton = styled(Button)(
         background: transparent;
         color: inherit;
         font-weight: ${isSelected ? 900 : 100};
-        opacity: ${isSelected ? 1 : 0};
+        opacity: ${isSelected ? 1 : 0.75};
         width: auto;
         ${UNIFIED_TRANSITION};
         
@@ -29,7 +29,7 @@ const OptionBar = ({
     ...otherProps
 }) => (
     <ToolBar {...otherProps}>
-        {options.map(option => {
+        {options.map((option, optionIndex) => {
             const isSelected = option === selectedOption;
 
             return (
@@ -39,8 +39,11 @@ const OptionBar = ({
                     onClick={() => onChange(option)}
                 >
                     {isSelected
-                        ? renderSelectedOption(renderOption(option))
-                        : renderOption(option)}
+                        ? renderSelectedOption(
+                              renderOption(option, optionIndex),
+                              optionIndex
+                          )
+                        : renderOption(option, optionIndex)}
                 </OptionButton>
             );
         })}

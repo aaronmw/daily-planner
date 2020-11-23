@@ -38,11 +38,7 @@ const BacklogToggleButton = ({
 }) => (
     <ToggleButton
         isActive={isBacklogVisibleOrDraggingTask}
-        title={
-            isBacklogVisibleOrDraggingTask
-                ? COPY.BACKLOG_HIDE
-                : COPY.BACKLOG_SHOW
-        }
+        title={COPY.TIPS.TOGGLE_BACKLOG}
         onClick={() =>
             onChangeBacklogVisibility(!isBacklogVisibleOrDraggingTask)
         }
@@ -84,6 +80,7 @@ const Backlog = ({ appActions, appData, ...otherProps }) => {
 
     const [backlogDropProps] = useDrop('task-id', taskId => {
         onUpdateTask(taskId, {
+            list_id: selectedListId,
             scheduled: false,
         });
     });
@@ -110,11 +107,7 @@ const Backlog = ({ appActions, appData, ...otherProps }) => {
                     <ToolBar>
                         <ToggleButton
                             isActive={theme === 'DARK'}
-                            title={
-                                theme === 'DARK'
-                                    ? COPY.TOGGLE_LIGHT_MODE
-                                    : COPY.TOGGLE_DARK_MODE
-                            }
+                            title={COPY.TIPS.TOGGLE_DARK_MODE}
                             onClick={() =>
                                 onChangeTheme(
                                     theme === 'LIGHT' ? 'DARK' : 'LIGHT'
@@ -138,7 +131,7 @@ const Backlog = ({ appActions, appData, ...otherProps }) => {
                         <FlexBox
                             justify="flex-start"
                             direction="column"
-                            spacing={1}
+                            spacing={0.5}
                             padding={1}
                             style={{
                                 bottom: 0,

@@ -5,7 +5,6 @@ import {
     BORDER_WIDTH,
     COLORS,
     GRID_UNIT,
-    ROUTE_TRANSITION_ANIMATION_DURATION,
     UNIFIED_TRANSITION,
 } from './atoms/tokens';
 
@@ -57,17 +56,13 @@ const AppColumn = ({ children, label, ...otherProps }) => (
 );
 
 export const PrimaryAppColumn = styled(AppColumn)(
-    ({ isTransitioning, theme }) => `
+    ({ theme }) => `
         box-shadow: 0 0 10px 10px ${COLORS[theme.name].SHADOW};
         border-left: ${BORDER_WIDTH} solid ${COLORS[theme.name].BORDER_NEUTRAL};
-        border-right: ${BORDER_WIDTH} solid ${
-        COLORS[theme.name].BORDER_NEUTRAL
-    };
-        opacity: ${isTransitioning ? 0 : 1};
+        border-right: 
+            ${BORDER_WIDTH} solid ${COLORS[theme.name].BORDER_NEUTRAL};
         overflow: unset;
         z-index: 11;
-        ${UNIFIED_TRANSITION};
-        transition-duration: ${ROUTE_TRANSITION_ANIMATION_DURATION / 2}ms;
     `
 );
 

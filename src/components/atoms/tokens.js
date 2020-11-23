@@ -1,4 +1,4 @@
-import { lighten, rgba, setLightness, transparentize } from 'polished';
+import { darken, lighten, rgba, setLightness, transparentize } from 'polished';
 
 export const BORDER_RADIUS = '3px';
 export const BORDER_WIDTH = '1px';
@@ -60,8 +60,6 @@ COPY.MOTIVATIONAL_DESCRIPTORS = [
     'Thoughtful',
     'Wonderful',
 ];
-COPY.BACKLOG_HIDE = 'Hide Backlog (⌘B)';
-COPY.BACKLOG_SHOW = 'Show Backlog (⌘B)';
 COPY.EMPTY_LABEL = '...label?';
 COPY.EMPTY_NOTES = '...notes?';
 COPY.NAME_OF_LIST_MANAGER = 'All Lists';
@@ -71,8 +69,14 @@ COPY.CREATE_TASK_LABEL = 'Create Task';
 COPY.NEW_LIST_LABEL = 'New List';
 COPY.NEW_TASK_LABEL = `New Task`;
 COPY.NEW_TASK_NOTES = '';
-COPY.TOGGLE_DARK_MODE = 'Turn on Dark Mode (⌘D)';
-COPY.TOGGLE_LIGHT_MODE = 'Turn off Dark Mode (⌘D)';
+COPY.TIPS = {
+    PREFIX: 'Tip ☝️: ',
+    SETTING_DURATION:
+        'Press keys [1] to [6] to quickly adjust your time estimate for the task',
+    TOGGLE_BACKLOG:
+        'Press [⌘]+[B] to show / hide the side[B]ar of unscheduled tasks',
+    TOGGLE_DARK_MODE: 'Press [⌘]+[D] to toggle [D]ark Mode',
+};
 
 export { COPY };
 
@@ -80,9 +84,10 @@ const PRIMARY = '#0094FF';
 
 const DARK = {};
 DARK.PRIMARY = PRIMARY;
+DARK.PRIMARY_FADED = darken(0.2, DARK.PRIMARY);
 DARK.BACKGROUND = '#000209';
 DARK.HIGH_CONTRAST_BACKGROUND = DARK.PRIMARY;
-DARK.HIGH_CONTRAST_TEXT = DARK.BACKGROUND;
+DARK.HIGH_CONTRAST_TEXT = '#FFFFFF';
 DARK.BORDER_HOVER = setLightness(0.5, PRIMARY);
 DARK.BORDER_IDLE = setLightness(0.3, PRIMARY);
 DARK.SHADED = lighten(0.1, DARK.BACKGROUND);
@@ -93,7 +98,8 @@ DARK.BORDER_NEUTRAL = setLightness(0.15, DARK.TEXT);
 
 const LIGHT = {};
 LIGHT.PRIMARY = PRIMARY;
-LIGHT.BACKGROUND = 'white';
+LIGHT.PRIMARY_FADED = lighten(0.2, LIGHT.PRIMARY);
+LIGHT.BACKGROUND = '#FFFFFF';
 LIGHT.HIGH_CONTRAST_BACKGROUND = LIGHT.PRIMARY;
 LIGHT.HIGH_CONTRAST_TEXT = LIGHT.BACKGROUND;
 LIGHT.BORDER_HOVER = rgba('#0094FF', 0.5);

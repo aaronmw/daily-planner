@@ -2,16 +2,16 @@ import React from 'react';
 import { transparentize } from 'polished';
 import styled, { css, keyframes } from 'styled-components';
 import useDrop from '../hooks/useDrop';
-import { COLORS, ICONS, UNIFIED_TRANSITION } from './atoms/tokens';
+import { COLORS, GRID_UNIT, ICONS, UNIFIED_TRANSITION } from './atoms/tokens';
 
-const DROP_ZONE_RADIUS = '20vw';
+const DROP_ZONE_RADIUS = `calc(${GRID_UNIT} * 3.5)`;
 
-const pulsingAnimation = ({ theme }) => keyframes`
+const pulsingAnimation = ({ from, to }) => keyframes`
     0% {
-        transform: scale(1);
+        transform: scale(${from});
     }
     100% {
-        transform: scale(1.2);
+        transform: scale(${to});
     }
 `;
 
@@ -20,7 +20,11 @@ const Container = styled.div(
         animation-direction: alternate;
         animation-duration: 300ms;
         animation-iteration-count: infinite;
-        animation-name: ${isTargetedForDrop ? pulsingAnimation : 'unset'};
+        animation-name: ${isTargetedForDrop
+            ? pulsingAnimation({ from: 1.6, to: 2.4 })
+            : isDraggingTask
+            ? pulsingAnimation({ from: 1, to: 1.6 })
+            : 'unset'};
         animation-timing-function: ease-in-out;
         background: ${transparentize(
             isTargetedForDrop || isDraggingTask ? 1 : 0.75,
@@ -32,7 +36,7 @@ const Container = styled.div(
         pointer-events: ${isDraggingTask ? 'all' : 'none'};
         position: fixed;
         right: calc(${DROP_ZONE_RADIUS} * -1);
-        transform: scale(${isDraggingTask ? 0.5 : 0.25});
+        transform: scale(${isDraggingTask ? 1.5 : 1});
         width: calc(${DROP_ZONE_RADIUS} * 2);
         z-index: 100;
         ${UNIFIED_TRANSITION};
@@ -41,7 +45,7 @@ const Container = styled.div(
             align-items: center;
             content: '${ICONS.END_ZONE}';
             display: flex;
-            font-size: 8rem;
+            font-size: 3rem;
             justify-content: center;
             height: calc(${DROP_ZONE_RADIUS} * 1.25);
             left: 0;
@@ -52,7 +56,7 @@ const Container = styled.div(
     `
 );
 
-const CompletedTaskDropZone = ({ appActions, appData, ...otherProps }) => {
+const Trash = ({ appActions, appData, ...otherProps }) => {
     const { onTransitionToTask, onUpdateTask } = appActions;
     const { isDraggingTask } = appData;
     const [dropProps] = useDrop('task-id', taskId => {
@@ -75,4 +79,4 @@ const CompletedTaskDropZone = ({ appActions, appData, ...otherProps }) => {
     );
 };
 
-export default CompletedTaskDropZone;
+export default Trash;
