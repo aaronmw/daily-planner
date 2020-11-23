@@ -64,7 +64,7 @@ const StyledListCard = styled(FlexBox).attrs({
 );
 
 const ListCardTaskIconContainer = styled(FlexBox).attrs({
-    justify: 'space-between',
+    justify: 'flex-start',
     paddingX: 0.25,
     paddingY: 0.25,
     wrapped: true,

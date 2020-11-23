@@ -57,18 +57,48 @@ const Container = styled.div(
 );
 
 const Trash = ({ appActions, appData, ...otherProps }) => {
-    const { onTransitionToTask, onUpdateList, onUpdateTask } = appActions;
-    const { isDraggingTask } = appData;
+    const {
+        onTransitionToTask,
+        onSelectList,
+        onImmediatelySelectTask,
+        onUpdateList,
+        onUpdateTask,
+    } = appActions;
+    const {
+        isDraggingTask,
+        lists,
+        selectedListId,
+        tasks,
+        selectedTaskId,
+    } = appData;
     const [dropProps] = useDrop({
         'list-id': listId => {
+            if (selectedListId === listId) {
+                const firstUnarchivedList = lists.find(
+                    list => list.id !== listId && !list.isArchived
+                );
+                onSelectList(firstUnarchivedList.id);
+            }
+
             onUpdateList(listId, {
                 isArchived: true,
             });
         },
         'task-id': taskId => {
+            if (selectedTaskId === taskId) {
+                const firstUnarchivedTask = tasks.find(
+                    task =>
+                        task.id !== taskId &&
+                        task.list_id === selectedListId &&
+                        !task.isComplete
+                );
+                onImmediatelySelectTask(firstUnarchivedTask.id);
+            }
+
             onUpdateTask(taskId, {
                 isComplete: true,
             });
+
             onTransitionToTask(currentSelectedTaskId => {
                 return currentSelectedTaskId === taskId
                     ? null

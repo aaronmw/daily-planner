@@ -76,6 +76,7 @@ COPY.TIPS = {
     TOGGLE_BACKLOG:
         'Press [⌘]+[B] to show / hide the side[B]ar of unscheduled tasks',
     TOGGLE_DARK_MODE: 'Press [⌘]+[D] to toggle [D]ark Mode',
+    TOGGLE_LIST_MANAGER: 'Press [⌘]+[L] to see your [L]ists',
 };
 
 export { COPY };

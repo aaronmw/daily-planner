@@ -116,7 +116,10 @@ function App() {
         [setLists]
     );
 
-    const onSelectList = setSelectedListId;
+    const onSelectList = listId => {
+        setSelectedListId(listId);
+        setIsBacklogVisible(true);
+    };
 
     const onUpdateTask = useCallback(
         (taskId, updates) => {
@@ -166,6 +169,8 @@ function App() {
             // This remotely activates the EditInPlace
             setIsCreatingTask(true);
 
+            setIsShowingListManager(false);
+
             setTimeout(() => setIsCreatingTask(false), 1000);
         },
         [selectedListId, setSelectedTaskId, setTasks]
@@ -198,7 +203,13 @@ function App() {
     const onChangeBacklogVisibility = setIsBacklogVisible;
 
     const onChangeIsShowingListManager = newIsShowingListManager => {
-        transition(() => setIsShowingListManager(newIsShowingListManager));
+        transition(() => {
+            setIsShowingListManager(newIsShowingListManager);
+
+            if (newIsShowingListManager) {
+                setIsBacklogVisible(true);
+            }
+        });
     };
 
     const onChangeTheme = setThemeName;
@@ -253,9 +264,14 @@ function App() {
                 evt.preventDefault();
                 onChangeTheme(themeName === 'LIGHT' ? 'DARK' : 'LIGHT');
             },
+            'cmd + l': evt => {
+                evt.preventDefault();
+                onChangeIsShowingListManager(!isShowingListManager);
+            },
         }),
         [
             isBacklogVisible,
+            isShowingListManager,
             onChangeBacklogVisibility,
             onChangeTheme,
             onUpdateTask,

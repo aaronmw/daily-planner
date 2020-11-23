@@ -73,7 +73,6 @@ const ScheduledTaskCard = styled(TaskCard)(
         right: ${GRID_UNIT};
         top: ${minutesToHeight(offsetMinutes)};
         width: auto;
-        z-index: 2;
     `
 );
 

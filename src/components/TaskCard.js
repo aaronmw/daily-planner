@@ -31,7 +31,7 @@ const Container = styled(FlexBox).attrs({
         padding-left: calc(${GRID_UNIT} * 0.5 + ${LABEL_STRIP_WIDTH});
         position: relative;
         width: 100%;
-        z-index: ${isActive ? 10 : 'initial'};
+        z-index: ${isActive ? 100 : 10};
         ${UNIFIED_TRANSITION};
         transition-property:
             background-color,
