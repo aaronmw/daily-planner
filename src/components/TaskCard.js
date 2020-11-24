@@ -23,9 +23,9 @@ const Container = styled(FlexBox).attrs({
     ({ duration, isActive, isDragging, isTargetedForDrop, theme }) => `
         background-color: ${COLORS[theme.name].BACKGROUND};
         border-radius: ${BORDER_RADIUS};
-        box-shadow: 0 0 0 2px ${
-            COLORS[theme.name][isActive ? 'PRIMARY' : 'BORDER_IDLE']
-        };
+        box-shadow:
+            0 0 0 ${isActive ? 2 : 1}px
+            ${COLORS[theme.name][isActive ? 'PRIMARY' : 'BORDER_IDLE']};
         cursor: pointer;
         height: ${minutesToHeight(duration)};
         opacity: ${isDragging ? 0 : 1};
