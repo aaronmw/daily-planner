@@ -2,7 +2,13 @@ import React from 'react';
 import { transparentize } from 'polished';
 import styled, { css, keyframes } from 'styled-components';
 import useDrop from '../hooks/useDrop';
-import { COLORS, GRID_UNIT, ICONS, UNIFIED_TRANSITION } from './atoms/tokens';
+import {
+    COLORS,
+    COPY,
+    GRID_UNIT,
+    ICONS,
+    UNIFIED_TRANSITION,
+} from './atoms/tokens';
 
 const DROP_ZONE_RADIUS = `calc(${GRID_UNIT} * 3.5)`;
 
@@ -81,6 +87,7 @@ const Trash = ({ appActions, appData, ...otherProps }) => {
     return (
         <Container
             isDraggingTask={isDraggingTask}
+            title={COPY.TIPS.DELETE_TASK}
             {...dropProps}
             {...otherProps}
         />

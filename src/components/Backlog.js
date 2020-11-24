@@ -161,6 +161,7 @@ const Backlog = ({ appActions, appData, ...otherProps }) => {
                                     style={{
                                         height: minutesToHeight(30),
                                     }}
+                                    title={COPY.TIPS.CREATE_NEW_TASK}
                                     onClick={() => onCreateTask()}
                                 >
                                     {COPY.CREATE_TASK_LABEL}

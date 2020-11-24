@@ -100,6 +100,7 @@ const ListCard = ({ appActions, children, listId, ...otherProps }) => {
     return (
         <StyledListCard
             data-list-id={listId}
+            title={COPY.TIPS.MOVE_BETWEEN_LISTS}
             {...dragProps}
             {...dropProps}
             {...otherProps}

@@ -5,6 +5,7 @@ import FlexBox from './atoms/FlexBox';
 import {
     BORDER_RADIUS,
     COLORS,
+    COPY,
     FONTS,
     GRID_UNIT,
     UNIFIED_TRANSITION,
@@ -125,6 +126,7 @@ const TaskCard = ({ appActions, appData, isActive, task, ...otherProps }) => {
             duration={scheduled_minutes}
             isActive={isActive}
             tabIndex={0}
+            title={COPY.TIPS.MOVE_TASK_BETWEEN_BACKLOG_AND_TIMELINE}
             onClick={handleClick}
             {...dragProps}
             {...otherProps}

@@ -458,6 +458,7 @@ function App() {
                     <ToolBar>
                         <ToggleButton
                             isActive={isShowingListManager}
+                            title={COPY.TIPS.TOGGLE_LIST_MANAGER}
                             onClick={() =>
                                 onChangeIsShowingListManager(
                                     !isShowingListManager
