@@ -1,6 +1,6 @@
 self.__precacheManifest = (self.__precacheManifest || []).concat([
   {
-    "revision": "458253b9ae62c595567f71dae8047713",
+    "revision": "7fad7c2291f06b8d77a23f871671a491",
     "url": "/daily-planner/index.html"
   },
   {
@@ -8,8 +8,8 @@ self.__precacheManifest = (self.__precacheManifest || []).concat([
     "url": "/daily-planner/static/js/2.c71086e2.chunk.js"
   },
   {
-    "revision": "45b2850d41e3a16dbd4d",
-    "url": "/daily-planner/static/js/main.a1eb5a7a.chunk.js"
+    "revision": "db856baf41afe2bce193",
+    "url": "/daily-planner/static/js/main.cd718cb2.chunk.js"
   },
   {
     "revision": "f6ffd485c2689ab998b8",
