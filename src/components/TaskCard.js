@@ -5,6 +5,7 @@ import FlexBox from './atoms/FlexBox';
 import {
     BORDER_RADIUS,
     COLORS,
+    FONTS,
     GRID_UNIT,
     UNIFIED_TRANSITION,
 } from './atoms/tokens';
@@ -97,7 +98,8 @@ const CardIcon = styled(FlexBox).attrs({
     align: 'center',
     justify: 'center',
 })(
-    ({ theme }) => `
+    ({ duration, theme }) => `
+        font-size: ${duration <= 15 ? FONTS.NORMAL.SIZE : FONTS.LARGE.SIZE};
         width: auto;
     `
 );
@@ -128,7 +130,7 @@ const TaskCard = ({ appActions, appData, isActive, task, ...otherProps }) => {
             {...otherProps}
         >
             <CardLabel>{label}</CardLabel>
-            <CardIcon>{icon}</CardIcon>
+            <CardIcon duration={scheduled_minutes}>{icon}</CardIcon>
         </Container>
     );
 };

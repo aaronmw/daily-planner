@@ -31,6 +31,14 @@ export default createGlobalStyle(
         em {
             font-style: italic;
         }
+        ::placeholder {
+            color: ${COLORS[theme.name].PRIMARY};
+            opacity: 1;
+        }
+        ::selection {
+            color: ${COLORS[theme.name].HIGH_CONTRAST_TEXT};
+            background-color: ${COLORS[theme.name].HIGH_CONTRAST_BACKGROUND};
+        }
         
         .markdown {
             * + * {

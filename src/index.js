@@ -29,7 +29,7 @@ import {
 } from './components/atoms/tokens';
 
 function App() {
-    const [isBacklogVisible, setIsBacklogVisible] = usePersistentState(
+    const [isShowingBacklog, setIsShowingBacklog] = usePersistentState(
         'is-backlog-visible',
         true
     );
@@ -52,12 +52,21 @@ function App() {
     const [isCreatingTask, setIsCreatingTask] = useState(false);
     const [isDraggingTask, setIsDraggingTask] = useState(false);
     const [isTransitioning, setIsTransitioning] = useState(false);
-    const isBacklogVisibleOrDraggingTask = isBacklogVisible || isDraggingTask;
+    const unarchivedLists = useMemo(
+        () => lists.filter(list => !list.isArchived),
+        [lists]
+    );
+    const currentListIndex = unarchivedLists.findIndex(
+        list => list.id === selectedListId
+    );
     const incompleteTasks = useMemo(
         () => tasks.filter(task => !task.isComplete),
         [tasks]
     );
     const hasIncompleteTasks = incompleteTasks.length;
+    const hasUnarchivedList = lists.filter(list => !list.isArchived).length;
+    const isBacklogVisible =
+        hasUnarchivedList && (isShowingBacklog || isDraggingTask);
 
     useEffect(() => {
         const handleDragOver = () => setIsDraggingTask(true);
@@ -81,6 +90,7 @@ function App() {
                 currentLists.concat([
                     {
                         id: newListId,
+                        isArchived: false,
                         label: `${sample(COPY.MOTIVATIONAL_DESCRIPTORS)} ${
                             COPY.NEW_LIST_LABEL
                         }`,
@@ -118,7 +128,7 @@ function App() {
 
     const onSelectList = listId => {
         setSelectedListId(listId);
-        setIsBacklogVisible(true);
+        setIsShowingBacklog(true);
     };
 
     const onUpdateTask = useCallback(
@@ -146,7 +156,7 @@ function App() {
             const currentMinute = now.getMinutes();
 
             setTasks(currentTasks =>
-                currentTasks.concat([
+                [
                     {
                         icon: ICONS.TASK_DEFAULT,
                         id: newTaskId,
@@ -161,7 +171,7 @@ function App() {
                         scheduled_time: `${currentHour}:${currentMinute}`,
                         ...overrides,
                     },
-                ])
+                ].concat(currentTasks)
             );
 
             setSelectedTaskId(newTaskId);
@@ -170,47 +180,98 @@ function App() {
             setIsCreatingTask(true);
 
             setIsShowingListManager(false);
-
-            setTimeout(() => setIsCreatingTask(false), 1000);
         },
-        [selectedListId, setSelectedTaskId, setTasks]
+        [selectedListId, setIsShowingListManager, setSelectedTaskId, setTasks]
     );
 
-    const transition = callback => {
-        setIsTransitioning(true);
-        setTimeout(() => {
-            callback();
-            setIsTransitioning(false);
-        }, ROUTE_TRANSITION_ANIMATION_DURATION / 2);
-    };
-
-    const onImmediatelySelectTask = taskId => {
-        if (isShowingListManager) {
+    useEffect(() => {
+        if (isCreatingTask) {
             setIsShowingListManager(false);
+            const timer = setTimeout(() => setIsCreatingTask(false), 100);
+            return () => clearTimeout(timer);
         }
+    }, [isCreatingTask, setIsCreatingTask, setIsShowingListManager]);
 
-        setSelectedTaskId(taskId);
-    };
+    const transition = useCallback(
+        callback => {
+            setIsTransitioning(true);
+            setTimeout(() => {
+                callback();
+                setIsTransitioning(false);
+            }, ROUTE_TRANSITION_ANIMATION_DURATION / 2);
+        },
+        [setIsTransitioning]
+    );
 
-    const onTransitionToTask = taskId => {
-        if (isShowingListManager) {
-            setIsShowingListManager(false);
-        }
-
-        transition(() => setSelectedTaskId(taskId));
-    };
-
-    const onChangeBacklogVisibility = setIsBacklogVisible;
-
-    const onChangeIsShowingListManager = newIsShowingListManager => {
-        transition(() => {
-            setIsShowingListManager(newIsShowingListManager);
-
-            if (newIsShowingListManager) {
-                setIsBacklogVisible(true);
+    const onImmediatelySelectTask = useCallback(
+        taskId => {
+            if (isShowingListManager) {
+                setIsShowingListManager(false);
             }
-        });
-    };
+
+            setSelectedTaskId(taskId);
+        },
+        [isShowingListManager, setIsShowingListManager, setSelectedTaskId]
+    );
+
+    const onTransitionToTask = useCallback(
+        taskId => {
+            if (isShowingListManager) {
+                setIsShowingListManager(false);
+            }
+
+            transition(() => setSelectedTaskId(taskId));
+        },
+        [
+            isShowingListManager,
+            setIsShowingListManager,
+            setSelectedTaskId,
+            transition,
+        ]
+    );
+
+    const onDeleteTask = useCallback(
+        taskId => {
+            if (selectedTaskId === taskId) {
+                const firstUnarchivedTask = tasks.find(
+                    task =>
+                        task.id !== taskId &&
+                        task.list_id === selectedListId &&
+                        !task.isComplete
+                );
+
+                if (firstUnarchivedTask) {
+                    onImmediatelySelectTask(firstUnarchivedTask.id);
+                }
+            }
+
+            onUpdateTask(taskId, {
+                isComplete: true,
+            });
+        },
+        [
+            onImmediatelySelectTask,
+            onUpdateTask,
+            selectedListId,
+            tasks,
+            selectedTaskId,
+        ]
+    );
+
+    const onChangeIsShowingBacklog = setIsShowingBacklog;
+
+    const onChangeIsShowingListManager = useCallback(
+        newIsShowingListManager => {
+            transition(() => {
+                setIsShowingListManager(newIsShowingListManager);
+
+                if (newIsShowingListManager) {
+                    setIsShowingBacklog(true);
+                }
+            });
+        },
+        [setIsShowingBacklog, setIsShowingListManager, transition]
+    );
 
     const onChangeTheme = setThemeName;
 
@@ -256,11 +317,29 @@ function App() {
                     scheduled: false,
                 });
             },
+            'cmd + shift + arrowRight': evt => {
+                evt.preventDefault();
+                const nextListIndex = currentListIndex + 1;
+                const nextIndex =
+                    nextListIndex > unarchivedLists.length - 1
+                        ? 0
+                        : nextListIndex;
+                setSelectedListId(unarchivedLists[nextIndex].id);
+            },
+            'cmd + shift + arrowLeft': evt => {
+                evt.preventDefault();
+                const prevListIndex = currentListIndex - 1;
+                const prevIndex =
+                    prevListIndex < 0
+                        ? unarchivedLists.length - 1
+                        : prevListIndex;
+                setSelectedListId(unarchivedLists[prevIndex].id);
+            },
             'cmd + b': evt => {
                 evt.preventDefault();
-                onChangeBacklogVisibility(!isBacklogVisible);
+                onChangeIsShowingBacklog(!isShowingBacklog);
             },
-            'cmd + d': evt => {
+            'cmd + shift + d': evt => {
                 evt.preventDefault();
                 onChangeTheme(themeName === 'LIGHT' ? 'DARK' : 'LIGHT');
             },
@@ -268,27 +347,41 @@ function App() {
                 evt.preventDefault();
                 onChangeIsShowingListManager(!isShowingListManager);
             },
+            'cmd + e': evt => {
+                evt.preventDefault();
+                setIsCreatingTask(true);
+            },
+            'cmd + d': evt => {
+                evt.preventDefault();
+                onDeleteTask(selectedTaskId);
+            },
         }),
         [
-            isBacklogVisible,
+            currentListIndex,
+            isShowingBacklog,
             isShowingListManager,
-            onChangeBacklogVisibility,
+            onChangeIsShowingBacklog,
+            onChangeIsShowingListManager,
             onChangeTheme,
+            onDeleteTask,
             onUpdateTask,
             selectedTaskId,
+            setSelectedListId,
             themeName,
+            unarchivedLists,
         ]
     );
 
     useGlobalKeyboardShortcuts(keyMap);
 
     const appActions = {
-        onChangeBacklogVisibility,
+        onChangeIsShowingBacklog,
         onChangeTaskPosition,
         onChangeIsShowingListManager,
         onChangeTheme,
         onCreateList,
         onCreateTask,
+        onDeleteTask,
         onSelectList,
         onImmediatelySelectTask,
         onTransitionToTask,
@@ -298,7 +391,7 @@ function App() {
 
     const appData = {
         incompleteTasks,
-        isBacklogVisibleOrDraggingTask,
+        isBacklogVisible,
         isCreatingList,
         isCreatingTask,
         isDraggingTask,
@@ -310,7 +403,7 @@ function App() {
         theme: themeName,
     };
 
-    const columnWidths = isBacklogVisibleOrDraggingTask
+    const columnWidths = isBacklogVisible
         ? {
               backlog: '30vw',
               listManager: '40vw',

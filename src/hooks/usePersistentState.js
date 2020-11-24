@@ -8,7 +8,9 @@ export default (key, initialState) => {
         if (!isLoaded) {
             const savedState = window.localStorage.getItem(key);
             setState(
-                savedState !== null ? JSON.parse(savedState) : initialState
+                ![null, 'undefined'].includes(savedState)
+                    ? JSON.parse(savedState)
+                    : initialState
             );
             setIsLoaded(true);
         }

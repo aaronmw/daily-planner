@@ -56,9 +56,9 @@ const DurationOptionBar = styled(OptionBar)(
 const TaskDetails = ({ appActions = {}, appData = {} }) => {
     const { onUpdateTask } = appActions;
     const { isCreatingTask, selectedTaskId, tasks } = appData;
-    const activeTask = tasks.find(task => task.id === selectedTaskId);
+    const activeTask = tasks.find(task => task.id === selectedTaskId) || {};
     const { icon, id, label, notes, scheduled_minutes } = activeTask;
-    const isEmpty = !selectedTaskId;
+    const isEmpty = !activeTask.id;
 
     const handleUpdateTask = useCallback(
         (field, value) => onUpdateTask(id, { [field]: value }),
@@ -110,7 +110,7 @@ const TaskDetails = ({ appActions = {}, appData = {} }) => {
                     options={DURATION_OPTIONS}
                     renderSelectedOption={option => <span>{option} mins</span>}
                     selectedOption={scheduled_minutes}
-                    title={COPY.TIPS.SHORTCUTS_TO_SET_DURATION}
+                    title={COPY.TIPS.SETTING_DURATION}
                     onChange={handleSaveDuration}
                 />
 

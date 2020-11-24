@@ -33,17 +33,15 @@ const BacklogDropZone = styled(Box).attrs({
 );
 
 const BacklogToggleButton = ({
-    isBacklogVisibleOrDraggingTask,
-    onChangeBacklogVisibility,
+    isBacklogVisible,
+    onChangeIsShowingBacklog,
 }) => (
     <ToggleButton
-        isActive={isBacklogVisibleOrDraggingTask}
+        isActive={isBacklogVisible}
         title={COPY.TIPS.TOGGLE_BACKLOG}
-        onClick={() =>
-            onChangeBacklogVisibility(!isBacklogVisibleOrDraggingTask)
-        }
+        onClick={() => onChangeIsShowingBacklog(!isBacklogVisible)}
     >
-        {isBacklogVisibleOrDraggingTask ? ICONS.LEFT : ICONS.RIGHT}
+        {isBacklogVisible ? ICONS.LEFT : ICONS.RIGHT}
     </ToggleButton>
 );
 
@@ -57,7 +55,7 @@ const CreateFirstTaskTip = styled(Box)`
 
 const Backlog = ({ appActions, appData, ...otherProps }) => {
     const {
-        onChangeBacklogVisibility,
+        onChangeIsShowingBacklog,
         onChangeTaskPosition,
         onChangeTheme,
         onCreateTask,
@@ -65,18 +63,20 @@ const Backlog = ({ appActions, appData, ...otherProps }) => {
     } = appActions;
     const {
         incompleteTasks,
-        isBacklogVisibleOrDraggingTask,
+        isBacklogVisible,
         lists,
         selectedListId,
         selectedTaskId,
         theme,
     } = appData;
+    const selectedList = lists.find(list => list.id === selectedListId);
     const unscheduledTasks = incompleteTasks.filter(
-        task => !task.scheduled && task.list_id === selectedListId
+        task =>
+            !task.scheduled &&
+            task.list_id === selectedListId &&
+            !selectedList.isArchived
     );
-    const hasTasks = incompleteTasks.length;
-    const selectedListLabel = lists.find(list => list.id === selectedListId)
-        .label;
+    const hasTasks = unscheduledTasks.length;
 
     const [backlogDropProps] = useDrop({
         'task-id': taskId => {
@@ -99,15 +99,13 @@ const Backlog = ({ appActions, appData, ...otherProps }) => {
 
     return (
         <Container
-            label={!isBacklogVisibleOrDraggingTask ? '' : selectedListLabel}
+            label={!isBacklogVisible ? '' : selectedList.label}
             {...otherProps}
         >
-            {!isBacklogVisibleOrDraggingTask ? (
+            {!isBacklogVisible ? (
                 <BacklogToggleButton
-                    isBacklogVisibleOrDraggingTask={
-                        isBacklogVisibleOrDraggingTask
-                    }
-                    onChangeBacklogVisibility={onChangeBacklogVisibility}
+                    isBacklogVisible={isBacklogVisible}
+                    onChangeIsShowingBacklog={onChangeIsShowingBacklog}
                 />
             ) : (
                 <>
@@ -126,12 +124,8 @@ const Backlog = ({ appActions, appData, ...otherProps }) => {
                                 : ICONS.LIGHT_MODE}
                         </ToggleButton>
                         <BacklogToggleButton
-                            isBacklogVisibleOrDraggingTask={
-                                isBacklogVisibleOrDraggingTask
-                            }
-                            onChangeBacklogVisibility={
-                                onChangeBacklogVisibility
-                            }
+                            isBacklogVisible={isBacklogVisible}
+                            onChangeIsShowingBacklog={onChangeIsShowingBacklog}
                         />
                     </ToolBar>
                     <BacklogDropZone {...backlogDropProps}>

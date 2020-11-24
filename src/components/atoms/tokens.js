@@ -9,10 +9,11 @@ export const FONTS = {
     NORMAL: { LINE_HEIGHT: '1.4em', SIZE: `calc(${GRID_UNIT} * 0.5)` },
     LARGE: { LINE_HEIGHT: '1.4em', SIZE: `calc(${GRID_UNIT} * 0.75)` },
 };
-export const HOURS_PER_SCREEN = 8;
+export const HOURS_PER_SCREEN = 10;
 export const INITIAL_LISTS = [
     {
         id: 1,
+        isArchived: false,
         label: 'Default List',
     },
 ];
@@ -70,12 +71,17 @@ COPY.NEW_LIST_LABEL = 'New List';
 COPY.NEW_TASK_LABEL = `New Task`;
 COPY.NEW_TASK_NOTES = '';
 COPY.TIPS = {
+    DELETE_TASK: 'Press [⌘]+[D] to [D]elete the selected task',
+    MOVE_TASK_BETWEEN_BACKLOG_AND_TIMELINE:
+        'Press [⌘]+[LEFT or RIGHT] to move the selected task to the Backlog or Timeline, respectively',
+    MOVE_BETWEEN_LISTS:
+        'Press [⌘]+[SHIFT]+[LEFT or RIGHT] to move between your lists',
     PREFIX: 'Tip ☝️: ',
     SETTING_DURATION:
-        'Press keys [1] to [6] to quickly adjust your time estimate for the task',
+        'Press keys [1] to [6] to quickly adjust your time estimate for the selected task',
     TOGGLE_BACKLOG:
         'Press [⌘]+[B] to show / hide the side[B]ar of unscheduled tasks',
-    TOGGLE_DARK_MODE: 'Press [⌘]+[D] to toggle [D]ark Mode',
+    TOGGLE_DARK_MODE: 'Press [⌘]+[SHIFT]+[D] to toggle [D]ark Mode',
     TOGGLE_LIST_MANAGER: 'Press [⌘]+[L] to see your [L]ists',
 };
 

@@ -20,9 +20,9 @@ const Container = styled(Box).attrs({
     isFlexible: true,
 })(
     ({ isEditing, isEmpty, theme, tracingElementStyles = () => {} }) => `
+        color: ${COLORS[theme.name][isEmpty ? 'TEXT_FADED' : 'TEXT']};
         cursor: ${isEditing ? 'text' : 'pointer'};
         position: relative;
-        opacity: ${isEmpty ? 0.5 : 1};
         user-select: ${isEditing ? 'text' : 'none'};
         width: auto;
         height: auto;
@@ -52,7 +52,16 @@ const Container = styled(Box).attrs({
     `
 );
 
+const StyledTextarea = styled.textarea(
+    ({ theme }) => `
+        display: block;
+        height: 100%;
+        width: 100%;
+    `
+);
+
 const EditInPlace = ({
+    doubleClickToEdit = false,
     isMultiLine = false,
     isRemotelyActivated = false,
     placeholder = 'Empty',
@@ -127,8 +136,8 @@ const EditInPlace = ({
             'shift + escape': close,
             'cmd + enter': saveAndClose,
             'shift + enter': saveAndClose,
-            escape: saveAndClose,
-            enter: evt => {
+            'escape': saveAndClose,
+            'enter': evt => {
                 if (isSingleLine) {
                     saveAndClose();
                     evt.preventDefault();
@@ -146,7 +155,8 @@ const EditInPlace = ({
             isEmpty={isEmpty}
             tabIndex={0}
             tracingElementStyles={tracingElementStyles}
-            onClick={handleClick}
+            onClick={!doubleClickToEdit ? handleClick : null}
+            onDoubleClick={doubleClickToEdit ? handleClick : null}
             {...otherProps}
         >
             <Box style={wrapperStyles}>
@@ -164,14 +174,12 @@ const EditInPlace = ({
                         >
                             {bufferedValue}.
                         </div>
-                        <textarea
+                        <StyledTextarea
                             disabled={!isEditing}
                             ref={inputRef}
                             rows={1}
                             style={{
-                                display: 'block',
                                 height: `${measuringElementHeight}px`,
-                                width: '100%',
                             }}
                             value={bufferedValue}
                             onBlur={handleBlur}
