@@ -20,7 +20,6 @@ const Container = styled(Box).attrs({
     isFlexible: true,
 })(
     ({ isEditing, isEmpty, theme, tracingElementStyles = () => {} }) => `
-        color: ${COLORS[theme.name][isEmpty ? 'TEXT_FADED' : 'TEXT']};
         cursor: ${isEditing ? 'text' : 'pointer'};
         position: relative;
         user-select: ${isEditing ? 'text' : 'none'};
@@ -159,7 +158,7 @@ const EditInPlace = ({
             onDoubleClick={doubleClickToEdit ? handleClick : null}
             {...otherProps}
         >
-            <Box style={wrapperStyles}>
+            <Box style={{ ...wrapperStyles, opacity: isEmpty ? 0.5 : 1 }}>
                 {isEditing ? (
                     <>
                         <div

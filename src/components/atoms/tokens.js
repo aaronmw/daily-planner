@@ -71,7 +71,8 @@ COPY.NEW_LIST_LABEL = 'New List';
 COPY.NEW_TASK_LABEL = `New Task`;
 COPY.NEW_TASK_NOTES = '';
 COPY.TIPS = {
-    DELETE_TASK: 'Press [⌘]+[D] to [D]elete the selected task',
+    CREATE_NEW_TASK: 'Press [N] to create a [N]ew task in the current list',
+    DELETE_TASK: 'Press [T] to move the selected task to the [T]rash',
     MOVE_TASK_BETWEEN_BACKLOG_AND_TIMELINE:
         'Press [⌘]+[LEFT or RIGHT] to move the selected task to the Backlog or Timeline, respectively',
     MOVE_BETWEEN_LISTS:
@@ -80,9 +81,9 @@ COPY.TIPS = {
     SETTING_DURATION:
         'Press keys [1] to [6] to quickly adjust your time estimate for the selected task',
     TOGGLE_BACKLOG:
-        'Press [⌘]+[B] to show / hide the side[B]ar of unscheduled tasks',
-    TOGGLE_DARK_MODE: 'Press [⌘]+[SHIFT]+[D] to toggle [D]ark Mode',
-    TOGGLE_LIST_MANAGER: 'Press [⌘]+[L] to see your [L]ists',
+        'Press [B] to show / hide the side[B]ar of unscheduled tasks',
+    TOGGLE_DARK_MODE: 'Press [D] to toggle [D]ark Mode',
+    TOGGLE_LIST_MANAGER: 'Press [L] to see your [L]ists',
 };
 
 export { COPY };

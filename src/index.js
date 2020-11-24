@@ -230,34 +230,6 @@ function App() {
         ]
     );
 
-    const onDeleteTask = useCallback(
-        taskId => {
-            if (selectedTaskId === taskId) {
-                const firstUnarchivedTask = tasks.find(
-                    task =>
-                        task.id !== taskId &&
-                        task.list_id === selectedListId &&
-                        !task.isComplete
-                );
-
-                if (firstUnarchivedTask) {
-                    onImmediatelySelectTask(firstUnarchivedTask.id);
-                }
-            }
-
-            onUpdateTask(taskId, {
-                isComplete: true,
-            });
-        },
-        [
-            onImmediatelySelectTask,
-            onUpdateTask,
-            selectedListId,
-            tasks,
-            selectedTaskId,
-        ]
-    );
-
     const onChangeIsShowingBacklog = setIsShowingBacklog;
 
     const onChangeIsShowingListManager = useCallback(
@@ -271,6 +243,37 @@ function App() {
             });
         },
         [setIsShowingBacklog, setIsShowingListManager, transition]
+    );
+
+    const onDeleteTask = useCallback(
+        taskId => {
+            if (selectedTaskId === taskId) {
+                const firstUnarchivedTask = tasks.find(
+                    task =>
+                        task.id !== taskId &&
+                        task.list_id === selectedListId &&
+                        !task.isComplete
+                );
+
+                if (firstUnarchivedTask) {
+                    onImmediatelySelectTask(firstUnarchivedTask.id);
+                } else {
+                    onChangeIsShowingListManager(true);
+                }
+            }
+
+            onUpdateTask(taskId, {
+                isComplete: true,
+            });
+        },
+        [
+            onChangeIsShowingListManager,
+            onImmediatelySelectTask,
+            onUpdateTask,
+            selectedListId,
+            tasks,
+            selectedTaskId,
+        ]
     );
 
     const onChangeTheme = setThemeName;
@@ -335,23 +338,27 @@ function App() {
                         : prevListIndex;
                 setSelectedListId(unarchivedLists[prevIndex].id);
             },
-            'cmd + b': evt => {
+            'b': evt => {
                 evt.preventDefault();
                 onChangeIsShowingBacklog(!isShowingBacklog);
             },
-            'cmd + shift + d': evt => {
+            'd': evt => {
                 evt.preventDefault();
                 onChangeTheme(themeName === 'LIGHT' ? 'DARK' : 'LIGHT');
             },
-            'cmd + l': evt => {
-                evt.preventDefault();
-                onChangeIsShowingListManager(!isShowingListManager);
-            },
-            'cmd + e': evt => {
+            'e': evt => {
                 evt.preventDefault();
                 setIsCreatingTask(true);
             },
-            'cmd + d': evt => {
+            'l': evt => {
+                evt.preventDefault();
+                onChangeIsShowingListManager(!isShowingListManager);
+            },
+            'n': evt => {
+                evt.preventDefault();
+                onCreateTask();
+            },
+            't': evt => {
                 evt.preventDefault();
                 onDeleteTask(selectedTaskId);
             },
@@ -363,6 +370,7 @@ function App() {
             onChangeIsShowingBacklog,
             onChangeIsShowingListManager,
             onChangeTheme,
+            onCreateTask,
             onDeleteTask,
             onUpdateTask,
             selectedTaskId,

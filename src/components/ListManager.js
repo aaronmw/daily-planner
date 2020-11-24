@@ -43,7 +43,9 @@ const StyledListCard = styled(FlexBox).attrs({
 })(
     ({ isActive, isTargetedForDrop, theme }) => `
         background-color: ${
-            COLORS[theme.name][isActive ? 'PRIMARY' : 'PRIMARY_FADED']
+            COLORS[theme.name][
+                isActive ? 'HIGH_CONTRAST_BACKGROUND' : 'PRIMARY_FADED'
+            ]
         };
         border-radius: ${BORDER_RADIUS};
         color: ${COLORS[theme.name].HIGH_CONTRAST_TEXT};
@@ -69,7 +71,7 @@ const ListCardTaskIconContainer = styled(FlexBox).attrs({
     paddingY: 0.25,
     wrapped: true,
 })(
-    ({ isActive, theme }) => `
+    ({ isActive }) => `
         background-color: rgba(255, 255, 255, ${isActive ? 0.75 : 0.25});
         border-radius: ${BORDER_RADIUS};
         border-top-right-radius: 0;
