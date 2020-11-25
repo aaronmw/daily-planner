@@ -1,6 +1,8 @@
 import { darken, lighten, setLightness, transparentize } from 'polished';
 import MOTIVATIONAL_DESCRIPTORS from './copy/motivational-descriptors';
 
+export const SIDEBAR_DEFAULT_WIDTH = '30vw';
+export const SIDEBAR_EXTENDED_WIDTH = '40vw';
 export const BORDER_RADIUS = '3px';
 export const BORDER_WIDTH = '1px';
 export const BULLET_SIZE = '10px';

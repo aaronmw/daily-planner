@@ -16,6 +16,7 @@ import ToolBar from './components/ToolBar';
 import useKeyboardShortcuts from './hooks/useKeyboardShortcuts';
 import usePersistentState from './hooks/usePersistentState';
 import {
+    SIDEBAR_DEFAULT_WIDTH,
     COPY,
     GRID_UNIT,
     ICONS,
@@ -26,6 +27,7 @@ import {
     ROUTE_TRANSITION_ANIMATION_DURATION,
     TIMELINE_FROM,
     TIMELINE_TO,
+    SIDEBAR_EXTENDED_WIDTH,
 } from './components/atoms/tokens';
 
 function App() {
@@ -65,8 +67,7 @@ function App() {
     );
     const hasIncompleteTasks = incompleteTasks.length;
     const hasUnarchivedList = lists.filter(list => !list.isArchived).length;
-    const isBacklogVisible =
-        hasUnarchivedList && (isShowingBacklog || isDraggingTask);
+    const isBacklogVisible = hasUnarchivedList && isShowingBacklog;
 
     useEffect(() => {
         const handleDragOver = () => setIsDraggingTask(true);
@@ -475,16 +476,16 @@ function App() {
 
     const columnWidths = isBacklogVisible
         ? {
-              backlog: '30vw',
+              backlog: SIDEBAR_DEFAULT_WIDTH,
               listManager: '40vw',
               taskDetails: '40vw',
-              timeline: '30vw',
+              timeline: SIDEBAR_DEFAULT_WIDTH,
           }
         : {
               backlog: `calc(${GRID_UNIT} * 2)`,
-              listManager: `calc(60vw - ${GRID_UNIT} * 2)`,
-              taskDetails: `calc(60vw - ${GRID_UNIT} * 2)`,
-              timeline: '40vw',
+              listManager: `calc((100vw - ${SIDEBAR_EXTENDED_WIDTH}) - ${GRID_UNIT} * 2)`,
+              taskDetails: `calc((100vw - ${SIDEBAR_EXTENDED_WIDTH}) - ${GRID_UNIT} * 2)`,
+              timeline: SIDEBAR_EXTENDED_WIDTH,
           };
 
     return (

@@ -1,4 +1,4 @@
-import React, { memo } from 'react';
+import React, { memo, useEffect } from 'react';
 import styled from 'styled-components';
 import useDrop from '../hooks/useDrop';
 import minutesToHeight from '../utils/minutesToHeight';
@@ -12,23 +12,27 @@ import { COLORS, COPY, GRID_UNIT, ICONS } from './atoms/tokens';
 import ToolBar from './ToolBar';
 
 const Container = styled(AppColumn)(
-    ({ hasTasks, theme }) => `
+    ({ hasTasks, isTargetedForDrop, theme }) => `
         background-color: ${COLORS[theme.name].SHADED};
         flex-grow: 1;
         overflow: ${hasTasks ? 'auto' : 'visible'};
-    `
-);
-
-const BacklogDropZone = styled(Box).attrs({
-    isFlexible: true,
-})(
-    ({ isTargetedForDrop, theme }) => `
-        box-shadow: ${
-            isTargetedForDrop
-                ? `0 0 0 5px ${COLORS[theme.name].TASK_BORDER_HOVER} inset`
-                : 'initial'
-        };
         position: relative;
+        
+        &:before {
+            box-shadow: ${
+                isTargetedForDrop
+                    ? `0 0 0 5px ${COLORS[theme.name].TASK_BORDER_HOVER} inset`
+                    : 'initial'
+            };
+            bottom: 0;
+            content: '';
+            left: 0;
+            pointer-events: none;
+            position: absolute;
+            right: 0;
+            top: 0;
+            z-index: 1000;
+        }
     `
 );
 
@@ -87,6 +91,12 @@ const Backlog = ({ appActions, appData, ...otherProps }) => {
         },
     });
 
+    useEffect(() => {
+        if (!isBacklogVisible) {
+            onChangeIsShowingBacklog(backlogDropProps.isTargetedForDrop);
+        }
+    }, [backlogDropProps.isTargetedForDrop]);
+
     const [taskCardDropProps] = useDrop({
         'task-id': (taskId, evt) => {
             const droppedOnTaskId = toInt(evt.currentTarget.dataset.taskId);
@@ -100,6 +110,7 @@ const Backlog = ({ appActions, appData, ...otherProps }) => {
     return (
         <Container
             label={!isBacklogVisible ? '' : selectedList.label}
+            {...backlogDropProps}
             {...otherProps}
         >
             {!isBacklogVisible ? (
@@ -128,57 +139,50 @@ const Backlog = ({ appActions, appData, ...otherProps }) => {
                             onChangeIsShowingBacklog={onChangeIsShowingBacklog}
                         />
                     </ToolBar>
-                    <BacklogDropZone {...backlogDropProps}>
-                        <FlexBox
-                            justify="flex-start"
-                            direction="column"
-                            spacing={0.5}
-                            padding={1}
-                            style={{
-                                bottom: 0,
-                                left: 0,
-                                overflow: hasTasks ? 'auto' : 'visible',
-                                position: 'absolute',
-                                right: 0,
-                                top: 0,
-                            }}
-                        >
-                            <div
-                                style={{ position: 'relative', width: '100%' }}
+                    <FlexBox
+                        isFlexible
+                        justify="flex-start"
+                        direction="column"
+                        spacing={0.5}
+                        padding={1}
+                        style={{
+                            height: '100%',
+                            overflow: hasTasks ? 'auto' : 'visible',
+                        }}
+                    >
+                        <div style={{ position: 'relative', width: '100%' }}>
+                            {!hasTasks && (
+                                <CreateFirstTaskTip>
+                                    <span
+                                        role="img"
+                                        aria-label="left-pointing hand"
+                                    >
+                                        {ICONS.LEFT}
+                                    </span>{' '}
+                                    Create your first task
+                                </CreateFirstTaskTip>
+                            )}
+                            <GhostButton
+                                style={{
+                                    height: minutesToHeight(30),
+                                }}
+                                title={COPY.TIPS.CREATE_NEW_TASK}
+                                onClick={() => onCreateTask()}
                             >
-                                {!hasTasks && (
-                                    <CreateFirstTaskTip>
-                                        <span
-                                            role="img"
-                                            aria-label="left-pointing hand"
-                                        >
-                                            {ICONS.LEFT}
-                                        </span>{' '}
-                                        Create your first task
-                                    </CreateFirstTaskTip>
-                                )}
-                                <GhostButton
-                                    style={{
-                                        height: minutesToHeight(30),
-                                    }}
-                                    title={COPY.TIPS.CREATE_NEW_TASK}
-                                    onClick={() => onCreateTask()}
-                                >
-                                    {COPY.CREATE_TASK_LABEL}
-                                </GhostButton>
-                            </div>
-                            {unscheduledTasks.map(task => (
-                                <TaskCard
-                                    key={task.id}
-                                    appActions={appActions}
-                                    appData={appData}
-                                    isActive={selectedTaskId === task.id}
-                                    task={task}
-                                    {...taskCardDropProps}
-                                />
-                            ))}
-                        </FlexBox>
-                    </BacklogDropZone>
+                                {COPY.CREATE_TASK_LABEL}
+                            </GhostButton>
+                        </div>
+                        {unscheduledTasks.map(task => (
+                            <TaskCard
+                                key={task.id}
+                                appActions={appActions}
+                                appData={appData}
+                                isActive={selectedTaskId === task.id}
+                                task={task}
+                                {...taskCardDropProps}
+                            />
+                        ))}
+                    </FlexBox>
                 </>
             )}
         </Container>
