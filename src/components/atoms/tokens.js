@@ -1,4 +1,5 @@
-import { darken, lighten, rgba, setLightness, transparentize } from 'polished';
+import { darken, lighten, setLightness, transparentize } from 'polished';
+import MOTIVATIONAL_DESCRIPTORS from './copy/motivational-descriptors';
 
 export const BORDER_RADIUS = '3px';
 export const BORDER_WIDTH = '1px';
@@ -20,51 +21,21 @@ export const INITIAL_LISTS = [
 export const INITIAL_SELECTED_LIST_ID = (INITIAL_LISTS[0] || {}).id;
 export const INITIAL_TASKS = [];
 export const INITIAL_SELECTED_TASK_ID = (INITIAL_TASKS[0] || {}).id;
+export const LIST_CARD_HEIGHT = `calc(${GRID_UNIT} * 8)`;
+export const LIST_CARD_SPACING = `calc(${GRID_UNIT} * 0.5)`;
+export const LIST_CARD_WIDTH = `calc((100% - (${LIST_CARD_SPACING} * 2)) / 3)`;
 export const MIN_SLOT_HEIGHT = GRID_UNIT;
 export const ROUTE_TRANSITION_ANIMATION_DURATION = 250;
-export const TIMELINE_FROM = '8:00';
-export const TIMELINE_TO = '20:00';
+export const TIMELINE_FROM = '6:00';
+export const TIMELINE_TO = '30:00';
 export const UNIFIED_TRANSITION = 'transition: all 0.15s ease-in-out';
 
 const COPY = {};
-COPY.MOTIVATIONAL_DESCRIPTORS = [
-    'Adorable',
-    'Adventurous',
-    'Amazing',
-    'Ambitious',
-    'Awesome',
-    'Beautiful',
-    'Bold',
-    'Bright',
-    'Charming',
-    'Clean',
-    'Colourful',
-    'Cute',
-    'Dashing',
-    'Elegant',
-    'Excellent',
-    'Exciting',
-    'Fabulous',
-    'Fantastic',
-    'Fresh',
-    'Gorgeous',
-    'Happy',
-    'Important',
-    'Incredible',
-    'Neat',
-    'Outstanding',
-    'Scrappy',
-    'Sleek',
-    'Special',
-    'Splendid',
-    'Super',
-    'Thoughtful',
-    'Wonderful',
-];
+COPY.MOTIVATIONAL_DESCRIPTORS = MOTIVATIONAL_DESCRIPTORS;
 COPY.EMPTY_LABEL = '...label?';
 COPY.EMPTY_NOTES = '...notes?';
-COPY.NAME_OF_LIST_MANAGER = 'All Lists';
-COPY.NAME_OF_TASK_DETAILS = 'Task Deets';
+COPY.LABEL_FOR_LIST_MANAGER = 'Switch Lists';
+COPY.LABEL_FOR_TASK_DETAILS = 'Back to Task';
 COPY.CREATE_LIST_LABEL = 'Create List';
 COPY.CREATE_TASK_LABEL = 'Create Task';
 COPY.NEW_LIST_LABEL = 'New List';
@@ -93,16 +64,18 @@ const PRIMARY = '#0094FF';
 const DARK = {};
 DARK.PRIMARY = PRIMARY;
 DARK.PRIMARY_FADED = darken(0.2, DARK.PRIMARY);
-DARK.BACKGROUND = '#000209';
+DARK.BACKGROUND = '#00010F';
 DARK.HIGH_CONTRAST_BACKGROUND = DARK.PRIMARY;
 DARK.HIGH_CONTRAST_TEXT = '#FFFFFF';
-DARK.BORDER_HOVER = setLightness(0.5, PRIMARY);
-DARK.BORDER_IDLE = setLightness(0.3, PRIMARY);
-DARK.SHADED = lighten(0.1, DARK.BACKGROUND);
+DARK.SHADED = lighten(0.15, DARK.BACKGROUND);
 DARK.SHADOW = transparentize(0.95, DARK.BACKGROUND);
 DARK.TEXT = setLightness(0.85, DARK.PRIMARY);
 DARK.TEXT_FADED = setLightness(0.4, DARK.TEXT);
-DARK.BORDER_NEUTRAL = setLightness(0.15, DARK.TEXT);
+DARK.TASK_BORDER = transparentize(0.5, DARK.PRIMARY);
+DARK.TASK_BORDER_HOVER = transparentize(0.5, DARK.PRIMARY);
+DARK.TASK_BORDER_ACTIVE = DARK.PRIMARY;
+DARK.BORDER = transparentize(0, DARK.TEXT_FADED);
+DARK.BORDER_FADED = transparentize(0.5, DARK.BORDER);
 
 const LIGHT = {};
 LIGHT.PRIMARY = PRIMARY;
@@ -110,13 +83,15 @@ LIGHT.PRIMARY_FADED = lighten(0.2, LIGHT.PRIMARY);
 LIGHT.BACKGROUND = '#FFFFFF';
 LIGHT.HIGH_CONTRAST_BACKGROUND = LIGHT.PRIMARY;
 LIGHT.HIGH_CONTRAST_TEXT = LIGHT.BACKGROUND;
-LIGHT.BORDER_HOVER = rgba('#0094FF', 0.5);
-LIGHT.BORDER_IDLE = rgba('#0094FF', 0.3);
 LIGHT.SHADED = setLightness(0.95, LIGHT.PRIMARY);
 LIGHT.SHADOW = transparentize(0.8, setLightness(0.25, LIGHT.PRIMARY));
 LIGHT.TEXT = setLightness(0.15, LIGHT.PRIMARY);
-LIGHT.TEXT_FADED = transparentize(0.5, LIGHT.TEXT);
-LIGHT.BORDER_NEUTRAL = transparentize(0.75, LIGHT.TEXT);
+LIGHT.TEXT_FADED = transparentize(0.4, LIGHT.TEXT);
+LIGHT.TASK_BORDER = transparentize(0.5, LIGHT.PRIMARY);
+LIGHT.TASK_BORDER_HOVER = transparentize(0.5, LIGHT.PRIMARY);
+LIGHT.TASK_BORDER_ACTIVE = LIGHT.PRIMARY;
+LIGHT.BORDER = transparentize(0.75, LIGHT.TEXT);
+LIGHT.BORDER_FADED = transparentize(0.5, LIGHT.BORDER);
 
 export const COLORS = {
     DARK,

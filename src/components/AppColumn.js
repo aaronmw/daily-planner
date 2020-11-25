@@ -38,7 +38,7 @@ const ColumnHeader = styled(FlexBox).attrs({
         background: ${COLORS[theme.name].BACKGROUND};
         color: ${COLORS[theme.name].TEXT_FADED};
         border-bottom:
-            ${BORDER_WIDTH} solid ${COLORS[theme.name].BORDER_NEUTRAL};
+            ${BORDER_WIDTH} solid ${COLORS[theme.name].BORDER};
         font-size: 0.75rem;
         height: ${GRID_UNIT};
         position: sticky;
@@ -58,9 +58,9 @@ const AppColumn = ({ children, label, ...otherProps }) => (
 export const PrimaryAppColumn = styled(AppColumn)(
     ({ theme }) => `
         box-shadow: 0 0 10px 10px ${COLORS[theme.name].SHADOW};
-        border-left: ${BORDER_WIDTH} solid ${COLORS[theme.name].BORDER_NEUTRAL};
+        border-left: ${BORDER_WIDTH} solid ${COLORS[theme.name].BORDER};
         border-right: 
-            ${BORDER_WIDTH} solid ${COLORS[theme.name].BORDER_NEUTRAL};
+            ${BORDER_WIDTH} solid ${COLORS[theme.name].BORDER};
         overflow: unset;
         z-index: 11;
     `

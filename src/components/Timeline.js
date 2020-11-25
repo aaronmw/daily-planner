@@ -21,7 +21,7 @@ const TimelineContainer = styled.div(
         bottom: 0;
         box-shadow: ${
             isTargetedForDrop
-                ? `0 0 0 5px ${COLORS[theme.name].BORDER_HOVER} inset`
+                ? `0 0 0 5px ${COLORS[theme.name].TASK_BORDER_HOVER} inset`
                 : 'initial'
         };
         left: 0;
@@ -53,11 +53,11 @@ const HalfHourLabel = styled.div(
         width: 100%;
 
         &:before {
-            background-color: ${COLORS[theme.name].BORDER_NEUTRAL};
+            background-color: ${COLORS[theme.name].BORDER};
             content: '';
             height: 1px;
             left: ${LINE_LABEL_WIDTH};
-            opacity: ${isFaded ? 0.25 : 1};
+            opacity: ${isFaded ? 0.5 : 1};
             position: absolute;
             right: 0;
             top: 50%;

@@ -25,7 +25,7 @@ const BacklogDropZone = styled(Box).attrs({
     ({ isTargetedForDrop, theme }) => `
         box-shadow: ${
             isTargetedForDrop
-                ? `0 0 0 5px ${COLORS[theme.name].BORDER_HOVER} inset`
+                ? `0 0 0 5px ${COLORS[theme.name].TASK_BORDER_HOVER} inset`
                 : 'initial'
         };
         position: relative;

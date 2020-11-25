@@ -13,16 +13,16 @@ const Button = styled(FlexBox).attrs({
         border-radius: ${BORDER_RADIUS};
         color: ${COLORS[theme.name].TEXT};
         cursor: pointer;
-        transform: scale(1);
+        transform: translateY(0);
         ${UNIFIED_TRANSITION};
+        transition-property: border, color;
         
         &:focus,
         &:hover {
-            box-shadow: 0 0 0 2px ${COLORS[theme.name].PRIMARY};
+            border-color: ${COLORS[theme.name].PRIMARY};
         }
         &:active {
-            transform: scale(0.9);
-            filter: hue-rotate(20deg);
+            transform: translateY(2px);
         }
     `
 );
@@ -30,13 +30,14 @@ const Button = styled(FlexBox).attrs({
 export const GhostButton = styled(Button)(
     ({ theme }) => `
         background: unset; 
-        border: 2px dashed ${COLORS[theme.name].BORDER_NEUTRAL};
+        border: 2px dashed ${COLORS[theme.name].BORDER};
         color: ${COLORS[theme.name].TEXT_FADED};
         width: 100%;
         
         &:focus,
         &:hover {
-            border-color: ${COLORS[theme.name].BORDER_HOVER};
+            color: ${COLORS[theme.name].TEXT};
+            border-style: solid;
         }
     `
 );
@@ -44,6 +45,7 @@ export const GhostButton = styled(Button)(
 export const ToggleButton = styled(Button)(
     ({ isActive, theme }) => `
         background: unset;
+        border: 2px solid transparent;
         width: auto;
     `
 );

@@ -13,7 +13,7 @@ import Timeline from './components/Timeline';
 import FlexBox from './components/atoms/FlexBox';
 import GlobalStyle from './components/atoms/GlobalStyles';
 import ToolBar from './components/ToolBar';
-import useGlobalKeyboardShortcuts from './hooks/useKeyboardShortcuts';
+import useKeyboardShortcuts from './hooks/useKeyboardShortcuts';
 import usePersistentState from './hooks/usePersistentState';
 import {
     COPY,
@@ -296,91 +296,153 @@ function App() {
         [setTasks]
     );
 
-    const keyMap = useMemo(
-        () => ({
-            ...[15, 30, 45, 60, 90, 120].reduce((acc, duration, index) => {
-                return {
-                    ...acc,
-                    [index + 1]: () => {
-                        onUpdateTask(selectedTaskId, {
-                            scheduled_minutes: duration,
-                        });
-                    },
-                };
-            }, {}),
-            'cmd + arrowRight': evt => {
-                evt.preventDefault();
-                onUpdateTask(selectedTaskId, {
-                    scheduled: true,
-                });
-            },
-            'cmd + arrowLeft': evt => {
-                evt.preventDefault();
-                onUpdateTask(selectedTaskId, {
-                    scheduled: false,
-                });
-            },
-            'cmd + shift + arrowRight': evt => {
-                evt.preventDefault();
-                const nextListIndex = currentListIndex + 1;
-                const nextIndex =
-                    nextListIndex > unarchivedLists.length - 1
-                        ? 0
-                        : nextListIndex;
-                setSelectedListId(unarchivedLists[nextIndex].id);
-            },
-            'cmd + shift + arrowLeft': evt => {
-                evt.preventDefault();
-                const prevListIndex = currentListIndex - 1;
-                const prevIndex =
-                    prevListIndex < 0
-                        ? unarchivedLists.length - 1
-                        : prevListIndex;
-                setSelectedListId(unarchivedLists[prevIndex].id);
-            },
-            'b': evt => {
-                evt.preventDefault();
-                onChangeIsShowingBacklog(!isShowingBacklog);
-            },
-            'd': evt => {
-                evt.preventDefault();
-                onChangeTheme(themeName === 'LIGHT' ? 'DARK' : 'LIGHT');
-            },
-            'e': evt => {
-                evt.preventDefault();
-                setIsCreatingTask(true);
-            },
-            'l': evt => {
-                evt.preventDefault();
-                onChangeIsShowingListManager(!isShowingListManager);
-            },
-            'n': evt => {
-                evt.preventDefault();
-                onCreateTask();
-            },
-            't': evt => {
-                evt.preventDefault();
-                onDeleteTask(selectedTaskId);
-            },
-        }),
+    const moveTaskToTimeline = useCallback(
+        evt => {
+            evt.preventDefault();
+            onUpdateTask(selectedTaskId, {
+                scheduled: true,
+            });
+        },
+        [onUpdateTask, selectedTaskId]
+    );
+
+    const moveTaskToBacklog = useCallback(
+        evt => {
+            evt.preventDefault();
+            onUpdateTask(selectedTaskId, {
+                scheduled: false,
+            });
+        },
+        [onUpdateTask, selectedTaskId]
+    );
+
+    const selectNextList = useCallback(
+        evt => {
+            evt.preventDefault();
+            const nextListIndex = currentListIndex + 1;
+            const nextIndex =
+                nextListIndex > unarchivedLists.length - 1 ? 0 : nextListIndex;
+            setSelectedListId(unarchivedLists[nextIndex].id);
+            setIsShowingListManager(true);
+        },
         [
             currentListIndex,
-            isShowingBacklog,
-            isShowingListManager,
-            onChangeIsShowingBacklog,
-            onChangeIsShowingListManager,
-            onChangeTheme,
-            onCreateTask,
-            onDeleteTask,
-            onUpdateTask,
-            selectedTaskId,
+            setIsShowingListManager,
             setSelectedListId,
-            themeName,
             unarchivedLists,
         ]
     );
 
-    useGlobalKeyboardShortcuts(keyMap);
+    const selectPreviousList = useCallback(
+        evt => {
+            evt.preventDefault();
+            const prevListIndex = currentListIndex - 1;
+            const prevIndex =
+                prevListIndex < 0 ? unarchivedLists.length - 1 : prevListIndex;
+            setSelectedListId(unarchivedLists[prevIndex].id);
+            setIsShowingListManager(true);
+        },
+        [
+            currentListIndex,
+            setIsShowingListManager,
+            setSelectedListId,
+            unarchivedLists,
+        ]
+    );
+
+    const setTaskDuration = useCallback(
+        duration => {
+            onUpdateTask(selectedTaskId, {
+                scheduled_minutes: duration,
+            });
+        },
+        [onUpdateTask, selectedTaskId]
+    );
+
+    const toggleBacklogVisibility = useCallback(
+        evt => {
+            evt.preventDefault();
+            onChangeIsShowingBacklog(!isShowingBacklog);
+        },
+        [isShowingBacklog, onChangeIsShowingBacklog]
+    );
+
+    const toggleDarkMode = useCallback(
+        evt => {
+            evt.preventDefault();
+            onChangeTheme(themeName === 'LIGHT' ? 'DARK' : 'LIGHT');
+        },
+        [onChangeTheme, themeName]
+    );
+
+    const toggleIsEditingCurrentTask = useCallback(
+        evt => {
+            evt.preventDefault();
+            setIsCreatingTask(true);
+        },
+        [setIsCreatingTask]
+    );
+
+    const toggleIsShowingListManager = useCallback(
+        evt => {
+            evt.preventDefault();
+            onChangeIsShowingListManager(!isShowingListManager);
+        },
+        [isShowingListManager, onChangeIsShowingListManager]
+    );
+
+    const createNewTask = useCallback(
+        evt => {
+            evt.preventDefault();
+            onCreateTask();
+        },
+        [onCreateTask]
+    );
+
+    const deleteCurrentTask = useCallback(
+        evt => {
+            evt.preventDefault();
+            onDeleteTask(selectedTaskId);
+        },
+        [onDeleteTask, selectedTaskId]
+    );
+
+    const keyMap = useMemo(() => {
+        return {
+            ...[15, 30, 45, 60, 90, 120].reduce((acc, duration, index) => {
+                return {
+                    ...acc,
+                    [index + 1]: setTaskDuration.bind(null, duration),
+                };
+            }, {}),
+            'cmd + arrowRight': moveTaskToTimeline,
+            'cmd + arrowLeft': moveTaskToBacklog,
+            'cmd + shift + arrowRight': selectNextList,
+            'cmd + shift + arrowLeft': selectPreviousList,
+            'cmd + shift + ]': selectNextList,
+            'cmd + shift + [': selectPreviousList,
+            'b': toggleBacklogVisibility,
+            'd': toggleDarkMode,
+            'e': toggleIsEditingCurrentTask,
+            'l': toggleIsShowingListManager,
+            'n': createNewTask,
+            't': deleteCurrentTask,
+        };
+    }, [
+        createNewTask,
+        deleteCurrentTask,
+        moveTaskToBacklog,
+        moveTaskToTimeline,
+        selectNextList,
+        selectPreviousList,
+        setTaskDuration,
+        toggleBacklogVisibility,
+        toggleDarkMode,
+        toggleIsEditingCurrentTask,
+        toggleIsShowingListManager,
+    ]);
+
+    useKeyboardShortcuts(keyMap);
 
     const appActions = {
         onChangeIsShowingBacklog,
@@ -446,8 +508,8 @@ function App() {
                 <PrimaryAppColumn
                     label={
                         isShowingListManager
-                            ? COPY.NAME_OF_LIST_MANAGER
-                            : COPY.NAME_OF_TASK_DETAILS
+                            ? COPY.LABEL_FOR_LIST_MANAGER
+                            : COPY.LABEL_FOR_TASK_DETAILS
                     }
                     style={{
                         width: isShowingListManager
@@ -466,8 +528,8 @@ function App() {
                             }
                         >
                             {isShowingListManager
-                                ? ICONS.TASK_DETAILS
-                                : ICONS.LIST_MANAGER}
+                                ? `${ICONS.TASK_DETAILS} ${COPY.LABEL_FOR_TASK_DETAILS}`
+                                : `${ICONS.LIST_MANAGER} ${COPY.LABEL_FOR_LIST_MANAGER}`}
                         </ToggleButton>
                     </ToolBar>
                     <Transition isTransitioning={isTransitioning}>

@@ -7,7 +7,7 @@ import React, {
     useState,
 } from 'react';
 import styled from 'styled-components';
-import useGlobalKeyboardShortcuts from '../hooks/useKeyboardShortcuts';
+import useKeyboardShortcuts from '../hooks/useKeyboardShortcuts';
 import Box from './atoms/Box';
 import {
     BORDER_RADIUS,
@@ -19,7 +19,7 @@ import {
 const Container = styled(Box).attrs({
     isFlexible: true,
 })(
-    ({ isEditing, isEmpty, theme, tracingElementStyles = () => {} }) => `
+    ({ isEditing, theme, tracingElementStyles = () => {} }) => `
         cursor: ${isEditing ? 'text' : 'pointer'};
         position: relative;
         user-select: ${isEditing ? 'text' : 'none'};
@@ -28,7 +28,18 @@ const Container = styled(Box).attrs({
     
         // Tracing element
         &:before {
-            border: 2px dashed ${COLORS[theme.name].BORDER_HOVER};
+            border:
+                ${
+                    isEditing
+                        ? 'none'
+                        : `2px dashed ${COLORS[theme.name].BORDER}`
+                };
+            box-shadow:
+                ${
+                    isEditing
+                        ? `0 0 0 2px ${COLORS[theme.name].PRIMARY}`
+                        : `0 0 0 0 ${COLORS[theme.name].PRIMARY}`
+                };
             border-radius: ${BORDER_RADIUS};
             content: '';
             opacity: ${isEditing ? 1 : 0};
@@ -51,13 +62,13 @@ const Container = styled(Box).attrs({
     `
 );
 
-const StyledTextarea = styled.textarea(
-    ({ theme }) => `
-        display: block;
-        height: 100%;
-        width: 100%;
-    `
-);
+const StyledTextarea = styled.textarea`
+    display: block;
+    height: 100%;
+    width: 100%;
+`;
+
+const Canvas = styled(Box)``;
 
 const EditInPlace = ({
     doubleClickToEdit = false,
@@ -67,13 +78,14 @@ const EditInPlace = ({
     render = value => value,
     tracingElementStyles = () => {},
     value = '',
-    wrapperStyles = {},
+    canvasStyles = {},
     onSave = () => {},
     ...otherProps
 }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [bufferedValue, setBufferedValue] = useState(value);
     const [measuringElementHeight, setMeasuringElementHeight] = useState(null);
+    const containerElementRef = useRef(null);
     const inputRef = useRef(null);
     const measuringElementRef = useRef(null);
     const isEmpty = bufferedValue.trim() === '';
@@ -137,28 +149,36 @@ const EditInPlace = ({
             'shift + enter': saveAndClose,
             'escape': saveAndClose,
             'enter': evt => {
-                if (isSingleLine) {
+                if (
+                    evt.target.tagName.toLowerCase() === 'textarea' &&
+                    isSingleLine
+                ) {
                     saveAndClose();
                     evt.preventDefault();
                     return false;
                 }
+
+                if (evt.target === containerElementRef.current) {
+                    evt.preventDefault();
+                    handleClick();
+                }
             },
         };
-    }, [bufferedValue, onSave, isSingleLine, value]);
+    }, [bufferedValue, handleClick, onSave, isSingleLine, value]);
 
-    useGlobalKeyboardShortcuts(keyMap, inputRef);
+    useKeyboardShortcuts(keyMap, inputRef);
 
     return (
         <Container
             isEditing={isEditing}
-            isEmpty={isEmpty}
+            ref={containerElementRef}
             tabIndex={0}
             tracingElementStyles={tracingElementStyles}
             onClick={!doubleClickToEdit ? handleClick : null}
             onDoubleClick={doubleClickToEdit ? handleClick : null}
             {...otherProps}
         >
-            <Box style={{ ...wrapperStyles, opacity: isEmpty ? 0.5 : 1 }}>
+            <Canvas isEmpty={isEmpty} style={{ ...canvasStyles }}>
                 {isEditing ? (
                     <>
                         <div
@@ -188,7 +208,7 @@ const EditInPlace = ({
                 ) : (
                     render(isEmpty ? placeholder : value)
                 )}
-            </Box>
+            </Canvas>
         </Container>
     );
 };

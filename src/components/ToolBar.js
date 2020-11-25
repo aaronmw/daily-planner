@@ -5,7 +5,7 @@ import { COLORS, GRID_UNIT } from './atoms/tokens';
 const ToolBar = styled(FlexBox).attrs({
     align: 'center',
     justify: 'space-between',
-    paddingX: 0.5,
+    paddingX: 1,
     spacing: 0.5,
 })(
     ({ theme }) => `

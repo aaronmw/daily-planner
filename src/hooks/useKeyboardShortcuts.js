@@ -44,7 +44,10 @@ const buildKeyboardShortcutHandler = (keyMap, scopedToElementRef) => evt => {
             const scopedToAnInput = scopedElement && isInput(scopedElement);
             const elementWithFocusIsAnInput = isInput(document.activeElement);
 
-            if (scopedToAnInput) {
+            if (
+                (scopedElement && evt.target === scopedElement) ||
+                scopedToAnInput
+            ) {
                 evt.stopPropagation();
             }
 
@@ -57,10 +60,7 @@ const buildKeyboardShortcutHandler = (keyMap, scopedToElementRef) => evt => {
     });
 };
 
-const useGlobalKeyboardShortcuts = (
-    keyMap,
-    targetElementRef = { current: null }
-) => {
+const useKeyboardShortcuts = (keyMap, targetElementRef = { current: null }) => {
     useEffect(() => {
         const onKeyDown = buildKeyboardShortcutHandler(
             keyMap,
@@ -73,4 +73,4 @@ const useGlobalKeyboardShortcuts = (
     }, [keyMap, targetElementRef]);
 };
 
-export default useGlobalKeyboardShortcuts;
+export default useKeyboardShortcuts;

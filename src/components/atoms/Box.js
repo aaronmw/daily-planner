@@ -14,7 +14,7 @@ export default styled.div(
         theme,
     }) => `
         box-shadow: ${
-            border ? `0 0 0 1px ${COLORS[theme.name].BORDER_NEUTRAL}` : 'none'
+            border ? `0 0 0 1px ${COLORS[theme.name].BORDER}` : 'none'
         };
         flex-grow: ${isFlexible ? 1 : 0};
         flex-shrink: ${isFlexible ? 1 : 0};

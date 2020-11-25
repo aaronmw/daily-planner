@@ -127,7 +127,7 @@ const TaskDetails = ({ appActions = {}, appData = {} }) => {
                             }}
                         />
                     )}
-                    wrapperStyles={{
+                    canvasStyles={{
                         bottom: 0,
                         left: 0,
                         overflow: 'auto',
