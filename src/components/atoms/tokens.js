@@ -74,7 +74,7 @@ DARK.TEXT_FADED = setLightness(0.4, DARK.TEXT);
 DARK.TASK_BORDER = transparentize(0.5, DARK.PRIMARY);
 DARK.TASK_BORDER_HOVER = transparentize(0.5, DARK.PRIMARY);
 DARK.TASK_BORDER_ACTIVE = DARK.PRIMARY;
-DARK.BORDER = transparentize(0, DARK.TEXT_FADED);
+DARK.BORDER = transparentize(0.5, DARK.TEXT_FADED);
 DARK.BORDER_FADED = transparentize(0.5, DARK.BORDER);
 
 const LIGHT = {};
