@@ -1,4 +1,4 @@
-import React, { memo, useEffect } from 'react';
+import React, { memo, useEffect, useState } from 'react';
 import styled from 'styled-components';
 import useDrop from '../hooks/useDrop';
 import minutesToHeight from '../utils/minutesToHeight';
@@ -73,6 +73,7 @@ const Backlog = ({ appActions, appData, ...otherProps }) => {
         selectedTaskId,
         theme,
     } = appData;
+    const [isBacklogForcedOpen, setIsBacklogForcedOpen] = useState(false);
     const selectedList = lists.find(list => list.id === selectedListId);
     const unscheduledTasks = incompleteTasks.filter(
         task =>
@@ -92,10 +93,17 @@ const Backlog = ({ appActions, appData, ...otherProps }) => {
     });
 
     useEffect(() => {
-        if (!isBacklogVisible) {
-            onChangeIsShowingBacklog(backlogDropProps.isTargetedForDrop);
+        if (!isBacklogVisible && backlogDropProps.isTargetedForDrop) {
+            setIsBacklogForcedOpen(true);
+            onChangeIsShowingBacklog(true);
+            return;
         }
-    }, [backlogDropProps.isTargetedForDrop]);
+
+        if (isBacklogForcedOpen && !backlogDropProps.isTargetedForDrop) {
+            setIsBacklogForcedOpen(false);
+            onChangeIsShowingBacklog(false);
+        }
+    }, [backlogDropProps.isTargetedForDrop, setIsBacklogForcedOpen]);
 
     const [taskCardDropProps] = useDrop({
         'task-id': (taskId, evt) => {
