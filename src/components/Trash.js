@@ -44,7 +44,7 @@ const Container = styled.div(
         right: calc(${DROP_ZONE_RADIUS} * -1);
         transform: scale(${isDraggingTask ? 1.5 : 1});
         width: calc(${DROP_ZONE_RADIUS} * 2);
-        z-index: 100;
+        z-index: 1000;
         ${UNIFIED_TRANSITION};
 
         &:before {
