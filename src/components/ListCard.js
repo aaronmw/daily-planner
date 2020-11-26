@@ -92,6 +92,7 @@ export const ListCard = ({ appActions, children, listId, ...otherProps }) => {
             const targetListId = toInt(evt.currentTarget.dataset.listId);
             if (targetListId) {
                 onUpdateTask(taskId, {
+                    isComplete: false,
                     list_id: targetListId,
                 });
             }

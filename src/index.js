@@ -1,22 +1,12 @@
+import sample from 'lodash/sample';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import ReactDOM from 'react-dom';
 import { ThemeProvider } from 'styled-components';
-import sample from 'lodash/sample';
 import { PrimaryAppColumn } from './components/AppColumn';
 import { ToggleButton } from './components/atoms/Button';
-import Transition from './components/atoms/Transition';
-import TaskList from './components/TaskList';
-import CompletedTasksDropZone from './components/Trash';
-import ListManager from './components/ListManager';
-import TaskDetails from './components/TaskDetails';
-import Timeline from './components/Timeline';
 import FlexBox from './components/atoms/FlexBox';
 import GlobalStyle from './components/atoms/GlobalStyles';
-import ToolBar from './components/ToolBar';
-import useKeyboardShortcuts from './hooks/useKeyboardShortcuts';
-import usePersistentState from './hooks/usePersistentState';
 import {
-    SIDEBAR_DEFAULT_WIDTH,
     COPY,
     GRID_UNIT,
     ICONS,
@@ -25,14 +15,26 @@ import {
     INITIAL_SELECTED_TASK_ID,
     INITIAL_TASKS,
     ROUTE_TRANSITION_ANIMATION_DURATION,
+    SIDEBAR_DEFAULT_WIDTH,
+    SIDEBAR_EXTENDED_WIDTH,
     TIMELINE_FROM,
     TIMELINE_TO,
-    SIDEBAR_EXTENDED_WIDTH,
 } from './components/atoms/tokens';
+import Transition from './components/atoms/Transition';
+import ListManager from './components/ListManager';
+import Sidebar from './components/Sidebar';
+import TaskDetails from './components/TaskDetails';
+import TaskList from './components/TaskList';
+import Timeline from './components/Timeline';
+import ToolBar from './components/ToolBar';
+import CompletedTasksDropZone from './components/Trash';
+import TrashContents from './components/TrashContents';
+import useKeyboardShortcuts from './hooks/useKeyboardShortcuts';
+import usePersistentState from './hooks/usePersistentState';
 
 function App() {
-    const [isShowingTaskList, setIsShowingTaskList] = usePersistentState(
-        'is-backlog-visible',
+    const [isShowingSidebar, setIsShowingSidebar] = usePersistentState(
+        'is-showing-sidebar',
         true
     );
     const [lists, setLists] = usePersistentState('lists', INITIAL_LISTS);
@@ -53,6 +55,7 @@ function App() {
     const [isCreatingList, setIsCreatingList] = useState(false);
     const [isCreatingTask, setIsCreatingTask] = useState(false);
     const [isDraggingTask, setIsDraggingTask] = useState(false);
+    const [isShowingTrashContents, setIsShowingTrashContents] = useState(false);
     const [isTransitioning, setIsTransitioning] = useState(false);
     const unarchivedLists = useMemo(
         () => lists.filter(list => !list.isArchived),
@@ -67,7 +70,7 @@ function App() {
     );
     const hasIncompleteTasks = incompleteTasks.length;
     const hasUnarchivedList = lists.filter(list => !list.isArchived).length;
-    const isTaskListVisible = hasUnarchivedList && isShowingTaskList;
+    const isSidebarOpen = hasUnarchivedList && isShowingSidebar;
 
     useEffect(() => {
         const handleDragOver = () => setIsDraggingTask(true);
@@ -102,7 +105,6 @@ function App() {
 
             setSelectedListId(newListId);
 
-            // This remotely activates the EditInPlace
             setIsCreatingList(true);
 
             setTimeout(() => setIsCreatingList(false), 1000);
@@ -129,7 +131,8 @@ function App() {
 
     const onSelectList = listId => {
         setSelectedListId(listId);
-        setIsShowingTaskList(true);
+        setIsShowingSidebar(true);
+        setIsShowingTrashContents(false);
     };
 
     const onUpdateTask = useCallback(
@@ -231,7 +234,7 @@ function App() {
         ]
     );
 
-    const onChangeIsShowingTaskList = setIsShowingTaskList;
+    const onChangeIsSidebarOpen = setIsShowingSidebar;
 
     const onChangeIsShowingListManager = useCallback(
         newIsShowingListManager => {
@@ -239,12 +242,24 @@ function App() {
                 setIsShowingListManager(newIsShowingListManager);
 
                 if (newIsShowingListManager) {
-                    setIsShowingTaskList(true);
+                    setIsShowingSidebar(true);
                 }
             });
         },
-        [setIsShowingTaskList, setIsShowingListManager, transition]
+        [setIsShowingSidebar, setIsShowingListManager, transition]
     );
+
+    const onChangeIsShowingTrashContents = useCallback(() => {
+        if (!isShowingSidebar) {
+            setIsShowingSidebar(true);
+        }
+        setIsShowingTrashContents(!isShowingTrashContents);
+    }, [
+        isShowingSidebar,
+        isShowingTrashContents,
+        setIsShowingSidebar,
+        setIsShowingTrashContents,
+    ]);
 
     const onDeleteTask = useCallback(
         taskId => {
@@ -363,9 +378,14 @@ function App() {
     const toggleTaskListVisibility = useCallback(
         evt => {
             evt.preventDefault();
-            onChangeIsShowingTaskList(!isShowingTaskList);
+
+            if (isShowingSidebar) {
+                setIsShowingTrashContents(false);
+            }
+
+            onChangeIsSidebarOpen(!isShowingSidebar);
         },
-        [isShowingTaskList, onChangeIsShowingTaskList]
+        [isShowingSidebar, onChangeIsSidebarOpen]
     );
 
     const toggleDarkMode = useCallback(
@@ -446,9 +466,10 @@ function App() {
     useKeyboardShortcuts(keyMap);
 
     const appActions = {
-        onChangeIsShowingTaskList,
+        onChangeIsSidebarOpen,
         onChangeTaskPosition,
         onChangeIsShowingListManager,
+        onChangeIsShowingTrashContents,
         onChangeTheme,
         onCreateList,
         onCreateTask,
@@ -462,11 +483,12 @@ function App() {
 
     const appData = {
         incompleteTasks,
-        isTaskListVisible,
+        isSidebarOpen,
         isCreatingList,
         isCreatingTask,
         isDraggingTask,
         isShowingListManager,
+        isShowingTrashContents,
         lists,
         selectedListId,
         selectedTaskId,
@@ -474,15 +496,15 @@ function App() {
         theme: themeName,
     };
 
-    const columnWidths = isTaskListVisible
+    const columnWidths = isSidebarOpen
         ? {
-              backlog: SIDEBAR_DEFAULT_WIDTH,
+              sidebar: SIDEBAR_DEFAULT_WIDTH,
               listManager: '40vw',
               taskDetails: '40vw',
               timeline: SIDEBAR_DEFAULT_WIDTH,
           }
         : {
-              backlog: `calc(${GRID_UNIT} * 2)`,
+              sidebar: `calc(${GRID_UNIT} * 2)`,
               listManager: `calc((100vw - ${SIDEBAR_EXTENDED_WIDTH}) - ${GRID_UNIT} * 2)`,
               taskDetails: `calc((100vw - ${SIDEBAR_EXTENDED_WIDTH}) - ${GRID_UNIT} * 2)`,
               timeline: SIDEBAR_EXTENDED_WIDTH,
@@ -492,20 +514,18 @@ function App() {
         <ThemeProvider theme={{ name: themeName }}>
             <GlobalStyle />
             <CompletedTasksDropZone appActions={appActions} appData={appData} />
-            <FlexBox align="stretch" direction="row-reverse">
-                <Timeline
-                    appActions={appActions}
-                    appData={appData}
-                    selectedTaskId={selectedTaskId}
-                    from={TIMELINE_FROM}
-                    style={{
-                        opacity: hasIncompleteTasks ? 1 : 0.25,
-                        width: columnWidths.timeline,
-                        pointerEvents: hasIncompleteTasks ? 'all' : 'none',
-                    }}
-                    tasks={incompleteTasks}
-                    to={TIMELINE_TO}
-                />
+            <FlexBox align="stretch">
+                <Sidebar appActions={appActions} appData={appData}>
+                    {isShowingTrashContents ? (
+                        <TrashContents
+                            appActions={appActions}
+                            appData={appData}
+                        />
+                    ) : (
+                        <TaskList appActions={appActions} appData={appData} />
+                    )}
+                </Sidebar>
+
                 <PrimaryAppColumn
                     label={
                         isShowingListManager
@@ -558,12 +578,19 @@ function App() {
                         )}
                     </Transition>
                 </PrimaryAppColumn>
-                <TaskList
+
+                <Timeline
                     appActions={appActions}
                     appData={appData}
+                    selectedTaskId={selectedTaskId}
+                    from={TIMELINE_FROM}
                     style={{
-                        width: columnWidths.backlog,
+                        opacity: hasIncompleteTasks ? 1 : 0.25,
+                        width: columnWidths.timeline,
+                        pointerEvents: hasIncompleteTasks ? 'all' : 'none',
                     }}
+                    tasks={incompleteTasks}
+                    to={TIMELINE_TO}
                 />
             </FlexBox>
         </ThemeProvider>

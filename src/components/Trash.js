@@ -1,5 +1,4 @@
 import React from 'react';
-import { transparentize } from 'polished';
 import styled, { css, keyframes } from 'styled-components';
 import useDrop from '../hooks/useDrop';
 import FlexBox from './atoms/FlexBox';
@@ -11,7 +10,7 @@ import {
     UNIFIED_TRANSITION,
 } from './atoms/tokens';
 
-const DROP_ZONE_RADIUS = `calc(${GRID_UNIT} * 3.5)`;
+const DROP_ZONE_SIZE = `calc(${GRID_UNIT} * 4)`;
 
 const pulsingAnimation = ({ from, to }) => keyframes`
     0% {
@@ -22,12 +21,8 @@ const pulsingAnimation = ({ from, to }) => keyframes`
     }
 `;
 
-const Container = styled(FlexBox).attrs({
-    align: 'flex-end',
-    justify: 'flex-end',
-    padding: 1,
-})(
-    ({ isDraggingTask, isTargetedForDrop, theme }) => css`
+const AnimatedContainer = styled(FlexBox)(
+    ({ isDraggingTask, isTargetedForDrop }) => css`
         animation-direction: alternate;
         animation-duration: 300ms;
         animation-iteration-count: infinite;
@@ -38,22 +33,62 @@ const Container = styled(FlexBox).attrs({
             : 'unset'};
         animation-timing-function: ease-in-out;
         bottom: 0;
-        font-size: 3rem;
-        height: calc(${DROP_ZONE_RADIUS} * 2);
-        pointer-events: ${isDraggingTask ? 'all' : 'none'};
+        height: ${DROP_ZONE_SIZE};
         position: fixed;
         right: 0;
-        transform: scale(${isDraggingTask ? 1.5 : 1});
         transform-origin: bottom right;
-        width: calc(${DROP_ZONE_RADIUS} * 2);
+        transform: scale(${isDraggingTask ? 1.5 : 1});
+        width: ${DROP_ZONE_SIZE};
         z-index: 1000;
         ${UNIFIED_TRANSITION};
     `
 );
 
+const TrashDropZone = styled(AnimatedContainer)(
+    ({ isDraggingTask }) => `
+        pointer-events: ${isDraggingTask ? 'all' : 'none'};
+    `
+);
+
+const TrashIconContainer = styled(AnimatedContainer).attrs({
+    align: 'center',
+    justify: 'center',
+    padding: 1,
+})(
+    ({ isDraggingTask, isShowingTrashContents, isTargetedForDrop, theme }) => `
+        color: ${
+            isTargetedForDrop
+                ? '#FF0000'
+                : COLORS[theme.name][
+                      isDraggingTask || isShowingTrashContents
+                          ? 'PRIMARY'
+                          : 'TEXT_FADED'
+                  ]
+        };
+        cursor: pointer;
+        font-size: 3rem;
+        
+        &:hover {
+            color: ${COLORS[theme.name].PRIMARY};
+        }
+    `
+);
+
 const Trash = ({ appActions, appData, ...otherProps }) => {
-    const { onDeleteTask, onSelectList, onUpdateList } = appActions;
-    const { isDraggingTask, lists, selectedListId } = appData;
+    const {
+        onChangeIsShowingTrashContents,
+        onDeleteTask,
+        onSelectList,
+        onUpdateList,
+    } = appActions;
+
+    const {
+        isDraggingTask,
+        isShowingTrashContents,
+        lists,
+        selectedListId,
+    } = appData;
+
     const [dropProps] = useDrop({
         'list-id': listId => {
             if (selectedListId === listId) {
@@ -73,15 +108,26 @@ const Trash = ({ appActions, appData, ...otherProps }) => {
         'task-id': onDeleteTask,
     });
 
+    const handleClick = () =>
+        onChangeIsShowingTrashContents(!isShowingTrashContents);
+
     return (
-        <Container
-            isDraggingTask={isDraggingTask}
-            title={COPY.TIPS.DELETE_TASK}
-            {...dropProps}
-            {...otherProps}
-        >
-            {ICONS.END_ZONE}
-        </Container>
+        <>
+            <TrashIconContainer
+                isDraggingTask={isDraggingTask}
+                isShowingTrashContents={isShowingTrashContents}
+                isTargetedForDrop={dropProps.isTargetedForDrop}
+                title={COPY.TIPS.DELETE_TASK}
+                onClick={handleClick}
+            >
+                {ICONS.END_ZONE}
+            </TrashIconContainer>
+            <TrashDropZone
+                isDraggingTask={isDraggingTask}
+                {...dropProps}
+                {...otherProps}
+            />
+        </>
     );
 };
 

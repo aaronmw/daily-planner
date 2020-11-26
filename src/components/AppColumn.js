@@ -66,4 +66,29 @@ export const PrimaryAppColumn = styled(AppColumn)(
     `
 );
 
+export const SecondaryAppColumn = styled(AppColumn)(
+    ({ isTargetedForDrop, theme }) => `
+        background-color: ${COLORS[theme.name].SHADED};
+        flex-grow: 1;
+        overflow: auto;
+        position: relative;
+        
+        &:before {
+            box-shadow: ${
+                isTargetedForDrop
+                    ? `0 0 0 5px ${COLORS[theme.name].TASK_BORDER_HOVER} inset`
+                    : 'initial'
+            };
+            bottom: 0;
+            content: '';
+            left: 0;
+            pointer-events: none;
+            position: absolute;
+            right: 0;
+            top: 0;
+            z-index: 1000;
+        }
+    `
+);
+
 export default AppColumn;

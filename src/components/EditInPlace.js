@@ -68,7 +68,11 @@ const StyledTextarea = styled.textarea`
     width: 100%;
 `;
 
-const Canvas = styled(Box)``;
+const Canvas = styled(Box)(
+    ({ isEmpty }) => `
+        opacity: ${isEmpty ? 0.6 : 1};
+    `
+);
 
 const EditInPlace = ({
     doubleClickToEdit = false,

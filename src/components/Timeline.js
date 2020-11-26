@@ -8,12 +8,12 @@ import TaskCard from './TaskCard';
 import TimelineDropZone from './TimelineDropZone';
 import strToHoursAndMinutes from '../utils/strToHoursAndMinutes';
 import minutesToHeight from '../utils/minutesToHeight';
-import { COLORS, GRID_UNIT } from './atoms/tokens';
+import { COLORS, COPY, GRID_UNIT } from './atoms/tokens';
 
 const LINE_LABEL_WIDTH = '80px';
 
 const Container = styled(AppColumn).attrs({
-    label: "Today's Plan",
+    label: COPY.LABEL_FOR_TIMELINE,
 })``;
 
 const TimelineContainer = styled.div(
