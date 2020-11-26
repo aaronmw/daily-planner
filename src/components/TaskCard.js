@@ -46,6 +46,13 @@ const Container = styled(FlexBox).attrs({
             min-height,
             opacity,
             width;
+            
+        &::selection {
+            /*color: ${COLORS[theme.name].HIGH_CONTRAST_BACKGROUND};
+            background-color: ${COLORS[theme.name].HIGH_CONTRAST_TEXT};*/
+            color: purple;
+            background-color: ${COLORS[theme.name].HIGH_CONTRAST_TEXT};
+        }
 
         &:before {
             background-color: ${COLORS[theme.name].PRIMARY};
@@ -136,7 +143,7 @@ const TaskCard = ({ appActions, appData, isActive, task, ...otherProps }) => {
             duration={scheduled_minutes}
             isActive={isActive}
             tabIndex={0}
-            title={COPY.TIPS.MOVE_TASK_BETWEEN_BACKLOG_AND_TIMELINE}
+            title={COPY.TIPS.MOVE_TASK_BETWEEN_TASK_LIST_AND_TIMELINE}
             onClick={handleClick}
             {...dragProps}
             {...otherProps}

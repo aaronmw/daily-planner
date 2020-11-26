@@ -36,16 +36,16 @@ const Container = styled(AppColumn)(
     `
 );
 
-const BacklogToggleButton = ({
-    isBacklogVisible,
-    onChangeIsShowingBacklog,
+const TaskListToggleButton = ({
+    isTaskListVisible,
+    onChangeIsShowingTaskList,
 }) => (
     <ToggleButton
-        isActive={isBacklogVisible}
-        title={COPY.TIPS.TOGGLE_BACKLOG}
-        onClick={() => onChangeIsShowingBacklog(!isBacklogVisible)}
+        isActive={isTaskListVisible}
+        title={COPY.TIPS.TOGGLE_TASK_LIST}
+        onClick={() => onChangeIsShowingTaskList(!isTaskListVisible)}
     >
-        {isBacklogVisible ? ICONS.LEFT : ICONS.RIGHT}
+        {isTaskListVisible ? ICONS.LEFT : ICONS.RIGHT}
     </ToggleButton>
 );
 
@@ -57,9 +57,9 @@ const CreateFirstTaskTip = styled(Box)`
     white-space: nowrap;
 `;
 
-const Backlog = ({ appActions, appData, ...otherProps }) => {
+const TaskList = ({ appActions, appData, ...otherProps }) => {
     const {
-        onChangeIsShowingBacklog,
+        onChangeIsShowingTaskList,
         onChangeTaskPosition,
         onChangeTheme,
         onCreateTask,
@@ -67,13 +67,13 @@ const Backlog = ({ appActions, appData, ...otherProps }) => {
     } = appActions;
     const {
         incompleteTasks,
-        isBacklogVisible,
+        isTaskListVisible,
         lists,
         selectedListId,
         selectedTaskId,
         theme,
     } = appData;
-    const [isBacklogForcedOpen, setIsBacklogForcedOpen] = useState(false);
+    const [isTaskListForcedOpen, setIsTaskListForcedOpen] = useState(false);
     const selectedList = lists.find(list => list.id === selectedListId);
     const unscheduledTasks = incompleteTasks.filter(
         task =>
@@ -93,17 +93,23 @@ const Backlog = ({ appActions, appData, ...otherProps }) => {
     });
 
     useEffect(() => {
-        if (!isBacklogVisible && backlogDropProps.isTargetedForDrop) {
-            setIsBacklogForcedOpen(true);
-            onChangeIsShowingBacklog(true);
+        if (!isTaskListVisible && backlogDropProps.isTargetedForDrop) {
+            setIsTaskListForcedOpen(true);
+            onChangeIsShowingTaskList(true);
             return;
         }
 
-        if (isBacklogForcedOpen && !backlogDropProps.isTargetedForDrop) {
-            setIsBacklogForcedOpen(false);
-            onChangeIsShowingBacklog(false);
+        if (isTaskListForcedOpen && !backlogDropProps.isTargetedForDrop) {
+            setIsTaskListForcedOpen(false);
+            onChangeIsShowingTaskList(false);
         }
-    }, [backlogDropProps.isTargetedForDrop, setIsBacklogForcedOpen]);
+    }, [
+        backlogDropProps.isTargetedForDrop,
+        isTaskListForcedOpen,
+        isTaskListVisible,
+        setIsTaskListForcedOpen,
+        onChangeIsShowingTaskList,
+    ]);
 
     const [taskCardDropProps] = useDrop({
         'task-id': (taskId, evt) => {
@@ -117,14 +123,14 @@ const Backlog = ({ appActions, appData, ...otherProps }) => {
 
     return (
         <Container
-            label={!isBacklogVisible ? '' : selectedList.label}
+            label={!isTaskListVisible ? '' : selectedList.label}
             {...backlogDropProps}
             {...otherProps}
         >
-            {!isBacklogVisible ? (
-                <BacklogToggleButton
-                    isBacklogVisible={isBacklogVisible}
-                    onChangeIsShowingBacklog={onChangeIsShowingBacklog}
+            {!isTaskListVisible ? (
+                <TaskListToggleButton
+                    isTaskListVisible={isTaskListVisible}
+                    onChangeIsShowingTaskList={onChangeIsShowingTaskList}
                 />
             ) : (
                 <>
@@ -142,9 +148,11 @@ const Backlog = ({ appActions, appData, ...otherProps }) => {
                                 ? ICONS.DARK_MODE
                                 : ICONS.LIGHT_MODE}
                         </ToggleButton>
-                        <BacklogToggleButton
-                            isBacklogVisible={isBacklogVisible}
-                            onChangeIsShowingBacklog={onChangeIsShowingBacklog}
+                        <TaskListToggleButton
+                            isTaskListVisible={isTaskListVisible}
+                            onChangeIsShowingTaskList={
+                                onChangeIsShowingTaskList
+                            }
                         />
                     </ToolBar>
                     <FlexBox
@@ -197,4 +205,4 @@ const Backlog = ({ appActions, appData, ...otherProps }) => {
     );
 };
 
-export default memo(Backlog);
+export default memo(TaskList);

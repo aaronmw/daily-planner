@@ -1,5 +1,7 @@
+import React from 'react';
 import { darken, lighten, setLightness, transparentize } from 'polished';
 import MOTIVATIONAL_DESCRIPTORS from './copy/motivational-descriptors';
+import Icon from './Icon';
 
 export const SIDEBAR_DEFAULT_WIDTH = '30vw';
 export const SIDEBAR_EXTENDED_WIDTH = '40vw';
@@ -46,14 +48,14 @@ COPY.NEW_TASK_NOTES = '';
 COPY.TIPS = {
     CREATE_NEW_TASK: 'Press [N] to create a [N]ew task in the current list',
     DELETE_TASK: 'Press [T] to move the selected task to the [T]rash',
-    MOVE_TASK_BETWEEN_BACKLOG_AND_TIMELINE:
-        'Press [⌘]+[LEFT or RIGHT] to move the selected task to the Backlog or Timeline, respectively',
+    MOVE_TASK_BETWEEN_TASK_LIST_AND_TIMELINE:
+        'Press [⌘]+[LEFT or RIGHT] to move the selected task to the TaskList or Timeline, respectively',
     MOVE_BETWEEN_LISTS:
         'Press [⌘]+[SHIFT]+[LEFT or RIGHT] to move between your lists',
     PREFIX: 'Tip ☝️: ',
     SETTING_DURATION:
         'Press keys [1] to [6] to quickly adjust your time estimate for the selected task',
-    TOGGLE_BACKLOG:
+    TOGGLE_TASK_LIST:
         'Press [B] to show / hide the side[B]ar of unscheduled tasks',
     TOGGLE_DARK_MODE: 'Press [D] to toggle [D]ark Mode',
     TOGGLE_LIST_MANAGER: 'Press [L] to see your [L]ists',
@@ -64,20 +66,20 @@ export { COPY };
 const PRIMARY = '#0094FF';
 
 const DARK = {};
-DARK.PRIMARY = PRIMARY;
+DARK.PRIMARY = '#FFB73E';
 DARK.PRIMARY_FADED = darken(0.2, DARK.PRIMARY);
 DARK.BACKGROUND = '#00010F';
 DARK.HIGH_CONTRAST_BACKGROUND = DARK.PRIMARY;
-DARK.HIGH_CONTRAST_TEXT = '#FFFFFF';
-DARK.SHADED = lighten(0.15, DARK.BACKGROUND);
+DARK.HIGH_CONTRAST_TEXT = DARK.BACKGROUND;
+DARK.SHADED = setLightness(0.04, DARK.PRIMARY);
 DARK.SHADOW = transparentize(0.95, DARK.BACKGROUND);
-DARK.TEXT = setLightness(0.85, DARK.PRIMARY);
-DARK.TEXT_FADED = setLightness(0.4, DARK.TEXT);
+DARK.TEXT = DARK.PRIMARY;
+DARK.TEXT_FADED = setLightness(0.35, DARK.TEXT);
 DARK.TASK_BORDER = transparentize(0.5, DARK.PRIMARY);
 DARK.TASK_BORDER_HOVER = transparentize(0.5, DARK.PRIMARY);
 DARK.TASK_BORDER_ACTIVE = DARK.PRIMARY;
-DARK.BORDER = transparentize(0.5, DARK.TEXT_FADED);
-DARK.BORDER_FADED = transparentize(0.5, DARK.BORDER);
+DARK.BORDER = setLightness(0.15, DARK.PRIMARY);
+DARK.BORDER_FADED = DARK.TEXT_FADED;
 
 const LIGHT = {};
 LIGHT.PRIMARY = PRIMARY;
@@ -93,20 +95,64 @@ LIGHT.TASK_BORDER = transparentize(0.5, LIGHT.PRIMARY);
 LIGHT.TASK_BORDER_HOVER = transparentize(0.5, LIGHT.PRIMARY);
 LIGHT.TASK_BORDER_ACTIVE = LIGHT.PRIMARY;
 LIGHT.BORDER = transparentize(0.75, LIGHT.TEXT);
-LIGHT.BORDER_FADED = transparentize(0.5, LIGHT.BORDER);
+LIGHT.BORDER_FADED = transparentize(0.25, LIGHT.TEXT_FADED);
 
 export const COLORS = {
     DARK,
     LIGHT,
 };
 
-export const ICONS = {
-    DARK_MODE: '🌚',
-    END_ZONE: '🗑',
-    LEFT: '👈',
-    LIGHT_MODE: '🌞',
-    LIST_MANAGER: '📚',
-    RIGHT: '👉',
-    TASK_DEFAULT: '📌',
-    TASK_DETAILS: '📌',
+const ICON_PACKS = {
+    EMOJI: {
+        DARK_MODE: '🌚',
+        END_ZONE: '🗑',
+        LEFT: '👈',
+        LIGHT_MODE: '🌞',
+        LIST_MANAGER: '📚',
+        RIGHT: '👉',
+        TASK_DETAILS: '📌',
+    },
+    FONT_AWESOME: {
+        DARK_MODE: {
+            ICON_NAME: 'moon-stars',
+            STYLE_NAME: 'light',
+        },
+        END_ZONE: {
+            ICON_NAME: 'trash-alt',
+            STYLE_NAME: 'light',
+        },
+        LEFT: {
+            ICON_NAME: 'long-arrow-left',
+            STYLE_NAME: 'light',
+        },
+        LIGHT_MODE: {
+            ICON_NAME: 'sun',
+            STYLE_NAME: 'light',
+        },
+        LIST_MANAGER: {
+            ICON_NAME: 'book',
+            STYLE_NAME: 'light',
+        },
+        RIGHT: {
+            ICON_NAME: 'long-arrow-right',
+            STYLE_NAME: 'light',
+        },
+        TASK_DETAILS: {
+            ICON_NAME: 'thumbtack',
+            STYLE_NAME: 'light',
+        },
+    },
 };
+
+Object.keys(ICON_PACKS.FONT_AWESOME).forEach(key => {
+    const { ICON_NAME, STYLE_NAME } = ICON_PACKS.FONT_AWESOME[key];
+    ICON_PACKS.FONT_AWESOME[key] = (
+        <Icon iconName={ICON_NAME} styleName={STYLE_NAME} />
+    );
+});
+
+const ICONS = ICON_PACKS.FONT_AWESOME;
+
+ICONS.TASK_DEFAULT = '📌';
+
+export { ICONS };

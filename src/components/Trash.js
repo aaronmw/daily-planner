@@ -2,6 +2,7 @@ import React from 'react';
 import { transparentize } from 'polished';
 import styled, { css, keyframes } from 'styled-components';
 import useDrop from '../hooks/useDrop';
+import FlexBox from './atoms/FlexBox';
 import {
     COLORS,
     COPY,
@@ -21,7 +22,11 @@ const pulsingAnimation = ({ from, to }) => keyframes`
     }
 `;
 
-const Container = styled.div(
+const Container = styled(FlexBox).attrs({
+    align: 'flex-end',
+    justify: 'flex-end',
+    padding: 1,
+})(
     ({ isDraggingTask, isTargetedForDrop, theme }) => css`
         animation-direction: alternate;
         animation-duration: 300ms;
@@ -32,33 +37,17 @@ const Container = styled.div(
             ? pulsingAnimation({ from: 1, to: 1.6 })
             : 'unset'};
         animation-timing-function: ease-in-out;
-        background: ${transparentize(
-            isTargetedForDrop || isDraggingTask ? 1 : 0.75,
-            COLORS[theme.name].PRIMARY
-        )};
-        bottom: calc(${DROP_ZONE_RADIUS} * -1);
-        border-radius: calc(${DROP_ZONE_RADIUS} * 2);
+        bottom: 0;
+        font-size: 3rem;
         height: calc(${DROP_ZONE_RADIUS} * 2);
         pointer-events: ${isDraggingTask ? 'all' : 'none'};
         position: fixed;
-        right: calc(${DROP_ZONE_RADIUS} * -1);
+        right: 0;
         transform: scale(${isDraggingTask ? 1.5 : 1});
+        transform-origin: bottom right;
         width: calc(${DROP_ZONE_RADIUS} * 2);
         z-index: 1000;
         ${UNIFIED_TRANSITION};
-
-        &:before {
-            align-items: center;
-            content: '${ICONS.END_ZONE}';
-            display: flex;
-            font-size: 3rem;
-            justify-content: center;
-            height: calc(${DROP_ZONE_RADIUS} * 1.25);
-            left: 0;
-            position: absolute;
-            top: 0;
-            width: calc(${DROP_ZONE_RADIUS} * 1.25);
-        }
     `
 );
 
@@ -90,7 +79,9 @@ const Trash = ({ appActions, appData, ...otherProps }) => {
             title={COPY.TIPS.DELETE_TASK}
             {...dropProps}
             {...otherProps}
-        />
+        >
+            {ICONS.END_ZONE}
+        </Container>
     );
 };
 

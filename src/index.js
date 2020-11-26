@@ -5,7 +5,7 @@ import sample from 'lodash/sample';
 import { PrimaryAppColumn } from './components/AppColumn';
 import { ToggleButton } from './components/atoms/Button';
 import Transition from './components/atoms/Transition';
-import Backlog from './components/Backlog';
+import TaskList from './components/TaskList';
 import CompletedTasksDropZone from './components/Trash';
 import ListManager from './components/ListManager';
 import TaskDetails from './components/TaskDetails';
@@ -31,7 +31,7 @@ import {
 } from './components/atoms/tokens';
 
 function App() {
-    const [isShowingBacklog, setIsShowingBacklog] = usePersistentState(
+    const [isShowingTaskList, setIsShowingTaskList] = usePersistentState(
         'is-backlog-visible',
         true
     );
@@ -67,7 +67,7 @@ function App() {
     );
     const hasIncompleteTasks = incompleteTasks.length;
     const hasUnarchivedList = lists.filter(list => !list.isArchived).length;
-    const isBacklogVisible = hasUnarchivedList && isShowingBacklog;
+    const isTaskListVisible = hasUnarchivedList && isShowingTaskList;
 
     useEffect(() => {
         const handleDragOver = () => setIsDraggingTask(true);
@@ -129,7 +129,7 @@ function App() {
 
     const onSelectList = listId => {
         setSelectedListId(listId);
-        setIsShowingBacklog(true);
+        setIsShowingTaskList(true);
     };
 
     const onUpdateTask = useCallback(
@@ -231,7 +231,7 @@ function App() {
         ]
     );
 
-    const onChangeIsShowingBacklog = setIsShowingBacklog;
+    const onChangeIsShowingTaskList = setIsShowingTaskList;
 
     const onChangeIsShowingListManager = useCallback(
         newIsShowingListManager => {
@@ -239,11 +239,11 @@ function App() {
                 setIsShowingListManager(newIsShowingListManager);
 
                 if (newIsShowingListManager) {
-                    setIsShowingBacklog(true);
+                    setIsShowingTaskList(true);
                 }
             });
         },
-        [setIsShowingBacklog, setIsShowingListManager, transition]
+        [setIsShowingTaskList, setIsShowingListManager, transition]
     );
 
     const onDeleteTask = useCallback(
@@ -307,7 +307,7 @@ function App() {
         [onUpdateTask, selectedTaskId]
     );
 
-    const moveTaskToBacklog = useCallback(
+    const moveTaskToTaskList = useCallback(
         evt => {
             evt.preventDefault();
             onUpdateTask(selectedTaskId, {
@@ -360,12 +360,12 @@ function App() {
         [onUpdateTask, selectedTaskId]
     );
 
-    const toggleBacklogVisibility = useCallback(
+    const toggleTaskListVisibility = useCallback(
         evt => {
             evt.preventDefault();
-            onChangeIsShowingBacklog(!isShowingBacklog);
+            onChangeIsShowingTaskList(!isShowingTaskList);
         },
-        [isShowingBacklog, onChangeIsShowingBacklog]
+        [isShowingTaskList, onChangeIsShowingTaskList]
     );
 
     const toggleDarkMode = useCallback(
@@ -417,12 +417,12 @@ function App() {
                 };
             }, {}),
             'cmd + arrowRight': moveTaskToTimeline,
-            'cmd + arrowLeft': moveTaskToBacklog,
+            'cmd + arrowLeft': moveTaskToTaskList,
             'cmd + shift + arrowRight': selectNextList,
             'cmd + shift + arrowLeft': selectPreviousList,
             'cmd + shift + ]': selectNextList,
             'cmd + shift + [': selectPreviousList,
-            'b': toggleBacklogVisibility,
+            'b': toggleTaskListVisibility,
             'd': toggleDarkMode,
             'e': toggleIsEditingCurrentTask,
             'l': toggleIsShowingListManager,
@@ -432,12 +432,12 @@ function App() {
     }, [
         createNewTask,
         deleteCurrentTask,
-        moveTaskToBacklog,
+        moveTaskToTaskList,
         moveTaskToTimeline,
         selectNextList,
         selectPreviousList,
         setTaskDuration,
-        toggleBacklogVisibility,
+        toggleTaskListVisibility,
         toggleDarkMode,
         toggleIsEditingCurrentTask,
         toggleIsShowingListManager,
@@ -446,7 +446,7 @@ function App() {
     useKeyboardShortcuts(keyMap);
 
     const appActions = {
-        onChangeIsShowingBacklog,
+        onChangeIsShowingTaskList,
         onChangeTaskPosition,
         onChangeIsShowingListManager,
         onChangeTheme,
@@ -462,7 +462,7 @@ function App() {
 
     const appData = {
         incompleteTasks,
-        isBacklogVisible,
+        isTaskListVisible,
         isCreatingList,
         isCreatingTask,
         isDraggingTask,
@@ -474,7 +474,7 @@ function App() {
         theme: themeName,
     };
 
-    const columnWidths = isBacklogVisible
+    const columnWidths = isTaskListVisible
         ? {
               backlog: SIDEBAR_DEFAULT_WIDTH,
               listManager: '40vw',
@@ -528,9 +528,17 @@ function App() {
                                 )
                             }
                         >
-                            {isShowingListManager
-                                ? `${ICONS.TASK_DETAILS} ${COPY.LABEL_FOR_TASK_DETAILS}`
-                                : `${ICONS.LIST_MANAGER} ${COPY.LABEL_FOR_LIST_MANAGER}`}
+                            {isShowingListManager ? (
+                                <FlexBox spacing={0.25}>
+                                    {ICONS.TASK_DETAILS}
+                                    <span>{COPY.LABEL_FOR_TASK_DETAILS}</span>
+                                </FlexBox>
+                            ) : (
+                                <FlexBox spacing={0.25}>
+                                    {ICONS.LIST_MANAGER}
+                                    <span>{COPY.LABEL_FOR_LIST_MANAGER}</span>
+                                </FlexBox>
+                            )}
                         </ToggleButton>
                     </ToolBar>
                     <Transition isTransitioning={isTransitioning}>
@@ -550,7 +558,7 @@ function App() {
                         )}
                     </Transition>
                 </PrimaryAppColumn>
-                <Backlog
+                <TaskList
                     appActions={appActions}
                     appData={appData}
                     style={{
