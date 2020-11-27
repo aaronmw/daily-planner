@@ -19,7 +19,7 @@ import {
 const Container = styled(Box).attrs({
     isFlexible: true,
 })(
-    ({ isEditing, theme, tracingElementStyles = () => {} }) => `
+    ({ isEditable, isEditing, theme, tracingElementStyles = () => {} }) => `
         cursor: ${isEditing ? 'text' : 'pointer'};
         position: relative;
         user-select: ${isEditing ? 'text' : 'none'};
@@ -56,7 +56,7 @@ const Container = styled(Box).attrs({
         &:focus,
         &:hover {
             &:before {
-                opacity: 1;
+                opacity: ${isEditable ? 1 : 0};
             }
         }
     `
@@ -75,14 +75,15 @@ const Canvas = styled(Box)(
 );
 
 const EditInPlace = ({
+    canvasStyles = {},
     doubleClickToEdit = false,
+    isEditable = true,
     isMultiLine = false,
     isRemotelyActivated = false,
     placeholder = 'Empty',
     render = value => value,
     tracingElementStyles = () => {},
     value = '',
-    canvasStyles = {},
     onSave = () => {},
     ...otherProps
 }) => {
@@ -114,11 +115,11 @@ const EditInPlace = ({
     }, [bufferedValue, isEditing, measuringElementRef]);
 
     const handleClick = useCallback(() => {
-        if (!isEditing) {
+        if (isEditable && !isEditing) {
             setBufferedValue(value);
             setIsEditing(true);
         }
-    }, [isEditing, setBufferedValue, setIsEditing, value]);
+    }, [isEditable, isEditing, setBufferedValue, setIsEditing, value]);
 
     useEffect(() => {
         if (isRemotelyActivated === true) {
@@ -174,6 +175,7 @@ const EditInPlace = ({
 
     return (
         <Container
+            isEditable={isEditable}
             isEditing={isEditing}
             ref={containerElementRef}
             tabIndex={0}

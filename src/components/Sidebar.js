@@ -55,7 +55,7 @@ const Sidebar = ({ appActions, appData, children, ...otherProps }) => {
                 !isSidebarOpen
                     ? ''
                     : isShowingTrashContents
-                    ? COPY.LABEL_FOR_TRASH
+                    ? COPY.LABEL_FOR_TRASHED_TASKS
                     : selectedList.label
             }
             {...sidebarDropProps}

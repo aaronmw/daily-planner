@@ -39,6 +39,7 @@ const TimelineDropTarget = memo(
         const [dropProps] = useDrop({
             'task-id': taskId =>
                 onUpdateTask(taskId, {
+                    isComplete: false,
                     scheduled: true,
                     scheduled_time: newTime,
                 }),

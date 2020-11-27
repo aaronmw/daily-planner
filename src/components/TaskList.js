@@ -3,14 +3,13 @@ import useDrop from '../hooks/useDrop';
 import minutesToHeight from '../utils/minutesToHeight';
 import toInt from '../utils/toInt';
 import { GhostButton } from './atoms/Button';
-import FlexBox from './atoms/FlexBox';
 import { COPY } from './atoms/tokens';
-import TaskCard from './TaskCard';
+import TaskCard, { TaskCardContainer } from './TaskCard';
 
 const TaskList = ({ appActions, appData, ...otherProps }) => {
     const { onChangeTaskPosition, onCreateTask } = appActions;
 
-    const { incompleteTasks, lists, selectedListId, selectedTaskId } = appData;
+    const { incompleteTasks, lists, selectedListId } = appData;
 
     const selectedList = lists.find(list => list.id === selectedListId);
 
@@ -32,14 +31,7 @@ const TaskList = ({ appActions, appData, ...otherProps }) => {
     });
 
     return (
-        <FlexBox
-            isFlexible
-            justify="flex-start"
-            direction="column"
-            spacing={0.5}
-            padding={1}
-            {...otherProps}
-        >
+        <TaskCardContainer {...otherProps}>
             <GhostButton
                 style={{
                     height: minutesToHeight(30),
@@ -54,12 +46,11 @@ const TaskList = ({ appActions, appData, ...otherProps }) => {
                     key={task.id}
                     appActions={appActions}
                     appData={appData}
-                    isActive={selectedTaskId === task.id}
                     task={task}
                     {...taskCardDropProps}
                 />
             ))}
-        </FlexBox>
+        </TaskCardContainer>
     );
 };
 

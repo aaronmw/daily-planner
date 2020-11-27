@@ -12,24 +12,36 @@ const Container = styled(FlexBox).attrs({
     direction: 'column',
     isFlexible: true,
 })(
-    ({ theme }) => `
+    ({ isDisabled, theme }) => `
+        position: relative;
+        
+        &:before {
+            background-color: ${COLORS[theme.name].BACKGROUND};
+            bottom: 0;
+            content: '';
+            left: 0;
+            opacity: ${isDisabled ? 0.25 : 0};
+            pointer-events: ${isDisabled ? 'all' : 'none'};
+            position: absolute;
+            right: 0;
+            top: 0;
+            z-index: 200;
+        }
     `
 );
 
 const ContentContainer = styled(FlexBox).attrs({
     direction: 'column',
-})(
-    ({ theme }) => `
-        height: calc(100vh - ${GRID_UNIT});
-        overflow: auto;
-        position: relative;
-        ${UNIFIED_TRANSITION};
-        
-        & > * {
-            align-self: stretch;
-        }
-    `
-);
+})`
+    height: calc(100vh - ${GRID_UNIT});
+    overflow: auto;
+    position: relative;
+    ${UNIFIED_TRANSITION};
+
+    & > * {
+        align-self: stretch;
+    }
+`;
 
 const ColumnHeader = styled(FlexBox).attrs({
     justify: 'center',
@@ -48,12 +60,22 @@ const ColumnHeader = styled(FlexBox).attrs({
     `
 );
 
-const AppColumn = ({ children, label, ...otherProps }) => (
-    <Container>
-        <ColumnHeader>{label}</ColumnHeader>
-        <ContentContainer {...otherProps}>{children}</ContentContainer>
-    </Container>
-);
+const AppColumn = ({
+    children,
+    disabledIf = [false],
+    label,
+    ...otherProps
+}) => {
+    const isDisabled =
+        disabledIf.length && disabledIf.some(condition => condition === true);
+
+    return (
+        <Container isDisabled={isDisabled}>
+            <ColumnHeader>{label}</ColumnHeader>
+            <ContentContainer {...otherProps}>{children}</ContentContainer>
+        </Container>
+    );
+};
 
 export const PrimaryAppColumn = styled(AppColumn)(
     ({ theme }) => `

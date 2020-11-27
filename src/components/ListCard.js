@@ -10,13 +10,15 @@ import {
     BORDER_RADIUS,
     COLORS,
     COPY,
+    GRID_UNIT,
     LIST_CARD_HEIGHT,
     LIST_CARD_SPACING,
     LIST_CARD_WIDTH,
     UNIFIED_TRANSITION,
 } from './atoms/tokens';
+import EditInPlace from './EditInPlace';
 
-const StyledListCard = styled(FlexBox).attrs({
+const Container = styled(FlexBox).attrs({
     align: 'flex-start',
     direction: 'column',
     justify: 'space-between',
@@ -66,6 +68,7 @@ const StyledListCard = styled(FlexBox).attrs({
         }
     `
 );
+
 export const ListCardTaskIconContainer = styled(FlexBox).attrs({
     justify: 'flex-start',
     paddingX: 0.25,
@@ -81,8 +84,51 @@ export const ListCardTaskIconContainer = styled(FlexBox).attrs({
         width: calc(100% - (5px * 2));
     `
 );
-export const ListCard = ({ appActions, children, listId, ...otherProps }) => {
-    const { onUpdateTask } = appActions;
+
+export const GhostListCard = styled(GhostButton).attrs({
+    align: 'center',
+    justify: 'center',
+})`
+    height: ${LIST_CARD_HEIGHT};
+    margin-bottom: ${LIST_CARD_SPACING};
+    width: ${LIST_CARD_WIDTH};
+`;
+
+export const ListCardContainer = styled(FlexBox).attrs({
+    align: 'flex-start',
+    isFlexible: true,
+    justify: 'flex-start',
+    padding: 1,
+    wrapped: true,
+})(
+    ({ theme }) => `
+        align-content: flex-start;
+        background-color: ${COLORS[theme.name].SHADED};
+        height: 100%;
+        overflow: auto;
+        padding-bottom: calc(${GRID_UNIT} * 1.5);
+    `
+);
+
+const ListCard = ({
+    appActions,
+    appData,
+    listId,
+    isEditable = true,
+    ...otherProps
+}) => {
+    const { onUpdateList, onUpdateTask } = appActions;
+
+    const { isCreatingList, lists, selectedListId, tasks } = appData;
+
+    const list = lists.find(list => list.id === listId);
+
+    const tasksInList = tasks.filter(
+        task => task.list_id === listId && !task.isComplete
+    );
+
+    const isActive = listId === selectedListId;
+
     const listCardElementRef = useRef(null);
 
     const [dragProps] = useDrag({ 'list-id': listId });
@@ -114,8 +160,12 @@ export const ListCard = ({ appActions, children, listId, ...otherProps }) => {
 
     useKeyboardShortcuts(keyMap, listCardElementRef);
 
+    const tracingElementStyles = theme => `
+        border-color: ${COLORS[theme.name].HIGH_CONTRAST_TEXT}
+    `;
+
     return (
-        <StyledListCard
+        <Container
             data-list-id={listId}
             ref={listCardElementRef}
             tabIndex={0}
@@ -124,15 +174,33 @@ export const ListCard = ({ appActions, children, listId, ...otherProps }) => {
             {...dropProps}
             {...otherProps}
         >
-            {children}
-        </StyledListCard>
+            <EditInPlace
+                isEditable={isEditable}
+                isRemotelyActivated={
+                    isCreatingList && selectedListId === listId
+                }
+                marginX={0.75}
+                marginY={0.5}
+                style={{
+                    alignSelf: 'stretch',
+                    flexGrow: 0,
+                    flexShrink: 0,
+                }}
+                tracingElementStyles={tracingElementStyles}
+                value={list.label}
+                onSave={newLabel => {
+                    onUpdateList(listId, { label: newLabel });
+                }}
+            />
+            {tasksInList.length >= 1 && (
+                <ListCardTaskIconContainer isActive={isActive}>
+                    {tasksInList.map(task => (
+                        <span key={task.id}>{task.icon}</span>
+                    ))}
+                </ListCardTaskIconContainer>
+            )}
+        </Container>
     );
 };
-export const GhostListCard = styled(GhostButton).attrs({
-    align: 'center',
-    justify: 'center',
-})`
-    height: ${LIST_CARD_HEIGHT};
-    margin-bottom: ${LIST_CARD_SPACING};
-    width: ${LIST_CARD_WIDTH};
-`;
+
+export default ListCard;

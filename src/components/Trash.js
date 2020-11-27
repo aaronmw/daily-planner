@@ -67,6 +67,7 @@ const TrashIconContainer = styled(AnimatedContainer).attrs({
         };
         cursor: pointer;
         font-size: 3rem;
+        opacity: ${!isTargetedForDrop && !isDraggingTask ? 0.6 : 1};
         
         &:hover {
             color: ${COLORS[theme.name].PRIMARY};

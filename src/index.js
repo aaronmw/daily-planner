@@ -28,7 +28,8 @@ import TaskList from './components/TaskList';
 import Timeline from './components/Timeline';
 import ToolBar from './components/ToolBar';
 import CompletedTasksDropZone from './components/Trash';
-import TrashContents from './components/TrashContents';
+import TrashedLists from './components/TrashedLists';
+import TrashedTasks from './components/TrashedTasks';
 import useKeyboardShortcuts from './hooks/useKeyboardShortcuts';
 import usePersistentState from './hooks/usePersistentState';
 
@@ -253,10 +254,15 @@ function App() {
         if (!isShowingSidebar) {
             setIsShowingSidebar(true);
         }
+        if (!isShowingListManager) {
+            setIsShowingListManager(true);
+        }
         setIsShowingTrashContents(!isShowingTrashContents);
     }, [
+        isShowingListManager,
         isShowingSidebar,
         isShowingTrashContents,
+        setIsShowingListManager,
         setIsShowingSidebar,
         setIsShowingTrashContents,
     ]);
@@ -428,6 +434,16 @@ function App() {
         [onDeleteTask, selectedTaskId]
     );
 
+    const goBack = useCallback(() => {
+        setIsShowingTrashContents(current => {
+            if (current) {
+                return false;
+            }
+        });
+
+        setIsShowingListManager(current => !current);
+    }, [setIsShowingListManager, setIsShowingTrashContents]);
+
     const keyMap = useMemo(() => {
         return {
             ...[15, 30, 45, 60, 90, 120].reduce((acc, duration, index) => {
@@ -445,6 +461,7 @@ function App() {
             'b': toggleTaskListVisibility,
             'd': toggleDarkMode,
             'e': toggleIsEditingCurrentTask,
+            'escape': goBack,
             'l': toggleIsShowingListManager,
             'n': createNewTask,
             't': deleteCurrentTask,
@@ -452,6 +469,7 @@ function App() {
     }, [
         createNewTask,
         deleteCurrentTask,
+        goBack,
         moveTaskToTaskList,
         moveTaskToTimeline,
         selectNextList,
@@ -517,7 +535,7 @@ function App() {
             <FlexBox align="stretch">
                 <Sidebar appActions={appActions} appData={appData}>
                     {isShowingTrashContents ? (
-                        <TrashContents
+                        <TrashedTasks
                             appActions={appActions}
                             appData={appData}
                         />
@@ -527,8 +545,11 @@ function App() {
                 </Sidebar>
 
                 <PrimaryAppColumn
+                    disabledIf={[!isDraggingTask && !hasIncompleteTasks]}
                     label={
-                        isShowingListManager
+                        isShowingTrashContents
+                            ? COPY.LABEL_FOR_TRASHED_LISTS
+                            : isShowingListManager
                             ? COPY.LABEL_FOR_LIST_MANAGER
                             : COPY.LABEL_FOR_TASK_DETAILS
                     }
@@ -562,7 +583,12 @@ function App() {
                         </ToggleButton>
                     </ToolBar>
                     <Transition isTransitioning={isTransitioning}>
-                        {isShowingListManager ? (
+                        {isShowingTrashContents ? (
+                            <TrashedLists
+                                appActions={appActions}
+                                appData={appData}
+                            />
+                        ) : isShowingListManager ? (
                             <ListManager
                                 appActions={appActions}
                                 appData={appData}
@@ -571,9 +597,6 @@ function App() {
                             <TaskDetails
                                 appActions={appActions}
                                 appData={appData}
-                                style={{
-                                    opacity: hasIncompleteTasks ? 1 : 0.25,
-                                }}
                             />
                         )}
                     </Transition>
@@ -582,12 +605,11 @@ function App() {
                 <Timeline
                     appActions={appActions}
                     appData={appData}
+                    disabledIf={[!isDraggingTask && !hasIncompleteTasks]}
                     selectedTaskId={selectedTaskId}
                     from={TIMELINE_FROM}
                     style={{
-                        opacity: hasIncompleteTasks ? 1 : 0.25,
                         width: columnWidths.timeline,
-                        pointerEvents: hasIncompleteTasks ? 'all' : 'none',
                     }}
                     tasks={incompleteTasks}
                     to={TIMELINE_TO}

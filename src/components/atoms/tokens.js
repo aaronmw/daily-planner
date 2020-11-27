@@ -9,7 +9,7 @@ export const BORDER_RADIUS = '3px';
 export const BORDER_WIDTH = '1px';
 export const BULLET_SIZE = '10px';
 export const DURATION_OPTIONS = [15, 30, 45, 60, 90, 120];
-export const GRID_UNIT = '30px';
+export const GRID_UNIT = '25px';
 export const FONTS = {
     NORMAL: { LINE_HEIGHT: '1.4em', SIZE: `calc(${GRID_UNIT} * 0.5)` },
     LARGE: { LINE_HEIGHT: '1.4em', SIZE: `calc(${GRID_UNIT} * 0.75)` },
@@ -38,11 +38,15 @@ const COPY = {};
 COPY.MOTIVATIONAL_DESCRIPTORS = MOTIVATIONAL_DESCRIPTORS;
 COPY.EMPTY_LABEL = '...label?';
 COPY.EMPTY_NOTES = '...notes?';
-COPY.EMPTY_TRASH = 'Trash is Empty';
+COPY.EMPTY_TRASHED_LISTS = 'No Trashed Lists';
+COPY.EMPTY_TRASHED_TASKS = 'No Trashed Tasks';
 COPY.LABEL_FOR_LIST_MANAGER = 'Switch Lists';
+COPY.LABEL_FOR_RESTORING_LIST = 'Restore this List';
+COPY.LABEL_FOR_RESTORING_TASK = 'Restore this Task';
 COPY.LABEL_FOR_TASK_DETAILS = 'Back to Task';
 COPY.LABEL_FOR_TIMELINE = "Today's Schedule";
-COPY.LABEL_FOR_TRASH = 'Trash Contents';
+COPY.LABEL_FOR_TRASHED_LISTS = 'Trashed Lists';
+COPY.LABEL_FOR_TRASHED_TASKS = 'Trashed Tasks';
 COPY.CREATE_LIST_LABEL = 'Create List';
 COPY.CREATE_TASK_LABEL = 'Create Task';
 COPY.NEW_LIST_LABEL = 'New List';

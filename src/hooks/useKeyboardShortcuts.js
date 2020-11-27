@@ -40,18 +40,22 @@ const buildKeyboardShortcutHandler = (keyMap, scopedToElementRef) => evt => {
             .join('+');
 
         if (currentKeySequence === shortcutKeySequence) {
-            const scopedElement = scopedToElementRef.current;
+            const scopedToElement = scopedToElementRef !== null;
+            const scopedElement = scopedToElement && scopedToElementRef.current;
             const scopedToAnInput = scopedElement && isInput(scopedElement);
-            const elementWithFocusIsAnInput = isInput(document.activeElement);
+            const firedOnAnInput = isInput(evt.target);
 
             if (
                 (scopedElement && evt.target === scopedElement) ||
-                scopedToAnInput
+                (firedOnAnInput && !scopedToAnInput)
             ) {
                 evt.stopPropagation();
             }
 
-            if (!scopedToAnInput && elementWithFocusIsAnInput) {
+            if (
+                (firedOnAnInput && !scopedToAnInput) ||
+                (scopedToElement && !scopedElement)
+            ) {
                 return false;
             }
 
@@ -60,7 +64,7 @@ const buildKeyboardShortcutHandler = (keyMap, scopedToElementRef) => evt => {
     });
 };
 
-const useKeyboardShortcuts = (keyMap, targetElementRef = { current: null }) => {
+const useKeyboardShortcuts = (keyMap, targetElementRef = null) => {
     useEffect(() => {
         const onKeyDown = buildKeyboardShortcutHandler(
             keyMap,

@@ -20,7 +20,7 @@ const Container = styled(FlexBox).attrs({
     spacing: 0.5,
     paddingX: 0.5,
 })(
-    ({ duration, isActive, isDragging, isTargetedForDrop, theme }) => `
+    ({ duration, isActive, isDragging, theme }) => `
         background-color: ${COLORS[theme.name].BACKGROUND};
         border-radius: ${BORDER_RADIUS};
         box-shadow:
@@ -122,10 +122,23 @@ const CardIcon = styled(FlexBox).attrs({
     `
 );
 
-const TaskCard = ({ appActions, appData, isActive, task, ...otherProps }) => {
+export const TaskCardContainer = styled(FlexBox).attrs({
+    isFlexible: true,
+    justify: 'flex-start',
+    direction: 'column',
+    spacing: 0.5,
+    padding: 1,
+})``;
+
+const TaskCard = ({ appActions, appData, task, ...otherProps }) => {
     const { onImmediatelySelectTask, onTransitionToTask } = appActions;
-    const { isShowingListManager } = appData;
+
+    const { isShowingListManager, selectedTaskId } = appData;
+
     const { icon, id, label, scheduled_minutes } = task;
+
+    const isActive = task.id === selectedTaskId;
+
     const [dragProps] = useDrag({ 'task-id': id });
 
     const handleClick = () => {

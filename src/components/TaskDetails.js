@@ -129,6 +129,7 @@ const TaskDetails = ({ appActions = {}, appData = {} }) => {
                     )}
                     canvasStyles={{
                         bottom: 0,
+                        fontSize: FONTS.LARGE.SIZE,
                         left: 0,
                         overflow: 'auto',
                         position: 'absolute',
