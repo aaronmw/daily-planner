@@ -15,16 +15,6 @@ export const FONTS = {
     LARGE: { LINE_HEIGHT: '1.4em', SIZE: `calc(${GRID_UNIT} * 0.75)` },
 };
 export const HOURS_PER_SCREEN = 10;
-export const INITIAL_LISTS = [
-    {
-        id: 1,
-        isArchived: false,
-        label: 'Default List',
-    },
-];
-export const INITIAL_SELECTED_LIST_ID = (INITIAL_LISTS[0] || {}).id;
-export const INITIAL_TASKS = [];
-export const INITIAL_SELECTED_TASK_ID = (INITIAL_TASKS[0] || {}).id;
 export const LIST_CARD_HEIGHT = `calc(${GRID_UNIT} * 8)`;
 export const LIST_CARD_SPACING = `calc(${GRID_UNIT} * 0.5)`;
 export const LIST_CARD_WIDTH = `calc((100% - (${LIST_CARD_SPACING} * 2)) / 3)`;
@@ -53,13 +43,14 @@ COPY.NEW_LIST_LABEL = 'New List';
 COPY.NEW_TASK_LABEL = `New Task`;
 COPY.NEW_TASK_NOTES = '';
 COPY.TIPS = {
+    BASICALLY:
+        'Make lists of tasks. Every day, schedule your most important ones',
     CREATE_NEW_TASK: 'Press [N] to create a [N]ew task in the current list',
     DELETE_TASK: 'Press [T] to move the selected task to the [T]rash',
     MOVE_TASK_BETWEEN_TASK_LIST_AND_TIMELINE:
         'Press [⌘]+[LEFT or RIGHT] to move the selected task to the TaskList or Timeline, respectively',
     MOVE_BETWEEN_LISTS:
         'Press [⌘]+[SHIFT]+[LEFT or RIGHT] to move between your lists',
-    PREFIX: 'Tip ☝️: ',
     SETTING_DURATION:
         'Press keys [1] to [6] to quickly adjust your time estimate for the selected task',
     TOGGLE_TASK_LIST:
@@ -69,6 +60,33 @@ COPY.TIPS = {
 };
 
 export { COPY };
+
+export const INITIAL_LISTS = [
+    {
+        id: 1,
+        isArchived: false,
+        label: 'User Manual',
+    },
+];
+export const INITIAL_SELECTED_LIST_ID = (INITIAL_LISTS[0] || {}).id;
+
+export const INITIAL_TASKS = Object.keys(COPY.TIPS).map(tipId => {
+    const label = COPY.TIPS[tipId];
+
+    return {
+        icon: '☝️',
+        id: tipId,
+        list_id: INITIAL_SELECTED_LIST_ID,
+        label: label,
+        isComplete: false,
+        notes: '',
+        scheduled: false,
+        scheduled_minutes: 30,
+        scheduled_time: '9:00',
+    };
+});
+
+export const INITIAL_SELECTED_TASK_ID = (INITIAL_TASKS[0] || {}).id;
 
 const PRIMARY = '#0094FF';
 
@@ -120,41 +138,21 @@ const ICON_PACKS = {
         TASK_DETAILS: '📌',
     },
     FONT_AWESOME: {
-        DARK_MODE: {
-            ICON_NAME: 'moon-stars',
-            STYLE_NAME: 'light',
-        },
-        END_ZONE: {
-            ICON_NAME: 'trash-alt',
-            STYLE_NAME: 'light',
-        },
-        LEFT: {
-            ICON_NAME: 'long-arrow-left',
-            STYLE_NAME: 'light',
-        },
-        LIGHT_MODE: {
-            ICON_NAME: 'sun',
-            STYLE_NAME: 'light',
-        },
-        LIST_MANAGER: {
-            ICON_NAME: 'book',
-            STYLE_NAME: 'light',
-        },
-        RIGHT: {
-            ICON_NAME: 'long-arrow-right',
-            STYLE_NAME: 'light',
-        },
-        TASK_DETAILS: {
-            ICON_NAME: 'thumbtack',
-            STYLE_NAME: 'light',
-        },
+        DARK_MODE: 'moon-stars',
+        END_ZONE: 'trash-alt',
+        LEFT: 'long-arrow-left',
+        LIGHT_MODE: 'sun',
+        LIST_MANAGER: 'book',
+        RIGHT: 'long-arrow-right',
+        TASK_DETAILS: 'thumbtack',
+        TIP: 'gem',
     },
 };
 
 Object.keys(ICON_PACKS.FONT_AWESOME).forEach(key => {
-    const { ICON_NAME, STYLE_NAME } = ICON_PACKS.FONT_AWESOME[key];
+    const ICON_NAME = ICON_PACKS.FONT_AWESOME[key];
     ICON_PACKS.FONT_AWESOME[key] = (
-        <Icon iconName={ICON_NAME} styleName={STYLE_NAME} />
+        <Icon iconName={ICON_NAME} styleName="solid" />
     );
 });
 

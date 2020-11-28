@@ -1,25 +1,28 @@
+import React, { forwardRef } from 'react';
 import styled from 'styled-components';
 import { COLORS, GRID_UNIT } from './tokens';
+import preventWidowsFunction from '../../utils/preventWidows';
 
-export default styled.div(
+const Container = styled.div(
     ({
         border = false,
         isFlexible = false,
-        margin = 0,
-        marginX = 0,
-        marginY = 0,
-        padding = 0,
-        paddingX = 0,
-        paddingY = 0,
+        margin = null,
+        marginX = null,
+        marginY = null,
+        padding = null,
+        paddingX = null,
+        paddingY = null,
         theme,
     }) => `
+        align-self: stretch;
         box-shadow: ${
             border ? `0 0 0 1px ${COLORS[theme.name].BORDER}` : 'none'
         };
         flex-grow: ${isFlexible ? 1 : 0};
         flex-shrink: ${isFlexible ? 1 : 0};
         ${
-            marginX
+            marginX !== null
                 ? `
                     margin-left: calc(${marginX} * ${GRID_UNIT});
                     margin-right: calc(${marginX} * ${GRID_UNIT});
@@ -27,7 +30,7 @@ export default styled.div(
                 : ''
         }
         ${
-            marginY
+            marginY !== null
                 ? `
                     margin-top: calc(${marginY} * ${GRID_UNIT});
                     margin-bottom: calc(${marginY} * ${GRID_UNIT});
@@ -35,14 +38,14 @@ export default styled.div(
                 : ''
         }
         ${
-            margin
+            margin !== null
                 ? `
                     margin: calc(${margin} * ${GRID_UNIT});
                 `
                 : ''
         }
         ${
-            paddingX
+            paddingX !== null
                 ? `
                     padding-left: calc(${paddingX} * ${GRID_UNIT});
                     padding-right: calc(${paddingX} * ${GRID_UNIT});
@@ -50,7 +53,7 @@ export default styled.div(
                 : ''
         }
         ${
-            paddingY
+            paddingY !== null
                 ? `
                     padding-top: calc(${paddingY} * ${GRID_UNIT});
                     padding-bottom: calc(${paddingY} * ${GRID_UNIT});
@@ -58,7 +61,7 @@ export default styled.div(
                 : ''
         }
         ${
-            padding
+            padding !== null
                 ? `
                     padding: calc(${padding} * ${GRID_UNIT});
                 `
@@ -66,3 +69,13 @@ export default styled.div(
         }
     `
 );
+
+const Box = forwardRef(
+    ({ children, preventWidows = false, ...otherProps }, ref) => (
+        <Container ref={ref} {...otherProps}>
+            {preventWidows ? preventWidowsFunction(children) : children}
+        </Container>
+    )
+);
+
+export default Box;

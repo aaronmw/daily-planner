@@ -15,7 +15,7 @@ import {
 } from './atoms/tokens';
 
 const TaskHeader = styled(FlexBox).attrs({
-    as: 'h1',
+    forwardedAs: 'h1',
     align: 'center',
     spacing: 1.5,
     paddingX: 1,
@@ -32,7 +32,7 @@ const TaskHeader = styled(FlexBox).attrs({
 const TaskHeaderLabel = styled(Box)`
     flex-grow: 1;
     flex-shrink: 1;
-    justify-self: stretch;
+    align-self: center;
 `;
 
 const TaskHeaderIcon = styled(Box).attrs({

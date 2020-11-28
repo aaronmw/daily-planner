@@ -1,7 +1,7 @@
 import sample from 'lodash/sample';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import ReactDOM from 'react-dom';
-import { ThemeProvider } from 'styled-components';
+import { StyleSheetManager, ThemeProvider } from 'styled-components';
 import { PrimaryAppColumn } from './components/AppColumn';
 import { ToggleButton } from './components/atoms/Button';
 import FlexBox from './components/atoms/FlexBox';
@@ -27,7 +27,7 @@ import TaskDetails from './components/TaskDetails';
 import TaskList from './components/TaskList';
 import Timeline from './components/Timeline';
 import ToolBar from './components/ToolBar';
-import CompletedTasksDropZone from './components/Trash';
+import Trash from './components/Trash';
 import TrashedLists from './components/TrashedLists';
 import TrashedTasks from './components/TrashedTasks';
 import useKeyboardShortcuts from './hooks/useKeyboardShortcuts';
@@ -69,7 +69,6 @@ function App() {
         () => tasks.filter(task => !task.isComplete),
         [tasks]
     );
-    const hasIncompleteTasks = incompleteTasks.length;
     const hasUnarchivedList = lists.filter(list => !list.isArchived).length;
     const isSidebarOpen = hasUnarchivedList && isShowingSidebar;
 
@@ -529,93 +528,106 @@ function App() {
           };
 
     return (
-        <ThemeProvider theme={{ name: themeName }}>
-            <GlobalStyle />
-            <CompletedTasksDropZone appActions={appActions} appData={appData} />
-            <FlexBox align="stretch">
-                <Sidebar appActions={appActions} appData={appData}>
-                    {isShowingTrashContents ? (
-                        <TrashedTasks
-                            appActions={appActions}
-                            appData={appData}
-                        />
-                    ) : (
-                        <TaskList appActions={appActions} appData={appData} />
-                    )}
-                </Sidebar>
-
-                <PrimaryAppColumn
-                    disabledIf={[!isDraggingTask && !hasIncompleteTasks]}
-                    label={
-                        isShowingTrashContents
-                            ? COPY.LABEL_FOR_TRASHED_LISTS
-                            : isShowingListManager
-                            ? COPY.LABEL_FOR_LIST_MANAGER
-                            : COPY.LABEL_FOR_TASK_DETAILS
-                    }
-                    style={{
-                        width: isShowingListManager
-                            ? columnWidths.listManager
-                            : columnWidths.taskDetails,
-                    }}
-                >
-                    <ToolBar>
-                        <ToggleButton
-                            isActive={isShowingListManager}
-                            title={COPY.TIPS.TOGGLE_LIST_MANAGER}
-                            onClick={() =>
-                                onChangeIsShowingListManager(
-                                    !isShowingListManager
-                                )
-                            }
-                        >
-                            {isShowingListManager ? (
-                                <FlexBox spacing={0.25}>
-                                    {ICONS.TASK_DETAILS}
-                                    <span>{COPY.LABEL_FOR_TASK_DETAILS}</span>
-                                </FlexBox>
-                            ) : (
-                                <FlexBox spacing={0.25}>
-                                    {ICONS.LIST_MANAGER}
-                                    <span>{COPY.LABEL_FOR_LIST_MANAGER}</span>
-                                </FlexBox>
-                            )}
-                        </ToggleButton>
-                    </ToolBar>
-                    <Transition isTransitioning={isTransitioning}>
+        <StyleSheetManager disableVendorPrefixes>
+            <ThemeProvider theme={{ name: themeName }}>
+                <GlobalStyle />
+                <Trash appActions={appActions} appData={appData} />
+                <FlexBox align="stretch">
+                    <Sidebar
+                        appActions={appActions}
+                        appData={appData}
+                        style={{
+                            width: columnWidths.sidebar,
+                        }}
+                    >
                         {isShowingTrashContents ? (
-                            <TrashedLists
-                                appActions={appActions}
-                                appData={appData}
-                            />
-                        ) : isShowingListManager ? (
-                            <ListManager
+                            <TrashedTasks
                                 appActions={appActions}
                                 appData={appData}
                             />
                         ) : (
-                            <TaskDetails
+                            <TaskList
                                 appActions={appActions}
                                 appData={appData}
                             />
                         )}
-                    </Transition>
-                </PrimaryAppColumn>
+                    </Sidebar>
 
-                <Timeline
-                    appActions={appActions}
-                    appData={appData}
-                    disabledIf={[!isDraggingTask && !hasIncompleteTasks]}
-                    selectedTaskId={selectedTaskId}
-                    from={TIMELINE_FROM}
-                    style={{
-                        width: columnWidths.timeline,
-                    }}
-                    tasks={incompleteTasks}
-                    to={TIMELINE_TO}
-                />
-            </FlexBox>
-        </ThemeProvider>
+                    <PrimaryAppColumn
+                        label={
+                            isShowingTrashContents
+                                ? COPY.LABEL_FOR_TRASHED_LISTS
+                                : isShowingListManager
+                                ? COPY.LABEL_FOR_LIST_MANAGER
+                                : COPY.LABEL_FOR_TASK_DETAILS
+                        }
+                        style={{
+                            width: isShowingListManager
+                                ? columnWidths.listManager
+                                : columnWidths.taskDetails,
+                        }}
+                    >
+                        <ToolBar>
+                            <ToggleButton
+                                isActive={isShowingListManager}
+                                title={COPY.TIPS.TOGGLE_LIST_MANAGER}
+                                onClick={() =>
+                                    onChangeIsShowingListManager(
+                                        !isShowingListManager
+                                    )
+                                }
+                            >
+                                {isShowingListManager ? (
+                                    <FlexBox spacing={0.25}>
+                                        {ICONS.TASK_DETAILS}
+                                        <span>
+                                            {COPY.LABEL_FOR_TASK_DETAILS}
+                                        </span>
+                                    </FlexBox>
+                                ) : (
+                                    <FlexBox spacing={0.25}>
+                                        {ICONS.LIST_MANAGER}
+                                        <span>
+                                            {COPY.LABEL_FOR_LIST_MANAGER}
+                                        </span>
+                                    </FlexBox>
+                                )}
+                            </ToggleButton>
+                        </ToolBar>
+                        <Transition isTransitioning={isTransitioning}>
+                            {isShowingTrashContents ? (
+                                <TrashedLists
+                                    appActions={appActions}
+                                    appData={appData}
+                                />
+                            ) : isShowingListManager ? (
+                                <ListManager
+                                    appActions={appActions}
+                                    appData={appData}
+                                />
+                            ) : (
+                                <TaskDetails
+                                    appActions={appActions}
+                                    appData={appData}
+                                />
+                            )}
+                        </Transition>
+                    </PrimaryAppColumn>
+
+                    <Timeline
+                        appActions={appActions}
+                        appData={appData}
+                        selectedTaskId={selectedTaskId}
+                        from={TIMELINE_FROM}
+                        style={{
+                            width: columnWidths.timeline,
+                        }}
+                        tasks={incompleteTasks}
+                        to={TIMELINE_TO}
+                    />
+                </FlexBox>
+            </ThemeProvider>
+        </StyleSheetManager>
     );
 }
 

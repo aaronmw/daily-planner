@@ -167,6 +167,7 @@ const ListCard = ({
     return (
         <Container
             data-list-id={listId}
+            isActive={isActive}
             ref={listCardElementRef}
             tabIndex={0}
             title={COPY.TIPS.MOVE_BETWEEN_LISTS}

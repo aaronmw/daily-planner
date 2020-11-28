@@ -6,19 +6,16 @@ export default styled(Box)(
     ({
         align = 'center',
         direction = 'row',
-        isFlexible = false,
         justify = 'stretch',
         spacing = 0,
         wrapped = false,
     }) => `
         align-items: ${align};
+        align-content: ${wrapped ? align : ''};
         display: flex;
         flex-direction: ${direction};
-        flex-grow: ${isFlexible ? 1 : 0};
-        flex-shrink: ${isFlexible ? 1 : 0};
-        flex-wrap: ${wrapped ? 'wrap' : 'nowrap'}; 
+        flex-wrap: ${wrapped ? 'wrap' : 'nowrap'};
         justify-content: ${justify};
-        width: 100%;
         
         ${
             spacing
