@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useRef } from 'react';
-import styled from 'styled-components';
+import styled, { ThemeProvider } from 'styled-components';
 import useDrag from '../hooks/useDrag';
 import useDrop from '../hooks/useDrop';
 import useKeyboardShortcuts from '../hooks/useKeyboardShortcuts';
@@ -8,39 +8,37 @@ import { GhostButton } from './atoms/Button';
 import FlexBox from './atoms/FlexBox';
 import {
     BORDER_RADIUS,
-    COLORS,
+    buildPalette,
     COPY,
+    FONTS,
     GRID_UNIT,
     LIST_CARD_HEIGHT,
     LIST_CARD_SPACING,
     LIST_CARD_WIDTH,
     UNIFIED_TRANSITION,
 } from './atoms/tokens';
+import ColorPicker from './ColorPicker';
 import EditInPlace from './EditInPlace';
 
 const Container = styled(FlexBox).attrs({
     align: 'flex-start',
     direction: 'column',
-    justify: 'space-between',
+    justify: 'flex-start',
     spacing: 0.5,
 })(
     ({ isActive, isTargetedForDrop, theme }) => `
-        background-color: ${
-            COLORS[theme.name][
-                isActive ? 'HIGH_CONTRAST_BACKGROUND' : 'PRIMARY_FADED'
-            ]
-        };
+        background-color: ${theme.HIGH_CONTRAST_BACKGROUND};
         border-radius: ${BORDER_RADIUS};
         box-shadow:
-            0 0 0 2px ${isActive ? COLORS[theme.name].SHADED : 'transparent'},
+            0 0 0 2px ${isActive ? theme.SHADED : 'transparent'},
             0 0 0 4px ${
                 isActive
-                    ? COLORS[theme.name][
+                    ? theme[
                           isActive ? 'TASK_BORDER_ACTIVE' : 'TASK_BORDER_HOVER'
                       ]
                     : 'transparent'
             };
-        color: ${COLORS[theme.name].HIGH_CONTRAST_TEXT};
+        color: ${theme.HIGH_CONTRAST_TEXT};
         cursor: pointer;
         height: ${LIST_CARD_HEIGHT};
         margin-bottom: ${LIST_CARD_SPACING};
@@ -59,11 +57,9 @@ const Container = styled(FlexBox).attrs({
         &:focus,
         &:hover {
             box-shadow:
-                0 0 0 2px ${COLORS[theme.name].SHADED},
+                0 0 0 2px ${theme.SHADED},
                 0 0 0 4px ${
-                    COLORS[theme.name][
-                        isActive ? 'TASK_BORDER_ACTIVE' : 'TASK_BORDER_HOVER'
-                    ]
+                    theme[isActive ? 'TASK_BORDER_ACTIVE' : 'TASK_BORDER_HOVER']
                 };
         }
     `
@@ -103,7 +99,7 @@ export const ListCardContainer = styled(FlexBox).attrs({
 })(
     ({ theme }) => `
         align-content: flex-start;
-        background-color: ${COLORS[theme.name].SHADED};
+        background-color: ${theme.SHADED};
         height: 100%;
         overflow: auto;
         padding-bottom: calc(${GRID_UNIT} * 1.5);
@@ -119,9 +115,11 @@ const ListCard = ({
 }) => {
     const { onUpdateList, onUpdateTask } = appActions;
 
-    const { isCreatingList, lists, selectedListId, tasks } = appData;
+    const { isCreatingList, lists, selectedListId, tasks, theme } = appData;
 
     const list = lists.find(list => list.id === listId);
+
+    const listPalette = buildPalette(theme, list.color_code);
 
     const tasksInList = tasks.filter(
         task => task.list_id === listId && !task.isComplete
@@ -150,6 +148,9 @@ const ListCard = ({
         evt.target.click();
     }, []);
 
+    const setListColor = colorCode =>
+        onUpdateList(listId, { color_code: colorCode });
+
     const keyMap = useMemo(
         () => ({
             enter: triggerClick,
@@ -161,46 +162,63 @@ const ListCard = ({
     useKeyboardShortcuts(keyMap, listCardElementRef);
 
     const tracingElementStyles = theme => `
-        border-color: ${COLORS[theme.name].HIGH_CONTRAST_TEXT}
+        border-color: ${theme.HIGH_CONTRAST_TEXT}
     `;
 
     return (
-        <Container
-            data-list-id={listId}
-            isActive={isActive}
-            ref={listCardElementRef}
-            tabIndex={0}
-            title={COPY.TIPS.MOVE_BETWEEN_LISTS}
-            {...dragProps}
-            {...dropProps}
-            {...otherProps}
-        >
-            <EditInPlace
-                isEditable={isEditable}
-                isRemotelyActivated={
-                    isCreatingList && selectedListId === listId
-                }
-                marginX={0.75}
-                marginY={0.5}
-                style={{
-                    alignSelf: 'stretch',
-                    flexGrow: 0,
-                    flexShrink: 0,
-                }}
-                tracingElementStyles={tracingElementStyles}
-                value={list.label}
-                onSave={newLabel => {
-                    onUpdateList(listId, { label: newLabel });
-                }}
-            />
-            {tasksInList.length >= 1 && (
-                <ListCardTaskIconContainer isActive={isActive}>
+        <ThemeProvider theme={listPalette}>
+            <Container
+                data-list-id={listId}
+                isActive={isActive}
+                ref={listCardElementRef}
+                tabIndex={0}
+                title={COPY.TIPS.MOVE_BETWEEN_LISTS}
+                {...dragProps}
+                {...dropProps}
+                {...otherProps}
+            >
+                <EditInPlace
+                    isEditable={isEditable}
+                    isRemotelyActivated={
+                        isCreatingList && selectedListId === listId
+                    }
+                    marginX={0.75}
+                    marginTop={0.5}
+                    style={{
+                        alignSelf: 'stretch',
+                        flexGrow: 0,
+                        flexShrink: 0,
+                    }}
+                    tracingElementStyles={tracingElementStyles}
+                    value={list.label}
+                    onSave={newLabel => {
+                        onUpdateList(listId, { label: newLabel });
+                    }}
+                />
+                <FlexBox
+                    direction="column"
+                    isFlexible
+                    isScrollable
+                    spacing={0.25}
+                >
                     {tasksInList.map(task => (
-                        <span key={task.id}>{task.icon}</span>
+                        <FlexBox
+                            key={task.id}
+                            align="flex-start"
+                            paddingX={0.25}
+                            spacing={0.25}
+                            style={{
+                                fontSize: `calc(${FONTS.NORMAL.SIZE} / 2)`,
+                            }}
+                        >
+                            <span>{task.icon}</span>
+                            <span>{task.label}</span>
+                        </FlexBox>
                     ))}
-                </ListCardTaskIconContainer>
-            )}
-        </Container>
+                </FlexBox>
+                <ColorPicker listId={listId} onPickColor={setListColor} />
+            </Container>
+        </ThemeProvider>
     );
 };
 

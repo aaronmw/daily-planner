@@ -8,7 +8,7 @@ import TaskCard from './TaskCard';
 import TimelineDropZone from './TimelineDropZone';
 import strToHoursAndMinutes from '../utils/strToHoursAndMinutes';
 import minutesToHeight from '../utils/minutesToHeight';
-import { COLORS, COPY, GRID_UNIT } from './atoms/tokens';
+import { COPY, GRID_UNIT } from './atoms/tokens';
 
 const LINE_LABEL_WIDTH = '80px';
 
@@ -21,7 +21,7 @@ const TimelineContainer = styled.div(
         bottom: 0;
         box-shadow: ${
             isTargetedForDrop
-                ? `0 0 0 5px ${COLORS[theme.name].TASK_BORDER_HOVER} inset`
+                ? `0 0 0 5px ${theme.TASK_BORDER_HOVER} inset`
                 : 'initial'
         };
         left: 0;
@@ -43,7 +43,7 @@ const HalfHourLabel = styled.div(
         color: ${
             hideLabel
                 ? 'transparent'
-                : transparentize(isFaded ? 1 : 0, COLORS[theme.name].TEXT_FADED)
+                : transparentize(isFaded ? 1 : 0, theme.TEXT_FADED)
         };
         padding-right: calc(100% - ${LINE_LABEL_WIDTH} + (${GRID_UNIT} * 0.5));
         position: absolute;
@@ -53,7 +53,7 @@ const HalfHourLabel = styled.div(
         width: 100%;
 
         &:before {
-            background-color: ${COLORS[theme.name].BORDER};
+            background-color: ${theme.BORDER};
             content: '';
             height: 1px;
             left: ${LINE_LABEL_WIDTH};

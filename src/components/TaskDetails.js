@@ -6,7 +6,6 @@ import OptionBar from './OptionBar';
 import Box from './atoms/Box';
 import FlexBox from './atoms/FlexBox';
 import {
-    COLORS,
     COPY,
     ICONS,
     DURATION_OPTIONS,
@@ -22,7 +21,7 @@ const TaskHeader = styled(FlexBox).attrs({
     paddingY: 0.75,
 })(
     ({ theme }) => `
-        background-color: ${COLORS[theme.name].SHADED};
+        background-color: ${theme.SHADED};
         font-size: ${FONTS.LARGE.SIZE};
         font-weight: 900;
         position: relative;
@@ -48,8 +47,8 @@ const TaskHeaderIcon = styled(Box).attrs({
 
 const DurationOptionBar = styled(OptionBar)(
     ({ theme }) => `
-        background-color: ${COLORS[theme.name].SHADED};
-        border-top: ${BORDER_WIDTH} solid ${COLORS[theme.name].BACKGROUND};
+        background-color: ${theme.SHADED};
+        border-top: ${BORDER_WIDTH} solid ${theme.BACKGROUND};
     `
 );
 

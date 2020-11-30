@@ -2,13 +2,7 @@ import React from 'react';
 import styled, { css, keyframes } from 'styled-components';
 import useDrop from '../hooks/useDrop';
 import FlexBox from './atoms/FlexBox';
-import {
-    COLORS,
-    COPY,
-    GRID_UNIT,
-    ICONS,
-    UNIFIED_TRANSITION,
-} from './atoms/tokens';
+import { COPY, GRID_UNIT, ICONS, UNIFIED_TRANSITION } from './atoms/tokens';
 
 const DROP_ZONE_SIZE = `calc(${GRID_UNIT} * 4)`;
 
@@ -59,7 +53,7 @@ const TrashIconContainer = styled(AnimatedContainer).attrs({
         color: ${
             isTargetedForDrop
                 ? '#FF0000'
-                : COLORS[theme.name][
+                : theme[
                       isDraggingTask || isShowingTrashContents
                           ? 'PRIMARY'
                           : 'TEXT_FADED'
@@ -70,7 +64,7 @@ const TrashIconContainer = styled(AnimatedContainer).attrs({
         opacity: ${!isTargetedForDrop && !isDraggingTask ? 0.6 : 1};
         
         &:hover {
-            color: ${COLORS[theme.name].PRIMARY};
+            color: ${theme.PRIMARY};
         }
     `
 );

@@ -2,12 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import styled, { css, keyframes } from 'styled-components';
 import toInt from '../../utils/toInt';
 import FlexBox from './FlexBox';
-import {
-    BORDER_RADIUS,
-    BORDER_WIDTH,
-    COLORS,
-    UNIFIED_TRANSITION,
-} from './tokens';
+import { BORDER_RADIUS, BORDER_WIDTH, UNIFIED_TRANSITION } from './tokens';
 
 const Button = styled(FlexBox).attrs({
     forwardedAs: 'button',
@@ -17,12 +12,10 @@ const Button = styled(FlexBox).attrs({
 })(
     ({ isInverted = false, theme }) => `
         align-self: unset;
-        background-color: ${
-            COLORS[theme.name][isInverted ? 'BACKGROUND' : 'PRIMARY']
-        };
+        background-color: ${theme[isInverted ? 'BACKGROUND' : 'PRIMARY']};
         border: 2px solid transparent;
         border-radius: ${BORDER_RADIUS};
-        color: ${COLORS[theme.name][isInverted ? 'PRIMARY' : 'BACKGROUND']};
+        color: ${theme[isInverted ? 'PRIMARY' : 'BACKGROUND']};
         cursor: pointer;
         transform: translateY(0);
         ${UNIFIED_TRANSITION};
@@ -30,9 +23,7 @@ const Button = styled(FlexBox).attrs({
         
         &:focus,
         &:hover {
-            border-color: ${
-                COLORS[theme.name][isInverted ? 'PRIMARY' : 'BACKGROUND']
-            };
+            border-color: ${theme[isInverted ? 'PRIMARY' : 'BACKGROUND']};
         }
         &:active {
             transform: translateY(2px);
@@ -43,24 +34,24 @@ const Button = styled(FlexBox).attrs({
 const StyledGhostButton = styled(Button)(
     ({ theme }) => `
         background: unset; 
-        color: ${COLORS[theme.name].TEXT_FADED};
+        color: ${theme.TEXT_FADED};
         position: relative;
         width: 100%;
         
         &:focus,
         &:hover {
-            color: ${COLORS[theme.name].TEXT};
+            color: ${theme.TEXT};
         }
     `
 );
 
 const animation = keyframes`
-  from {
-      stroke-dashoffset: 0;
-  }
-  to {
-      stroke-dashoffset: 12px;
-  }
+    from {
+        stroke-dashoffset: 0;
+    }
+    to {
+        stroke-dashoffset: 12px;
+    }
 `;
 
 const TracerSVGElement = styled.svg`
@@ -69,14 +60,17 @@ const TracerSVGElement = styled.svg`
 `;
 
 const Tracer = styled.rect(
-    ({ isAnimated, theme }) => css`
-        animation-name: ${isAnimated ? animation : ''};
+    ({ isAnimated, isResizing, theme }) => css`
+        animation-name: ${animation};
         animation-duration: 0.5s;
         animation-direction: normal;
         animation-iteration-count: infinite;
         animation-timing-function: linear;
+        animation-play-state: ${isAnimated ? 'running' : 'paused'};
         fill: none;
-        stroke: ${COLORS[theme.name][isAnimated ? 'PRIMARY' : 'TEXT_FADED']};
+        stroke: ${isResizing
+            ? 'transparent'
+            : theme[isAnimated ? 'PRIMARY' : 'TEXT_FADED']};
         stroke-width: calc(${BORDER_WIDTH} * 2);
         stroke-dasharray: 6px, 6px;
         position: relative;
@@ -85,19 +79,41 @@ const Tracer = styled.rect(
 );
 
 const AnimatedTracer = ({ isAnimated, targetElementRef, ...otherProps }) => {
+    const [isResizing, setIsResizing] = useState(true);
     const [viewBoxDimensions, setViewBoxDimensions] = useState({
         width: 0,
         height: 0,
     });
 
     useEffect(() => {
-        if (targetElementRef.current) {
-            setViewBoxDimensions({
-                width: targetElementRef.current.offsetWidth,
-                height: targetElementRef.current.offsetHeight,
-            });
-        }
-    }, [targetElementRef]);
+        const measureTracer = () => {
+            if (targetElementRef.current) {
+                const { offsetWidth, offsetHeight } = targetElementRef.current;
+                const { width, height } = viewBoxDimensions;
+
+                if (offsetWidth !== width || offsetHeight !== height) {
+                    setViewBoxDimensions({
+                        width: offsetWidth,
+                        height: offsetHeight,
+                    });
+                }
+            }
+        };
+
+        const timer = setInterval(measureTracer, 100);
+
+        return () => clearInterval(timer);
+    }, [targetElementRef, viewBoxDimensions]);
+
+    useEffect(() => {
+        setIsResizing(true);
+
+        const onComplete = () => setIsResizing(false);
+
+        const timer = setTimeout(onComplete, 100);
+
+        return () => clearTimeout(timer);
+    }, [viewBoxDimensions]);
 
     return (
         <TracerSVGElement
@@ -110,6 +126,7 @@ const AnimatedTracer = ({ isAnimated, targetElementRef, ...otherProps }) => {
                 width={viewBoxDimensions.width}
                 height={viewBoxDimensions.height}
                 isAnimated={isAnimated}
+                isResizing={isResizing}
                 rx={toInt(BORDER_RADIUS) * 2}
                 x={0}
                 y={0}

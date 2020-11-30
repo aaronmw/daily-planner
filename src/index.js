@@ -1,3 +1,4 @@
+import random from 'lodash/random';
 import sample from 'lodash/sample';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import ReactDOM from 'react-dom';
@@ -7,6 +8,7 @@ import { ToggleButton } from './components/atoms/Button';
 import FlexBox from './components/atoms/FlexBox';
 import GlobalStyle from './components/atoms/GlobalStyles';
 import {
+    buildPalette,
     COPY,
     GRID_UNIT,
     ICONS,
@@ -14,6 +16,7 @@ import {
     INITIAL_SELECTED_LIST_ID,
     INITIAL_SELECTED_TASK_ID,
     INITIAL_TASKS,
+    PRIMARY_COLORS,
     ROUTE_TRANSITION_ANIMATION_DURATION,
     SIDEBAR_DEFAULT_WIDTH,
     SIDEBAR_EXTENDED_WIDTH,
@@ -65,6 +68,17 @@ function App() {
     const currentListIndex = unarchivedLists.findIndex(
         list => list.id === selectedListId
     );
+    const selectedTask = tasks.find(task => task.id === selectedTaskId);
+    const listContainingSelectedTask = selectedTask
+        ? lists.find(list => list.id === selectedTask.list_id)
+        : null;
+    const selectedList = lists.find(list => list.id === selectedListId);
+    const primarycolorCode = listContainingSelectedTask
+        ? listContainingSelectedTask.color_code
+        : selectedList
+        ? selectedList.color_code
+        : PRIMARY_COLORS[0].primaryColor;
+    const palette = buildPalette(themeName, primarycolorCode);
     const incompleteTasks = useMemo(
         () => tasks.filter(task => !task.isComplete),
         [tasks]
@@ -89,11 +103,13 @@ function App() {
     const onCreateList = useCallback(
         (overrides = {}) => {
             const newListId = Date.now();
+            const randomcolorCode = random(0, PRIMARY_COLORS.length);
 
             setLists(currentLists =>
                 currentLists.concat([
                     {
                         id: newListId,
+                        color_code: randomcolorCode,
                         isArchived: false,
                         label: `${sample(COPY.MOTIVATIONAL_DESCRIPTORS)} ${
                             COPY.NEW_LIST_LABEL
@@ -130,7 +146,11 @@ function App() {
     );
 
     const onSelectList = listId => {
+        const firstTaskIdInList = incompleteTasks.find(
+            task => task.list_id === listId
+        );
         setSelectedListId(listId);
+        setSelectedTaskId(firstTaskIdInList ? firstTaskIdInList.id : '');
         setIsShowingSidebar(true);
         setIsShowingTrashContents(false);
     };
@@ -196,6 +216,16 @@ function App() {
         }
     }, [isCreatingTask, setIsCreatingTask, setIsShowingListManager]);
 
+    const onSelectTask = useCallback(
+        taskId => {
+            const task = tasks.find(task => task.id === taskId);
+
+            setSelectedListId(task.list_id);
+            setSelectedTaskId(taskId);
+        },
+        [tasks, setSelectedTaskId, setSelectedListId]
+    );
+
     const transition = useCallback(
         callback => {
             setIsTransitioning(true);
@@ -213,9 +243,9 @@ function App() {
                 setIsShowingListManager(false);
             }
 
-            setSelectedTaskId(taskId);
+            onSelectTask(taskId);
         },
-        [isShowingListManager, setIsShowingListManager, setSelectedTaskId]
+        [isShowingListManager, setIsShowingListManager, onSelectTask]
     );
 
     const onTransitionToTask = useCallback(
@@ -224,12 +254,12 @@ function App() {
                 setIsShowingListManager(false);
             }
 
-            transition(() => setSelectedTaskId(taskId));
+            transition(() => onSelectTask(taskId));
         },
         [
             isShowingListManager,
             setIsShowingListManager,
-            setSelectedTaskId,
+            onSelectTask,
             transition,
         ]
     );
@@ -529,7 +559,7 @@ function App() {
 
     return (
         <StyleSheetManager disableVendorPrefixes>
-            <ThemeProvider theme={{ name: themeName }}>
+            <ThemeProvider theme={palette}>
                 <GlobalStyle />
                 <Trash appActions={appActions} appData={appData} />
                 <FlexBox align="stretch">

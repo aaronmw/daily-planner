@@ -9,12 +9,7 @@ import React, {
 import styled from 'styled-components';
 import useKeyboardShortcuts from '../hooks/useKeyboardShortcuts';
 import Box from './atoms/Box';
-import {
-    BORDER_RADIUS,
-    COLORS,
-    GRID_UNIT,
-    UNIFIED_TRANSITION,
-} from './atoms/tokens';
+import { BORDER_RADIUS, GRID_UNIT, UNIFIED_TRANSITION } from './atoms/tokens';
 
 const Container = styled(Box).attrs({
     isFlexible: true,
@@ -29,16 +24,12 @@ const Container = styled(Box).attrs({
         // Tracing element
         &:before {
             border:
-                ${
-                    isEditing
-                        ? 'none'
-                        : `2px dashed ${COLORS[theme.name].BORDER}`
-                };
+                ${isEditing ? 'none' : `2px dashed ${theme.BORDER}`};
             box-shadow:
                 ${
                     isEditing
-                        ? `0 0 0 2px ${COLORS[theme.name].PRIMARY}`
-                        : `0 0 0 0 ${COLORS[theme.name].PRIMARY}`
+                        ? `0 0 0 2px ${theme.PRIMARY}`
+                        : `0 0 0 0 ${theme.PRIMARY}`
                 };
             border-radius: ${BORDER_RADIUS};
             content: '';

@@ -1,5 +1,5 @@
 import { createGlobalStyle } from 'styled-components';
-import { BULLET_SIZE, COLORS, FONTS, GRID_UNIT } from './tokens';
+import { BULLET_SIZE, FONTS, GRID_UNIT } from './tokens';
 
 export default createGlobalStyle(
     ({ theme }) => `
@@ -17,8 +17,8 @@ export default createGlobalStyle(
             padding: 0;
         }
         :root {
-            background: ${COLORS[theme.name].BACKGROUND};
-            color: ${COLORS[theme.name].TEXT};
+            background: ${theme.BACKGROUND};
+            color: ${theme.TEXT};
             font-family: 'Operator Mono', monospace;
             font-size: ${FONTS.NORMAL.SIZE};
             font-weight: 300;
@@ -32,12 +32,12 @@ export default createGlobalStyle(
             font-style: italic;
         }
         ::placeholder {
-            color: ${COLORS[theme.name].PRIMARY};
+            color: ${theme.PRIMARY};
             opacity: 1;
         }
         ::selection {
-            color: ${COLORS[theme.name].HIGH_CONTRAST_TEXT};
-            background-color: ${COLORS[theme.name].HIGH_CONTRAST_BACKGROUND};
+            color: ${theme.HIGH_CONTRAST_TEXT};
+            background-color: ${theme.HIGH_CONTRAST_BACKGROUND};
         }
         
         .markdown {
@@ -46,10 +46,10 @@ export default createGlobalStyle(
             }
             
             h1 {
-                color: ${COLORS[theme.name].TEXT_FADED};
+                color: ${theme.TEXT_FADED};
                 font-size: 1.4rem;
                 font-weight: 500;
-                border-bottom: 2px dotted ${COLORS[theme.name].TEXT_FADED};
+                border-bottom: 2px dotted ${theme.TEXT_FADED};
                 padding-bottom: calc(${GRID_UNIT} * 0.25);
                 
                 & + * {
@@ -58,7 +58,7 @@ export default createGlobalStyle(
             }
         
             blockquote {
-                border-left: 2px dotted ${COLORS[theme.name].TEXT_FADED};
+                border-left: 2px dotted ${theme.TEXT_FADED};
                 font-style: italic;
                 padding: calc(${GRID_UNIT} * 0.5) ${GRID_UNIT};
             }
@@ -73,7 +73,7 @@ export default createGlobalStyle(
                     position: absolute;
                     top: 5px;
                     left: 0;
-                    border: 2px dotted ${COLORS[theme.name].TEXT_FADED};
+                    border: 2px dotted ${theme.TEXT_FADED};
                     border-radius: 100px;
                     width: ${BULLET_SIZE};
                     height: ${BULLET_SIZE};

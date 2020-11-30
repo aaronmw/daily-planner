@@ -1,5 +1,5 @@
-import React from 'react';
 import { darken, lighten, setLightness, transparentize } from 'polished';
+import React from 'react';
 import MOTIVATIONAL_DESCRIPTORS from './copy/motivational-descriptors';
 import Icon from './Icon';
 
@@ -8,6 +8,8 @@ export const SIDEBAR_EXTENDED_WIDTH = '40vw';
 export const BORDER_RADIUS = '3px';
 export const BORDER_WIDTH = '1px';
 export const BULLET_SIZE = '10px';
+export const COLOR_PICKER_HEIGHT = '150px';
+export const COLOR_PICKER_WIDTH = '200px';
 export const DURATION_OPTIONS = [15, 30, 45, 60, 90, 120];
 export const GRID_UNIT = '25px';
 export const FONTS = {
@@ -64,6 +66,7 @@ export { COPY };
 export const INITIAL_LISTS = [
     {
         id: 1,
+        color_code: 0,
         isArchived: false,
         label: 'User Manual',
     },
@@ -88,47 +91,101 @@ export const INITIAL_TASKS = Object.keys(COPY.TIPS).map(tipId => {
 
 export const INITIAL_SELECTED_TASK_ID = (INITIAL_TASKS[0] || {}).id;
 
-const PRIMARY = '#0094FF';
+export const PRIMARY_COLORS = [
+    {
+        primaryColor: '#FFB83D',
+        highContrastTextColor: '#000000',
+    },
+    {
+        primaryColor: '#E5FF3D',
+        highContrastTextColor: '#000000',
+    },
+    {
+        primaryColor: '#84FF3D',
+        highContrastTextColor: '#000000',
+    },
+    {
+        primaryColor: '#3DFF57',
+        highContrastTextColor: '#000000',
+    },
+    {
+        primaryColor: '#3DFFB8',
+        highContrastTextColor: '#000000',
+    },
+    {
+        primaryColor: '#3DE5FF',
+        highContrastTextColor: '#000000',
+    },
+    {
+        primaryColor: '#3D84FF',
+        highContrastTextColor: '#ffffff',
+    },
+    {
+        primaryColor: '#573DFF',
+        highContrastTextColor: '#ffffff',
+    },
+    {
+        primaryColor: '#B83DFF',
+        highContrastTextColor: '#ffffff',
+    },
+    {
+        primaryColor: '#FF3DE5',
+        highContrastTextColor: '#ffffff',
+    },
+    {
+        primaryColor: '#FF3D84',
+        highContrastTextColor: '#ffffff',
+    },
+    {
+        primaryColor: '#FF573D',
+        highContrastTextColor: '#ffffff',
+    },
+];
 
-const DARK = {};
-DARK.PRIMARY = '#FFB73E';
-DARK.PRIMARY_FADED = darken(0.2, DARK.PRIMARY);
-DARK.BACKGROUND = '#050300';
-DARK.HIGH_CONTRAST_BACKGROUND = DARK.PRIMARY;
-DARK.HIGH_CONTRAST_TEXT = DARK.BACKGROUND;
-DARK.SHADED = setLightness(0.04, DARK.PRIMARY);
-DARK.SHADOW = transparentize(0.95, DARK.BACKGROUND);
-DARK.TEXT = DARK.PRIMARY;
-DARK.TEXT_FADED = setLightness(0.35, DARK.TEXT);
-DARK.TASK_BORDER = transparentize(0.5, DARK.PRIMARY);
-DARK.TASK_BORDER_HOVER = transparentize(0.5, DARK.PRIMARY);
-DARK.TASK_BORDER_ACTIVE = DARK.PRIMARY;
-DARK.BORDER = setLightness(0.15, DARK.PRIMARY);
-DARK.BORDER_FADED = DARK.TEXT_FADED;
+export const buildPalette = (theme = 'LIGHT', colorCode = '#0000FF') => {
+    const THEME = {};
 
-const LIGHT = {};
-LIGHT.PRIMARY = PRIMARY;
-LIGHT.PRIMARY_FADED = lighten(0.2, LIGHT.PRIMARY);
-LIGHT.BACKGROUND = '#FFFFFF';
-LIGHT.HIGH_CONTRAST_BACKGROUND = LIGHT.PRIMARY;
-LIGHT.HIGH_CONTRAST_TEXT = LIGHT.BACKGROUND;
-LIGHT.SHADED = setLightness(0.95, LIGHT.PRIMARY);
-LIGHT.SHADOW = transparentize(0.8, setLightness(0.25, LIGHT.PRIMARY));
-LIGHT.TEXT = setLightness(0.15, LIGHT.PRIMARY);
-LIGHT.TEXT_FADED = transparentize(0.4, LIGHT.TEXT);
-LIGHT.TASK_BORDER = transparentize(0.5, LIGHT.PRIMARY);
-LIGHT.TASK_BORDER_HOVER = transparentize(0.5, LIGHT.PRIMARY);
-LIGHT.TASK_BORDER_ACTIVE = LIGHT.PRIMARY;
-LIGHT.BORDER = transparentize(0.75, LIGHT.TEXT);
-LIGHT.BORDER_FADED = transparentize(0.25, LIGHT.TEXT_FADED);
+    const colorObj =
+        PRIMARY_COLORS.find(colorObj => colorObj.primaryColor === colorCode) ||
+        PRIMARY_COLORS[0];
 
-export const COLORS = {
-    DARK,
-    LIGHT,
+    const { primaryColor, highContrastTextColor } = colorObj;
+
+    THEME.PRIMARY = primaryColor;
+    THEME.HIGH_CONTRAST_BACKGROUND = THEME.PRIMARY;
+    THEME.HIGH_CONTRAST_TEXT = highContrastTextColor;
+    THEME.TASK_BORDER = transparentize(0.5, THEME.PRIMARY);
+    THEME.TASK_BORDER_HOVER = transparentize(0.5, THEME.PRIMARY);
+    THEME.TASK_BORDER_ACTIVE = THEME.PRIMARY;
+
+    if (theme === 'DARK') {
+        THEME.PRIMARY_FADED = darken(0.2, THEME.PRIMARY);
+        THEME.BACKGROUND = '#000000';
+        THEME.SHADED = setLightness(0.1, THEME.PRIMARY);
+        THEME.SHADOW = transparentize(0.95, THEME.BACKGROUND);
+        THEME.TEXT = setLightness(0.95, THEME.PRIMARY);
+        THEME.TEXT_FADED = setLightness(0.75, THEME.PRIMARY);
+        THEME.BORDER = setLightness(0.15, THEME.PRIMARY);
+        THEME.BORDER_FADED = THEME.TEXT_FADED;
+    }
+
+    if (theme === 'LIGHT') {
+        THEME.PRIMARY_FADED = lighten(0.2, THEME.PRIMARY);
+        THEME.BACKGROUND = '#FFFFFF';
+        THEME.SHADED = setLightness(0.95, THEME.PRIMARY);
+        THEME.SHADOW = transparentize(0.8, setLightness(0.25, THEME.PRIMARY));
+        THEME.TEXT = setLightness(0.05, THEME.PRIMARY);
+        THEME.TEXT_FADED = setLightness(0.75, THEME.PRIMARY);
+        THEME.BORDER = transparentize(0.75, THEME.TEXT);
+        THEME.BORDER_FADED = transparentize(0.25, THEME.TEXT_FADED);
+    }
+
+    return THEME;
 };
 
 const ICON_PACKS = {
     EMOJI: {
+        COLOR_PICKER: '🎨',
         DARK_MODE: '🌚',
         END_ZONE: '🗑',
         LEFT: '👈',
@@ -136,8 +193,10 @@ const ICON_PACKS = {
         LIST_MANAGER: '📚',
         RIGHT: '👉',
         TASK_DETAILS: '📌',
+        TIP: '☝️',
     },
     FONT_AWESOME: {
+        COLOR_PICKER: 'palette',
         DARK_MODE: 'moon-stars',
         END_ZONE: 'trash-alt',
         LEFT: 'long-arrow-left',

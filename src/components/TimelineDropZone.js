@@ -1,7 +1,7 @@
 import React, { memo } from 'react';
 import styled from 'styled-components';
 import range from 'lodash/range';
-import { COLORS, TIMELINE_FROM } from './atoms/tokens';
+import { TIMELINE_FROM } from './atoms/tokens';
 import minutesToHeight from '../utils/minutesToHeight';
 import minutesToTime from '../utils/minutesToTime';
 import strToHoursAndMinutes from '../utils/strToHoursAndMinutes';
@@ -23,9 +23,7 @@ const StyledTimelineDropTarget = styled.div(
         width: 100%;
         height: ${minutesToHeight(15)};
         z-index: 1;
-        border-top: ${
-            isTargetedForDrop ? `4px dotted ${COLORS[theme.name].PRIMARY}` : ''
-        };
+        border-top: ${isTargetedForDrop ? `4px dotted ${theme.PRIMARY}` : ''};
     `
 );
 

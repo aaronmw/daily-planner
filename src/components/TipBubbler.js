@@ -15,10 +15,10 @@ import {
 
 const Container = styled(FlexBox)(
     ({ theme }) => `
-        background-color: ${COLORS[theme.name].HIGH_CONTRAST_BACKGROUND};
+        background-color: ${theme.HIGH_CONTRAST_BACKGROUND};
         border-radius: ${BORDER_RADIUS};
         bottom: ${GRID_UNIT};
-        color: ${COLORS[theme.name].HIGH_CONTRAST_TEXT};
+        color: ${theme.HIGH_CONTRAST_TEXT};
         font-size: ${FONTS.LARGE.SIZE};
         line-height: ${FONTS.LARGE.LINE_HEIGHT};
         position: fixed;

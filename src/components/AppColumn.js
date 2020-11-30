@@ -1,12 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
 import FlexBox from './atoms/FlexBox';
-import {
-    BORDER_WIDTH,
-    COLORS,
-    GRID_UNIT,
-    UNIFIED_TRANSITION,
-} from './atoms/tokens';
+import { BORDER_WIDTH, GRID_UNIT, UNIFIED_TRANSITION } from './atoms/tokens';
 
 const Container = styled(FlexBox).attrs({
     direction: 'column',
@@ -16,7 +11,7 @@ const Container = styled(FlexBox).attrs({
         position: relative;
         
         &:before {
-            background-color: ${COLORS[theme.name].BACKGROUND};
+            background-color: ${theme.BACKGROUND};
             bottom: 0;
             content: '';
             left: 0;
@@ -47,10 +42,10 @@ const ColumnHeader = styled(FlexBox).attrs({
     justify: 'center',
 })(
     ({ theme }) => `
-        background: ${COLORS[theme.name].BACKGROUND};
-        color: ${COLORS[theme.name].TEXT_FADED};
+        background: ${theme.BACKGROUND};
+        color: ${theme.TEXT_FADED};
         border-bottom:
-            ${BORDER_WIDTH} solid ${COLORS[theme.name].BORDER};
+            ${BORDER_WIDTH} solid ${theme.BORDER};
         font-size: 0.75rem;
         height: ${GRID_UNIT};
         position: sticky;
@@ -79,10 +74,10 @@ const AppColumn = ({
 
 export const PrimaryAppColumn = styled(AppColumn)(
     ({ theme }) => `
-        box-shadow: 0 0 10px 10px ${COLORS[theme.name].SHADOW};
-        border-left: ${BORDER_WIDTH} solid ${COLORS[theme.name].BORDER};
+        box-shadow: 0 0 10px 10px ${theme.SHADOW};
+        border-left: ${BORDER_WIDTH} solid ${theme.BORDER};
         border-right: 
-            ${BORDER_WIDTH} solid ${COLORS[theme.name].BORDER};
+            ${BORDER_WIDTH} solid ${theme.BORDER};
         overflow: unset;
         z-index: 11;
     `
@@ -90,7 +85,7 @@ export const PrimaryAppColumn = styled(AppColumn)(
 
 export const SecondaryAppColumn = styled(AppColumn)(
     ({ isTargetedForDrop, theme }) => `
-        background-color: ${COLORS[theme.name].SHADED};
+        background-color: ${theme.SHADED};
         flex-grow: 1;
         overflow: auto;
         position: relative;
@@ -98,7 +93,7 @@ export const SecondaryAppColumn = styled(AppColumn)(
         &:before {
             box-shadow: ${
                 isTargetedForDrop
-                    ? `0 0 0 5px ${COLORS[theme.name].TASK_BORDER_HOVER} inset`
+                    ? `0 0 0 5px ${theme.TASK_BORDER_HOVER} inset`
                     : 'initial'
             };
             bottom: 0;
