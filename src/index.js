@@ -376,12 +376,7 @@ function App() {
                 nextListIndex > unarchivedLists.length - 1 ? 0 : nextListIndex;
             onSelectList(unarchivedLists[nextIndex].id);
         },
-        [
-            currentListIndex,
-            setIsShowingListManager,
-            setSelectedListId,
-            unarchivedLists,
-        ]
+        [currentListIndex, onSelectList, unarchivedLists]
     );
 
     const selectPreviousList = useCallback(
@@ -390,15 +385,9 @@ function App() {
             const prevListIndex = currentListIndex - 1;
             const prevIndex =
                 prevListIndex < 0 ? unarchivedLists.length - 1 : prevListIndex;
-            setSelectedListId(unarchivedLists[prevIndex].id);
-            setIsShowingListManager(true);
+            onSelectList(unarchivedLists[prevIndex].id);
         },
-        [
-            currentListIndex,
-            setIsShowingListManager,
-            setSelectedListId,
-            unarchivedLists,
-        ]
+        [currentListIndex, onSelectList, unarchivedLists]
     );
 
     const setTaskDuration = useCallback(
