@@ -145,16 +145,26 @@ function App() {
         [setLists]
     );
 
-    const onSelectList = listId => {
-        const firstTaskIdInList = incompleteTasks.find(
-            task => task.list_id === listId
-        );
-        setSelectedListId(listId);
-        setSelectedTaskId(firstTaskIdInList ? firstTaskIdInList.id : '');
-        setIsShowingSidebar(true);
-        setIsShowingTrashContents(false);
-        setIsShowingListManager(true);
-    };
+    const onSelectList = useCallback(
+        listId => {
+            const firstTaskIdInList = incompleteTasks.find(
+                task => task.list_id === listId
+            );
+            setSelectedListId(listId);
+            setSelectedTaskId(firstTaskIdInList ? firstTaskIdInList.id : '');
+            setIsShowingSidebar(true);
+            setIsShowingTrashContents(false);
+            setIsShowingListManager(true);
+        },
+        [
+            incompleteTasks,
+            setSelectedListId,
+            setSelectedTaskId,
+            setIsShowingSidebar,
+            setIsShowingTrashContents,
+            setIsShowingListManager,
+        ]
+    );
 
     const onUpdateTask = useCallback(
         (taskId, updates) => {

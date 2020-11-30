@@ -159,7 +159,6 @@ export const buildPalette = (theme = 'LIGHT', colorCode = '#0000FF') => {
     THEME.TASK_BORDER_ACTIVE = THEME.PRIMARY;
 
     if (theme === 'DARK') {
-        THEME.PRIMARY_FADED = darken(0.2, THEME.PRIMARY);
         THEME.BACKGROUND = '#000000';
         THEME.SHADED = setLightness(0.1, THEME.PRIMARY);
         THEME.SHADOW = transparentize(0.95, THEME.BACKGROUND);
@@ -170,14 +169,14 @@ export const buildPalette = (theme = 'LIGHT', colorCode = '#0000FF') => {
     }
 
     if (theme === 'LIGHT') {
-        THEME.PRIMARY_FADED = lighten(0.2, THEME.PRIMARY);
+        THEME.PRIMARY = setLightness(0.3, primaryColor);
         THEME.BACKGROUND = '#FFFFFF';
         THEME.SHADED = setLightness(0.95, THEME.PRIMARY);
         THEME.SHADOW = transparentize(0.8, setLightness(0.25, THEME.PRIMARY));
         THEME.TEXT = setLightness(0.05, THEME.PRIMARY);
-        THEME.TEXT_FADED = setLightness(0.75, THEME.PRIMARY);
-        THEME.BORDER = transparentize(0.75, THEME.TEXT);
-        THEME.BORDER_FADED = transparentize(0.25, THEME.TEXT_FADED);
+        THEME.TEXT_FADED = setLightness(0.4, THEME.PRIMARY);
+        THEME.BORDER = setLightness(0.9, THEME.PRIMARY);
+        THEME.BORDER_FADED = transparentize(0.5, THEME.TEXT_FADED);
     }
 
     return THEME;
