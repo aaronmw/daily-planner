@@ -41,6 +41,7 @@ const StyledGhostButton = styled(Button)(
         &:focus,
         &:hover {
             color: ${theme.TEXT};
+            border-color: transparent;
         }
     `
 );
