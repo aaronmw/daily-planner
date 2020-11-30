@@ -153,6 +153,7 @@ function App() {
         setSelectedTaskId(firstTaskIdInList ? firstTaskIdInList.id : '');
         setIsShowingSidebar(true);
         setIsShowingTrashContents(false);
+        setIsShowingListManager(true);
     };
 
     const onUpdateTask = useCallback(
@@ -373,8 +374,7 @@ function App() {
             const nextListIndex = currentListIndex + 1;
             const nextIndex =
                 nextListIndex > unarchivedLists.length - 1 ? 0 : nextListIndex;
-            setSelectedListId(unarchivedLists[nextIndex].id);
-            setIsShowingListManager(true);
+            onSelectList(unarchivedLists[nextIndex].id);
         },
         [
             currentListIndex,

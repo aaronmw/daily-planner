@@ -140,13 +140,11 @@ export const GhostButton = ({ children, ...otherProps }) => {
 
     const buttonElementRef = useRef(null);
 
-    const handleMouseEnterAndLeave = () => setIsAnimated(!isAnimated);
-
     return (
         <StyledGhostButton
             ref={buttonElementRef}
-            onMouseEnter={handleMouseEnterAndLeave}
-            onMouseLeave={handleMouseEnterAndLeave}
+            onMouseEnter={setIsAnimated.bind(null, true)}
+            onMouseLeave={setIsAnimated.bind(null, false)}
             {...otherProps}
         >
             <AnimatedTracer

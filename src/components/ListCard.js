@@ -65,22 +65,6 @@ const Container = styled(FlexBox).attrs({
     `
 );
 
-export const ListCardTaskIconContainer = styled(FlexBox).attrs({
-    justify: 'flex-start',
-    paddingX: 0.25,
-    paddingY: 0.25,
-    wrapped: true,
-})(
-    ({ isActive }) => `
-        background-color: rgba(255, 255, 255, ${isActive ? 0.75 : 0.25});
-        border-radius: ${BORDER_RADIUS};
-        border-top-right-radius: 0;
-        border-top-left-radius: 0;
-        margin: 5px;
-        width: calc(100% - (5px * 2));
-    `
-);
-
 export const GhostListCard = styled(GhostButton).attrs({
     align: 'center',
     justify: 'center',
