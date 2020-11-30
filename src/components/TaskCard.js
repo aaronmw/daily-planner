@@ -43,10 +43,8 @@ const Container = styled(FlexBox).attrs({
             opacity,
             width;
             
-        &::selection {
-            /*color: ${theme.HIGH_CONTRAST_BACKGROUND};
-            background-color: ${theme.HIGH_CONTRAST_TEXT};*/
-            color: purple;
+        & ::selection {
+            color: ${theme.HIGH_CONTRAST_BACKGROUND};
             background-color: ${theme.HIGH_CONTRAST_TEXT};
         }
 
@@ -81,7 +79,7 @@ const Container = styled(FlexBox).attrs({
 );
 
 const CardLabel = styled(FlexBox).attrs({
-    align: 'center',
+    align: 'flex-start',
     isFlexible: true,
 })(
     ({ duration, isActive, isMouseOver, theme }) => `
