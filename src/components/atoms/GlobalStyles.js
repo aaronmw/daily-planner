@@ -51,10 +51,10 @@ export default createGlobalStyle(
                 font-weight: 500;
                 border-bottom: 2px dotted ${theme.TEXT_FADED};
                 padding-bottom: calc(${GRID_UNIT} * 0.25);
-                
-                & + * {
-                    margin-top: ${GRID_UNIT};
-                } 
+            }
+            
+            * + h1 {
+                margin-top: ${GRID_UNIT};
             }
         
             blockquote {
