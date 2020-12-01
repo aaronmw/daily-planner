@@ -1,6 +1,6 @@
 import React, { memo } from 'react';
 import FlexBox from './atoms/FlexBox';
-import { COPY } from './atoms/tokens';
+import { COPY, LIST_CARD_WIDTH } from './atoms/tokens';
 import ListCard, { ListCardContainer } from './ListCard';
 import TrashedCard from './TrashedCard';
 
@@ -34,6 +34,7 @@ const TrashedLists = ({ appActions, appData, ...otherProps }) => {
                         <TrashedCard
                             key={list.id}
                             restoreButtonTitle={COPY.LABEL_FOR_RESTORING_LIST}
+                            style={{ width: LIST_CARD_WIDTH }}
                             onRestore={handleRestoreList.bind(this, list.id)}
                         >
                             <ListCard
@@ -41,6 +42,7 @@ const TrashedLists = ({ appActions, appData, ...otherProps }) => {
                                 appData={appData}
                                 isEditable={false}
                                 listId={list.id}
+                                style={{ marginLeft: 0 }}
                             />
                         </TrashedCard>
                     ))}

@@ -166,6 +166,8 @@ export const buildPalette = (theme = 'LIGHT', colorCode = '#0000FF') => {
         THEME.TEXT_FADED = setLightness(0.75, THEME.PRIMARY);
         THEME.BORDER = setLightness(0.15, THEME.PRIMARY);
         THEME.BORDER_FADED = THEME.TEXT_FADED;
+        THEME.NEUTRAL_FOREGROUND = '#ffffff';
+        THEME.NEUTRAL_BACKGROUND = '#000000';
     }
 
     if (theme === 'LIGHT') {
@@ -177,6 +179,8 @@ export const buildPalette = (theme = 'LIGHT', colorCode = '#0000FF') => {
         THEME.TEXT_FADED = setLightness(0.4, THEME.PRIMARY);
         THEME.BORDER = setLightness(0.9, THEME.PRIMARY);
         THEME.BORDER_FADED = transparentize(0.5, THEME.TEXT_FADED);
+        THEME.NEUTRAL_FOREGROUND = '#000000';
+        THEME.NEUTRAL_BACKGROUND = '#ffffff';
     }
 
     return THEME;

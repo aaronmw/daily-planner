@@ -62,10 +62,12 @@ const Sidebar = ({ appActions, appData, children, ...otherProps }) => {
             {...otherProps}
         >
             {!isSidebarOpen ? (
-                <SidebarToggleButton
-                    isSidebarOpen={isSidebarOpen}
-                    onChangeIsSidebarOpen={onChangeIsSidebarOpen}
-                />
+                <ToolBar isCollapsed>
+                    <SidebarToggleButton
+                        isSidebarOpen={isSidebarOpen}
+                        onChangeIsSidebarOpen={onChangeIsSidebarOpen}
+                    />
+                </ToolBar>
             ) : (
                 <>
                     <ToolBar>

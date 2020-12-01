@@ -2,12 +2,12 @@ import styled from 'styled-components';
 import FlexBox from './atoms/FlexBox';
 import { GRID_UNIT } from './atoms/tokens';
 
-const ToolBar = styled(FlexBox).attrs({
+const ToolBar = styled(FlexBox).attrs(({ isCollapsed = false }) => ({
     align: 'center',
-    justify: 'space-between',
-    paddingX: 0.5,
+    justify: isCollapsed ? 'center' : 'space-between',
+    paddingX: isCollapsed ? 0 : 0.5,
     spacing: 0.5,
-})(
+}))(
     ({ theme }) => `
         background-color: ${theme.BACKGROUND};
         color: ${theme.TEXT_FADED};

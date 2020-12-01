@@ -285,9 +285,16 @@ function App() {
                 if (newIsShowingListManager) {
                     setIsShowingSidebar(true);
                 }
+
+                setIsShowingTrashContents(false);
             });
         },
-        [setIsShowingSidebar, setIsShowingListManager, transition]
+        [
+            setIsShowingSidebar,
+            setIsShowingListManager,
+            setIsShowingTrashContents,
+            transition,
+        ]
     );
 
     const onChangeIsShowingTrashContents = useCallback(() => {
@@ -561,7 +568,7 @@ function App() {
             <ThemeProvider theme={palette}>
                 <GlobalStyle />
                 <Trash appActions={appActions} appData={appData} />
-                <FlexBox align="stretch">
+                <FlexBox align="stretch" poop="poop">
                     <Sidebar
                         appActions={appActions}
                         appData={appData}
@@ -623,7 +630,10 @@ function App() {
                                 )}
                             </ToggleButton>
                         </ToolBar>
-                        <Transition isTransitioning={isTransitioning}>
+                        <Transition
+                            isTransitioning={isTransitioning}
+                            style={{ height: '100%' }}
+                        >
                             {isShowingTrashContents ? (
                                 <TrashedLists
                                     appActions={appActions}

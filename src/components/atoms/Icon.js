@@ -8,7 +8,7 @@ const STYLE_PREFIX_MAP = {
     brands: 'fab',
 };
 
-const Icon = ({ iconName, styleName = 'regular', ...otherProps }) => (
+const Icon = ({ iconName, styleName = 'solid', ...otherProps }) => (
     <i
         className={`${STYLE_PREFIX_MAP[styleName]} fa-${iconName}`}
         {...otherProps}

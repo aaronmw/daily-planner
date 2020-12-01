@@ -40,18 +40,12 @@ const Container = styled(FlexBox).attrs({
             };
         color: ${theme.HIGH_CONTRAST_TEXT};
         cursor: pointer;
-        height: ${LIST_CARD_HEIGHT};
-        margin-bottom: ${LIST_CARD_SPACING};
-        margin-left: ${LIST_CARD_SPACING};
         overflow: hidden;
         position: relative;
         transform: scale(${isTargetedForDrop ? 1.1 : 1});
-        width: ${LIST_CARD_WIDTH};
+        width: 100%;
+        height: 100%;
         ${UNIFIED_TRANSITION};
-        
-        &:nth-child(3n+4) {
-            margin-left: 0;
-        }
         
         &:active,
         &:focus,
@@ -79,6 +73,7 @@ export const ListCardContainer = styled(FlexBox).attrs({
     isFlexible: true,
     justify: 'flex-start',
     padding: 1,
+    spacing: LIST_CARD_SPACING,
     wrapped: true,
 })(
     ({ theme }) => `
@@ -87,6 +82,17 @@ export const ListCardContainer = styled(FlexBox).attrs({
         height: 100%;
         overflow: auto;
         padding-bottom: calc(${GRID_UNIT} * 1.5);
+        
+        & > * {
+            height: ${LIST_CARD_HEIGHT};
+            margin-bottom: ${LIST_CARD_SPACING};
+            margin-left: ${LIST_CARD_SPACING};
+            width: ${LIST_CARD_WIDTH};
+            
+            :nth-child(3n + 1) {
+                margin-left: 0;
+            }
+        }
     `
 );
 

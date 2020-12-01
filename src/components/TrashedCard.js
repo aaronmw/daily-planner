@@ -1,9 +1,9 @@
 import React from 'react';
-import styled, { css, keyframes } from 'styled-components';
+import styled, { css, keyframes, ThemeProvider } from 'styled-components';
 import random from 'lodash/random';
 import FlexBox from './atoms/FlexBox';
 import Icon from './atoms/Icon';
-import { GRID_UNIT } from './atoms/tokens';
+import { buildPalette, GRID_UNIT } from './atoms/tokens';
 
 const animation = ({ minOpacity, translationDistance }) => keyframes`
     0% {
@@ -29,7 +29,7 @@ const Container = styled.div(
         position: relative;
 
         & > * {
-            width: auto;
+            width: 100%;
         }
     `
 );
@@ -40,10 +40,10 @@ const RestoreButton = styled(FlexBox).attrs({
     padding: 0.25,
 })(
     ({ theme }) => `
-        background-color: ${theme.HIGH_CONTRAST_TEXT};
-        border: 2px solid ${theme.HIGH_CONTRAST_BACKGROUND};
+        background-color: ${theme.NEUTRAL_BACKGROUND};
+        border: 2px solid ${theme.NEUTRAL_FOREGROUND};
         border-radius: 100px;
-        color: ${theme.HIGH_CONTRAST_BACKGROUND};
+        color: ${theme.NEUTRAL_FOREGROUND};
         cursor: pointer;
         height: calc(${GRID_UNIT});
         position: absolute;
@@ -54,8 +54,9 @@ const RestoreButton = styled(FlexBox).attrs({
         z-index: 1000;
         
         &:hover {
-            background-color: ${theme.HIGH_CONTRAST_BACKGROUND};
-            color: ${theme.HIGH_CONTRAST_TEXT};
+            background-color: ${theme.NEUTRAL_FOREGROUND};
+            border-color: ${theme.NEUTRAL_BACKGROUND};
+            color: ${theme.NEUTRAL_BACKGROUND};
         }
     `
 );
@@ -65,15 +66,13 @@ const TrashedCard = ({
     restoreButtonTitle,
     onRestore,
     ...otherProps
-}) => {
-    return (
-        <Container {...otherProps}>
-            <RestoreButton title={restoreButtonTitle} onClick={onRestore}>
-                <Icon iconName="reply" />
-            </RestoreButton>
-            {children}
-        </Container>
-    );
-};
+}) => (
+    <Container {...otherProps}>
+        <RestoreButton title={restoreButtonTitle} onClick={onRestore}>
+            <Icon iconName="reply" />
+        </RestoreButton>
+        {children}
+    </Container>
+);
 
 export default TrashedCard;

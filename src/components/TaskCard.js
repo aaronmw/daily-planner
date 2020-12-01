@@ -108,7 +108,9 @@ export const TaskCardContainer = styled(FlexBox).attrs({
     direction: 'column',
     spacing: 0.5,
     padding: 1,
-})``;
+})`
+    height: 100%;
+`;
 
 const TaskCard = ({ appActions, appData, task, ...otherProps }) => {
     const [isMouseOver, setIsMouseOver] = useState(false);
@@ -119,9 +121,9 @@ const TaskCard = ({ appActions, appData, task, ...otherProps }) => {
 
     const { icon, id, label, list_id, scheduled_minutes } = task;
 
-    const listcolorCode = lists.find(list => list.id === list_id).color_code;
+    const listColorCode = lists.find(list => list.id === list_id).color_code;
 
-    const cardPalette = buildPalette(theme, listcolorCode);
+    const cardPalette = buildPalette(theme, listColorCode);
 
     const isActive = task.id === selectedTaskId;
 
