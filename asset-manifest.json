@@ -1,13 +1,13 @@
 {
   "files": {
-    "main.js": "/daily-planner/static/js/main.f8a3e757.chunk.js",
-    "main.js.map": "/daily-planner/static/js/main.f8a3e757.chunk.js.map",
+    "main.js": "/daily-planner/static/js/main.82ac728a.chunk.js",
+    "main.js.map": "/daily-planner/static/js/main.82ac728a.chunk.js.map",
     "runtime~main.js": "/daily-planner/static/js/runtime~main.62d44102.js",
     "runtime~main.js.map": "/daily-planner/static/js/runtime~main.62d44102.js.map",
     "static/js/2.c223eb99.chunk.js": "/daily-planner/static/js/2.c223eb99.chunk.js",
     "static/js/2.c223eb99.chunk.js.map": "/daily-planner/static/js/2.c223eb99.chunk.js.map",
     "index.html": "/daily-planner/index.html",
-    "precache-manifest.3ca502705f1d4e276da13f57917a6539.js": "/daily-planner/precache-manifest.3ca502705f1d4e276da13f57917a6539.js",
+    "precache-manifest.3ef4e3fe4c0156da9d88413e399397e7.js": "/daily-planner/precache-manifest.3ef4e3fe4c0156da9d88413e399397e7.js",
     "service-worker.js": "/daily-planner/service-worker.js"
   }
 }
