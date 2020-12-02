@@ -262,7 +262,9 @@ function App() {
 
             const taskAtRelativeIndex = tasksInList[targetIndex];
 
-            onSelectTask(taskAtRelativeIndex.id);
+            if (taskAtRelativeIndex) {
+                onSelectTask(taskAtRelativeIndex.id);
+            }
         },
         [onSelectTask, selectedListId, selectedTaskId, tasks]
     );
