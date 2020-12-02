@@ -237,6 +237,33 @@ function App() {
         [tasks, setSelectedTaskId, setSelectedListId]
     );
 
+    const selectTaskByRelativeIndex = useCallback(
+        relativeIndex => {
+            const tasksInList = tasks.filter(
+                task => task.list_id === selectedListId
+            );
+
+            const numTasksInList = tasksInList.length;
+
+            const indexOfCurrentTask = tasksInList.findIndex(
+                task => task.id === selectedTaskId
+            );
+
+            const totalSteps =
+                relativeIndex >= 0
+                    ? relativeIndex
+                    : Math.abs(relativeIndex) * (numTasksInList - 1);
+
+            const targetIndex =
+                (indexOfCurrentTask + totalSteps) % numTasksInList;
+
+            const taskAtRelativeIndex = tasksInList[targetIndex];
+
+            onSelectTask(taskAtRelativeIndex.id);
+        },
+        [onSelectTask, selectedListId, selectedTaskId, tasks]
+    );
+
     const transition = useCallback(
         callback => {
             setIsTransitioning(true);
@@ -314,7 +341,7 @@ function App() {
         setIsShowingTrashContents,
     ]);
 
-    const onDeleteTask = useCallback(
+    const deleteTask = useCallback(
         taskId => {
             if (selectedTaskId === taskId) {
                 const firstUnarchivedTask = tasks.find(
@@ -464,9 +491,9 @@ function App() {
     const deleteCurrentTask = useCallback(
         evt => {
             evt.preventDefault();
-            onDeleteTask(selectedTaskId);
+            deleteTask(selectedTaskId);
         },
-        [onDeleteTask, selectedTaskId]
+        [deleteTask, selectedTaskId]
     );
 
     const goBack = useCallback(() => {
@@ -500,6 +527,8 @@ function App() {
             'l': toggleIsShowingListManager,
             'n': createNewTask,
             't': deleteCurrentTask,
+            'arrowUp': selectTaskByRelativeIndex.bind(null, -1),
+            'arrowDown': selectTaskByRelativeIndex.bind(null, 1),
         };
     }, [
         createNewTask,
@@ -509,6 +538,7 @@ function App() {
         moveTaskToTimeline,
         selectNextList,
         selectPreviousList,
+        selectTaskByRelativeIndex,
         setTaskDuration,
         toggleTaskListVisibility,
         toggleDarkMode,
@@ -526,7 +556,7 @@ function App() {
         onChangeTheme,
         onCreateList,
         onCreateTask,
-        onDeleteTask,
+        deleteTask,
         onSelectList,
         onImmediatelySelectTask,
         onTransitionToTask,

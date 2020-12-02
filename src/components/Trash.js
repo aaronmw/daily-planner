@@ -72,7 +72,7 @@ const TrashIconContainer = styled(AnimatedContainer).attrs({
 const Trash = ({ appActions, appData, ...otherProps }) => {
     const {
         onChangeIsShowingTrashContents,
-        onDeleteTask,
+        deleteTask,
         onSelectList,
         onUpdateList,
     } = appActions;
@@ -100,7 +100,7 @@ const Trash = ({ appActions, appData, ...otherProps }) => {
                 isArchived: true,
             });
         },
-        'task-id': onDeleteTask,
+        'task-id': deleteTask,
     });
 
     const handleClick = () =>
