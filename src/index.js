@@ -240,7 +240,10 @@ function App() {
     const selectTaskByRelativeIndex = useCallback(
         relativeIndex => {
             const tasksInList = tasks.filter(
-                task => task.list_id === selectedListId
+                task =>
+                    task.list_id === selectedListId &&
+                    !task.isComplete &&
+                    !task.scheduled
             );
 
             const numTasksInList = tasksInList.length;
