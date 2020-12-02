@@ -1,4 +1,4 @@
-import { darken, lighten, setLightness, transparentize } from 'polished';
+import { setLightness, transparentize } from 'polished';
 import React from 'react';
 import MOTIVATIONAL_DESCRIPTORS from './copy/motivational-descriptors';
 import Icon from './Icon';

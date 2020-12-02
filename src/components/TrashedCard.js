@@ -1,9 +1,9 @@
-import React from 'react';
-import styled, { css, keyframes, ThemeProvider } from 'styled-components';
 import random from 'lodash/random';
+import React from 'react';
+import styled, { css, keyframes } from 'styled-components';
 import FlexBox from './atoms/FlexBox';
 import Icon from './atoms/Icon';
-import { buildPalette, GRID_UNIT } from './atoms/tokens';
+import { GRID_UNIT } from './atoms/tokens';
 
 const animation = ({ minOpacity, translationDistance }) => keyframes`
     0% {

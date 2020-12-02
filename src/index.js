@@ -239,7 +239,13 @@ function App() {
 
             setSelectedTaskId(taskId);
         },
-        [tasks, setSelectedTaskId, setSelectedListId]
+        [
+            isShowingListManager,
+            tasks,
+            setIsShowingListManager,
+            setSelectedTaskId,
+            setSelectedListId,
+        ]
     );
 
     const selectTaskByRelativeIndex = useCallback(
@@ -289,19 +295,14 @@ function App() {
         taskId => {
             onSelectTask(taskId);
         },
-        [isShowingListManager, setIsShowingListManager, onSelectTask]
+        [onSelectTask]
     );
 
     const onTransitionToTask = useCallback(
         taskId => {
             transition(() => onSelectTask(taskId));
         },
-        [
-            isShowingListManager,
-            setIsShowingListManager,
-            onSelectTask,
-            transition,
-        ]
+        [onSelectTask, transition]
     );
 
     const onChangeIsSidebarOpen = setIsShowingSidebar;
