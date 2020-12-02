@@ -15,7 +15,7 @@ const Button = styled(FlexBox).attrs({
         background-color: ${theme[isInverted ? 'BACKGROUND' : 'PRIMARY']};
         border: 2px solid transparent;
         border-radius: ${BORDER_RADIUS};
-        color: ${theme[isInverted ? 'PRIMARY' : 'BACKGROUND']};
+        color: ${theme[isInverted ? 'TEXT_FADED' : 'HIGH_CONTRAST_TEXT']};
         cursor: pointer;
         transform: translateY(0);
         ${UNIFIED_TRANSITION};

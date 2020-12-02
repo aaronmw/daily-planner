@@ -1,4 +1,9 @@
-import { setLightness, transparentize } from 'polished';
+import {
+    getLuminance,
+    readableColor,
+    setLightness,
+    transparentize,
+} from 'polished';
 import React from 'react';
 import MOTIVATIONAL_DESCRIPTORS from './copy/motivational-descriptors';
 import Icon from './Icon';
@@ -95,96 +100,70 @@ export const INITIAL_TASKS = Object.keys(COPY.TIPS).map(tipId => {
 export const INITIAL_SELECTED_TASK_ID = (INITIAL_TASKS[0] || {}).id;
 
 export const PRIMARY_COLORS = [
-    {
-        primaryColor: '#FFB83D',
-        highContrastTextColor: '#000000',
-    },
-    {
-        primaryColor: '#E5FF3D',
-        highContrastTextColor: '#000000',
-    },
-    {
-        primaryColor: '#84FF3D',
-        highContrastTextColor: '#000000',
-    },
-    {
-        primaryColor: '#3DFF57',
-        highContrastTextColor: '#000000',
-    },
-    {
-        primaryColor: '#3DFFB8',
-        highContrastTextColor: '#000000',
-    },
-    {
-        primaryColor: '#3DE5FF',
-        highContrastTextColor: '#000000',
-    },
-    {
-        primaryColor: '#3D84FF',
-        highContrastTextColor: '#ffffff',
-    },
-    {
-        primaryColor: '#573DFF',
-        highContrastTextColor: '#ffffff',
-    },
-    {
-        primaryColor: '#B83DFF',
-        highContrastTextColor: '#ffffff',
-    },
-    {
-        primaryColor: '#FF3DE5',
-        highContrastTextColor: '#ffffff',
-    },
-    {
-        primaryColor: '#FF3D84',
-        highContrastTextColor: '#ffffff',
-    },
-    {
-        primaryColor: '#FF573D',
-        highContrastTextColor: '#ffffff',
-    },
+    '#FFB83D',
+    '#E5FF3D',
+    '#84FF3D',
+    '#3DFF57',
+    '#3DFFB8',
+    '#3DE5FF',
+    '#3D84FF',
+    '#573DFF',
+    '#B83DFF',
+    '#FF3DE5',
+    '#FF3D84',
+    '#FF573D',
 ];
 
 export const buildPalette = (theme = 'LIGHT', colorCode = '#0000FF') => {
     const THEME = {};
 
-    const colorObj =
-        PRIMARY_COLORS.find(colorObj => colorObj.primaryColor === colorCode) ||
+    THEME.PRIMARY =
+        PRIMARY_COLORS.find(primaryColor => primaryColor === colorCode) ||
         PRIMARY_COLORS[0];
 
-    const { primaryColor, highContrastTextColor } = colorObj;
-
-    THEME.PRIMARY = primaryColor;
-    THEME.HIGH_CONTRAST_BACKGROUND = THEME.PRIMARY;
-    THEME.HIGH_CONTRAST_TEXT = highContrastTextColor;
-    THEME.TASK_BORDER = transparentize(0.5, THEME.PRIMARY);
-    THEME.TASK_BORDER_HOVER = transparentize(0.5, THEME.PRIMARY);
-    THEME.TASK_BORDER_ACTIVE = THEME.PRIMARY;
+    const luminanceOfPrimaryColor = getLuminance(THEME.PRIMARY);
 
     if (theme === 'DARK') {
+        THEME.PRIMARY = setLightness(
+            luminanceOfPrimaryColor < 0.5 ? 0.85 : 0.75,
+            THEME.PRIMARY
+        );
+
         THEME.BACKGROUND = '#000000';
         THEME.SHADED = setLightness(0.1, THEME.PRIMARY);
-        THEME.SHADOW = transparentize(0.95, THEME.BACKGROUND);
         THEME.TEXT = setLightness(0.95, THEME.PRIMARY);
         THEME.TEXT_FADED = setLightness(0.75, THEME.PRIMARY);
-        THEME.BORDER = setLightness(0.15, THEME.PRIMARY);
+        THEME.BORDER = setLightness(0.2, THEME.PRIMARY);
         THEME.BORDER_FADED = THEME.TEXT_FADED;
         THEME.NEUTRAL_FOREGROUND = '#ffffff';
         THEME.NEUTRAL_BACKGROUND = '#000000';
     }
 
     if (theme === 'LIGHT') {
-        THEME.PRIMARY = setLightness(0.3, primaryColor);
-        THEME.BACKGROUND = '#FFFFFF';
+        THEME.PRIMARY = setLightness(
+            luminanceOfPrimaryColor < 0.5 ? 0.8 : 0.65,
+            THEME.PRIMARY
+        );
+
+        THEME.BACKGROUND = '#ffffff';
         THEME.SHADED = setLightness(0.95, THEME.PRIMARY);
-        THEME.SHADOW = transparentize(0.8, setLightness(0.25, THEME.PRIMARY));
         THEME.TEXT = setLightness(0.05, THEME.PRIMARY);
         THEME.TEXT_FADED = setLightness(0.4, THEME.PRIMARY);
-        THEME.BORDER = setLightness(0.9, THEME.PRIMARY);
+        THEME.BORDER = setLightness(
+            luminanceOfPrimaryColor < 0.5 ? 0.85 : 0.6,
+            THEME.PRIMARY
+        );
         THEME.BORDER_FADED = transparentize(0.5, THEME.TEXT_FADED);
         THEME.NEUTRAL_FOREGROUND = '#000000';
         THEME.NEUTRAL_BACKGROUND = '#ffffff';
     }
+
+    THEME.HIGH_CONTRAST_BACKGROUND = THEME.PRIMARY;
+    THEME.HIGH_CONTRAST_TEXT = readableColor(THEME.HIGH_CONTRAST_BACKGROUND);
+    THEME.SHADOW = transparentize(0.9, '#000000');
+    THEME.TASK_BORDER = transparentize(0.5, THEME.PRIMARY);
+    THEME.TASK_BORDER_HOVER = transparentize(0.5, THEME.PRIMARY);
+    THEME.TASK_BORDER_ACTIVE = THEME.PRIMARY;
 
     return THEME;
 };

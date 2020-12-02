@@ -102,17 +102,14 @@ const ColorPicker = ({ palette, onPickColor, ...otherProps }) => {
             {isPickingColor && (
                 <>
                     <ColorPaletteContainer>
-                        {PRIMARY_COLORS.map(colorObj => {
+                        {PRIMARY_COLORS.map(color => {
                             return (
                                 <ColorChip
-                                    key={colorObj.primaryColor}
+                                    key={color}
                                     style={{
-                                        backgroundColor: colorObj.primaryColor,
+                                        backgroundColor: color,
                                     }}
-                                    onClick={onPickColor.bind(
-                                        null,
-                                        colorObj.primaryColor
-                                    )}
+                                    onClick={onPickColor.bind(null, color)}
                                 />
                             );
                         })}
