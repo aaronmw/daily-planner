@@ -232,6 +232,11 @@ function App() {
             const task = tasks.find(task => task.id === taskId);
 
             setSelectedListId(task.list_id);
+
+            if (isShowingListManager) {
+                setIsShowingListManager(false);
+            }
+
             setSelectedTaskId(taskId);
         },
         [tasks, setSelectedTaskId, setSelectedListId]
@@ -282,10 +287,6 @@ function App() {
 
     const onImmediatelySelectTask = useCallback(
         taskId => {
-            if (isShowingListManager) {
-                setIsShowingListManager(false);
-            }
-
             onSelectTask(taskId);
         },
         [isShowingListManager, setIsShowingListManager, onSelectTask]
@@ -293,10 +294,6 @@ function App() {
 
     const onTransitionToTask = useCallback(
         taskId => {
-            if (isShowingListManager) {
-                setIsShowingListManager(false);
-            }
-
             transition(() => onSelectTask(taskId));
         },
         [
