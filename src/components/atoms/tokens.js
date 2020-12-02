@@ -49,10 +49,13 @@ COPY.TIPS = {
         'Make lists of tasks. Every day, schedule your most important ones',
     CREATE_NEW_TASK: 'Press [N] to create a [N]ew task in the current list',
     DELETE_TASK: 'Press [T] to move the selected task to the [T]rash',
-    MOVE_TASK_BETWEEN_TASK_LIST_AND_TIMELINE:
-        'Press [⌘]+[LEFT or RIGHT] to move the selected task to the TaskList or Timeline, respectively',
+    EDIT_TASK: 'Press [E] to edit the selected task',
     MOVE_BETWEEN_LISTS:
         'Press [⌘]+[SHIFT]+[LEFT or RIGHT] to move between your lists',
+    SELECT_NEXT_PREV_TASK:
+        'Press [UP] or [DOWN] to select the previous and next unscheduled tasks in the active list',
+    MOVE_TASK_BETWEEN_TASK_LIST_AND_TIMELINE:
+        'Press [⌘]+[LEFT or RIGHT] to move the selected task to the TaskList or Timeline, respectively',
     SETTING_DURATION:
         'Press keys [1] to [6] to quickly adjust your time estimate for the selected task',
     TOGGLE_TASK_LIST:
