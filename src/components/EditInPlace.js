@@ -127,7 +127,7 @@ const EditInPlace = ({
         setBufferedValue(evt.target.value);
     };
 
-    const keyMap = useMemo(() => {
+    const textareaKeyMap = useMemo(() => {
         const saveAndClose = () => {
             onSave(bufferedValue);
             setIsEditing(false);
@@ -153,16 +153,26 @@ const EditInPlace = ({
                     evt.preventDefault();
                     return false;
                 }
-
-                if (evt.target === containerElementRef.current) {
-                    evt.preventDefault();
-                    handleClick();
-                }
             },
         };
-    }, [bufferedValue, handleClick, onSave, isSingleLine, value]);
+    }, [bufferedValue, onSave, isSingleLine, value]);
 
-    useKeyboardShortcuts(keyMap, inputRef);
+    useKeyboardShortcuts(textareaKeyMap, inputRef);
+
+    const keyMap = useMemo(() => {
+        const enterEditMode = evt => {
+            if (evt.target === containerElementRef.current) {
+                evt.preventDefault();
+                handleClick();
+            }
+        };
+
+        return {
+            enter: enterEditMode,
+        };
+    }, [handleClick, containerElementRef]);
+
+    useKeyboardShortcuts(keyMap, containerElementRef);
 
     return (
         <Container
