@@ -1,5 +1,6 @@
 import random from 'lodash/random';
 import sample from 'lodash/sample';
+import sortBy from 'lodash/sortBy';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import ReactDOM from 'react-dom';
 import { StyleSheetManager, ThemeProvider } from 'styled-components';
@@ -62,7 +63,11 @@ function App() {
     const [isShowingTrashContents, setIsShowingTrashContents] = useState(false);
     const [isTransitioning, setIsTransitioning] = useState(false);
     const unarchivedLists = useMemo(
-        () => lists.filter(list => !list.isArchived),
+        () =>
+            sortBy(
+                lists.filter(list => !list.isArchived),
+                [list => list.label]
+            ),
         [lists]
     );
     const currentListIndex = unarchivedLists.findIndex(
@@ -280,6 +285,26 @@ function App() {
         [onSelectTask, selectedListId, selectedTaskId, tasks]
     );
 
+    const selectListByRelativeIndex = useCallback(
+        relativeIndex => {
+            const numLists = unarchivedLists.length;
+
+            const totalSteps =
+                relativeIndex >= 0
+                    ? relativeIndex
+                    : Math.abs(relativeIndex) * (numLists - 1);
+
+            const targetIndex = (currentListIndex + totalSteps) % numLists;
+
+            const listAtRelativeIndex = unarchivedLists[targetIndex];
+
+            if (listAtRelativeIndex) {
+                onSelectList(listAtRelativeIndex.id);
+            }
+        },
+        [currentListIndex, onSelectList, selectedListId, unarchivedLists]
+    );
+
     const transition = useCallback(
         callback => {
             setIsTransitioning(true);
@@ -415,28 +440,6 @@ function App() {
         [onUpdateTask, selectedTaskId]
     );
 
-    const selectNextList = useCallback(
-        evt => {
-            evt.preventDefault();
-            const nextListIndex = currentListIndex + 1;
-            const nextIndex =
-                nextListIndex > unarchivedLists.length - 1 ? 0 : nextListIndex;
-            onSelectList(unarchivedLists[nextIndex].id);
-        },
-        [currentListIndex, onSelectList, unarchivedLists]
-    );
-
-    const selectPreviousList = useCallback(
-        evt => {
-            evt.preventDefault();
-            const prevListIndex = currentListIndex - 1;
-            const prevIndex =
-                prevListIndex < 0 ? unarchivedLists.length - 1 : prevListIndex;
-            onSelectList(unarchivedLists[prevIndex].id);
-        },
-        [currentListIndex, onSelectList, unarchivedLists]
-    );
-
     const setTaskDuration = useCallback(
         duration => {
             onUpdateTask(selectedTaskId, {
@@ -519,10 +522,10 @@ function App() {
             }, {}),
             'cmd + arrowRight': moveTaskToTimeline,
             'cmd + arrowLeft': moveTaskToTaskList,
-            'cmd + shift + arrowRight': selectNextList,
-            'cmd + shift + arrowLeft': selectPreviousList,
-            'cmd + shift + ]': selectNextList,
-            'cmd + shift + [': selectPreviousList,
+            'cmd + shift + arrowRight': selectListByRelativeIndex.bind(null, 1),
+            'cmd + shift + arrowLeft': selectListByRelativeIndex.bind(null, -1),
+            'cmd + shift + ]': selectListByRelativeIndex.bind(null, 1),
+            'cmd + shift + [': selectListByRelativeIndex.bind(null, -1),
             'b': toggleTaskListVisibility,
             'd': toggleDarkMode,
             'e': toggleIsEditingCurrentTask,
@@ -539,8 +542,7 @@ function App() {
         goBack,
         moveTaskToTaskList,
         moveTaskToTimeline,
-        selectNextList,
-        selectPreviousList,
+        selectListByRelativeIndex,
         selectTaskByRelativeIndex,
         setTaskDuration,
         toggleTaskListVisibility,
@@ -676,6 +678,7 @@ function App() {
                                 <ListManager
                                     appActions={appActions}
                                     appData={appData}
+                                    lists={unarchivedLists}
                                 />
                             ) : (
                                 <TaskDetails
