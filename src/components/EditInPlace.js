@@ -14,7 +14,7 @@ import { BORDER_RADIUS, GRID_UNIT, UNIFIED_TRANSITION } from './atoms/tokens';
 const Container = styled(Box).attrs({
     isFlexible: true,
 })(
-    ({ isEditable, isEditing, theme, tracingElementStyles = () => {} }) => `
+    ({ isEditable, isEditing, theme, tracerColor }) => `
         cursor: ${isEditing ? 'text' : 'pointer'};
         position: relative;
         user-select: ${isEditing ? 'text' : 'none'};
@@ -24,12 +24,16 @@ const Container = styled(Box).attrs({
         // Tracing element
         &:before {
             border:
-                ${isEditing ? 'none' : `2px dashed ${theme.BORDER}`};
+                ${
+                    isEditing
+                        ? 'none'
+                        : `2px dashed ${tracerColor || theme.DOTTED_LINE}`
+                };
             box-shadow:
                 ${
                     isEditing
-                        ? `0 0 0 2px ${theme.PRIMARY}`
-                        : `0 0 0 0 ${theme.PRIMARY}`
+                        ? `0 0 0 2px ${tracerColor || theme.PRIMARY}`
+                        : `0 0 0 0 ${tracerColor || theme.PRIMARY}`
                 };
             border-radius: ${BORDER_RADIUS};
             content: '';
@@ -41,7 +45,6 @@ const Container = styled(Box).attrs({
             bottom: calc(${GRID_UNIT} * 0.25 * -1);
             left: calc(${GRID_UNIT} * 0.5 * -1);
             ${UNIFIED_TRANSITION};
-            ${tracingElementStyles(theme)}
         }
         
         &:focus,
@@ -53,11 +56,18 @@ const Container = styled(Box).attrs({
     `
 );
 
-const StyledTextarea = styled.textarea`
-    display: block;
-    height: 100%;
-    width: 100%;
-`;
+const StyledTextarea = styled.textarea(
+    ({ theme }) => `
+        display: block;
+        height: 100%;
+        width: 100%;
+        
+        ::selection {
+            background-color: ${theme.HIGH_CONTRAST_TEXT};
+            color: ${theme.HIGH_CONTRAST_BACKGROUND};
+        }
+    `
+);
 
 const Canvas = styled(Box)(
     ({ isEmpty }) => `
@@ -73,7 +83,7 @@ const EditInPlace = ({
     isRemotelyActivated = false,
     placeholder = 'Empty',
     render = value => value,
-    tracingElementStyles = () => {},
+    tracerColor = null,
     value = '',
     onSave = () => {},
     ...otherProps
@@ -93,7 +103,7 @@ const EditInPlace = ({
 
     useEffect(() => {
         if (isEditing && inputRef.current) {
-            inputRef.current.select();
+            // inputRef.current.select();
             inputRef.current.focus();
         }
     }, [inputRef, isEditing]);
@@ -180,7 +190,7 @@ const EditInPlace = ({
             isEditing={isEditing}
             ref={containerElementRef}
             tabIndex={0}
-            tracingElementStyles={tracingElementStyles}
+            tracerColor={tracerColor}
             onClick={!doubleClickToEdit ? handleClick : null}
             onDoubleClick={doubleClickToEdit ? handleClick : null}
             {...otherProps}

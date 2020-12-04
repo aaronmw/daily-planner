@@ -12,7 +12,9 @@ const Button = styled(FlexBox).attrs({
 })(
     ({ isInverted = false, theme }) => `
         align-self: unset;
-        background-color: ${theme[isInverted ? 'BACKGROUND' : 'PRIMARY']};
+        background-color: ${
+            theme[isInverted ? 'BACKGROUND' : 'HIGH_CONTRAST_BACKGROUND']
+        };
         border: 2px solid transparent;
         border-radius: ${BORDER_RADIUS};
         color: ${theme[isInverted ? 'TEXT_FADED' : 'HIGH_CONTRAST_TEXT']};
@@ -71,7 +73,7 @@ const Tracer = styled.rect(
         fill: none;
         stroke: ${isResizing
             ? 'transparent'
-            : theme[isAnimated ? 'PRIMARY' : 'TEXT_FADED']};
+            : theme[isAnimated ? 'BORDER' : 'DOTTED_LINE']};
         stroke-width: calc(${BORDER_WIDTH} * 2);
         stroke-dasharray: 6px, 6px;
         position: relative;

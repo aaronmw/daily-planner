@@ -11,6 +11,7 @@ import GlobalStyle from './components/atoms/GlobalStyles';
 import {
     buildPalette,
     COPY,
+    DEFAULT_LIST_PROPS,
     GRID_UNIT,
     ICONS,
     INITIAL_LISTS,
@@ -73,17 +74,15 @@ function App() {
     const currentListIndex = unarchivedLists.findIndex(
         list => list.id === selectedListId
     );
-    const selectedTask = tasks.find(task => task.id === selectedTaskId);
-    const listContainingSelectedTask = selectedTask
-        ? lists.find(list => list.id === selectedTask.list_id)
-        : null;
     const selectedList = lists.find(list => list.id === selectedListId);
-    const primarycolorCode = listContainingSelectedTask
-        ? listContainingSelectedTask.color_code
-        : selectedList
+
+    const primaryColorCode = selectedList
         ? selectedList.color_code
-        : PRIMARY_COLORS[0].primaryColor;
-    const palette = buildPalette(themeName, primarycolorCode);
+        : PRIMARY_COLORS[0]
+        ? PRIMARY_COLORS[0]
+        : '#FF0000';
+
+    const palette = buildPalette(themeName, primaryColorCode);
     const incompleteTasks = useMemo(
         () => tasks.filter(task => !task.isComplete),
         [tasks]
@@ -108,13 +107,13 @@ function App() {
     const onCreateList = useCallback(
         (overrides = {}) => {
             const newListId = Date.now();
-            const randomcolorCode = random(0, PRIMARY_COLORS.length);
+            const randomColorCode = random(0, PRIMARY_COLORS.length);
 
             setLists(currentLists =>
                 currentLists.concat([
                     {
                         id: newListId,
-                        color_code: randomcolorCode,
+                        color_code: randomColorCode,
                         isArchived: false,
                         label: `${sample(COPY.MOTIVATIONAL_DESCRIPTORS)} ${
                             COPY.NEW_LIST_LABEL

@@ -1,4 +1,7 @@
+import range from 'lodash/range';
+import sample from 'lodash/sample';
 import {
+    adjustHue,
     getLuminance,
     readableColor,
     setLightness,
@@ -71,13 +74,26 @@ COPY.TIPS = {
 
 export { COPY };
 
+export const PRIMARY_COLORS = [];
+const NUM_COLORS = 10;
+range(NUM_COLORS).map(
+    num =>
+        (PRIMARY_COLORS[num] = adjustHue((360 / NUM_COLORS) * num, '#D72127'))
+);
+
 export const INITIAL_LISTS = [
     {
         id: 1,
-        color_code: 0,
+        color_code: sample(PRIMARY_COLORS),
         isArchived: false,
         label: 'User Manual',
     },
+    // ...PRIMARY_COLORS.map((primaryColor, index) => ({
+    //     id: index + 2,
+    //     color_code: primaryColor,
+    //     isArchived: false,
+    //     label: primaryColor,
+    // })),
 ];
 export const INITIAL_SELECTED_LIST_ID = (INITIAL_LISTS[0] || {}).id;
 
@@ -99,66 +115,62 @@ export const INITIAL_TASKS = Object.keys(COPY.TIPS).map(tipId => {
 
 export const INITIAL_SELECTED_TASK_ID = (INITIAL_TASKS[0] || {}).id;
 
-export const PRIMARY_COLORS = [
-    '#FFB83D',
-    '#E5FF3D',
-    '#84FF3D',
-    '#3DFF57',
-    '#3DFFB8',
-    '#3DE5FF',
-    '#3D84FF',
-    '#573DFF',
-    '#B83DFF',
-    '#FF3DE5',
-    '#FF3D84',
-    '#FF573D',
-];
+export const DEFAULT_LIST_PROPS = {
+    id: Date.now(),
+    color_code: '#FF0000',
+    isArchived: false,
+    label: 'New List',
+};
 
-export const buildPalette = (theme = 'LIGHT', colorCode = '#0000FF') => {
+export const buildPalette = (theme = 'LIGHT', colorCode = '#FF0000') => {
     const THEME = {};
 
-    THEME.PRIMARY =
-        PRIMARY_COLORS.find(primaryColor => primaryColor === colorCode) ||
-        PRIMARY_COLORS[0];
+    THEME.PRIMARY = colorCode;
 
     const luminanceOfPrimaryColor = getLuminance(THEME.PRIMARY);
 
     if (theme === 'DARK') {
-        THEME.PRIMARY = setLightness(
-            luminanceOfPrimaryColor < 0.5 ? 0.85 : 0.75,
-            THEME.PRIMARY
-        );
-
         THEME.BACKGROUND = '#000000';
         THEME.SHADED = setLightness(0.1, THEME.PRIMARY);
         THEME.TEXT = setLightness(0.95, THEME.PRIMARY);
         THEME.TEXT_FADED = setLightness(0.75, THEME.PRIMARY);
         THEME.BORDER = setLightness(0.2, THEME.PRIMARY);
-        THEME.BORDER_FADED = THEME.TEXT_FADED;
+        THEME.DOTTED_LINE = setLightness(0.8, THEME.PRIMARY);
+        THEME.TIME_LINE_PRIMARY = THEME.TEXT_FADED;
+        THEME.TIME_LINE_SECONDARY = THEME.TEXT_FADED;
         THEME.NEUTRAL_FOREGROUND = '#ffffff';
         THEME.NEUTRAL_BACKGROUND = '#000000';
     }
 
     if (theme === 'LIGHT') {
         THEME.PRIMARY = setLightness(
-            luminanceOfPrimaryColor < 0.5 ? 0.8 : 0.65,
+            luminanceOfPrimaryColor < 0.5 ? 0.6 : 0.4,
             THEME.PRIMARY
         );
 
         THEME.BACKGROUND = '#ffffff';
-        THEME.SHADED = setLightness(0.95, THEME.PRIMARY);
+        THEME.SHADED = setLightness(0.975, THEME.PRIMARY);
         THEME.TEXT = setLightness(0.05, THEME.PRIMARY);
         THEME.TEXT_FADED = setLightness(0.4, THEME.PRIMARY);
         THEME.BORDER = setLightness(
             luminanceOfPrimaryColor < 0.5 ? 0.85 : 0.6,
             THEME.PRIMARY
         );
-        THEME.BORDER_FADED = transparentize(0.5, THEME.TEXT_FADED);
+        THEME.DOTTED_LINE = setLightness(
+            luminanceOfPrimaryColor < 0.5 ? 0.8 : 0.45,
+            THEME.PRIMARY
+        );
+        THEME.TIME_LINE_PRIMARY = transparentize(0.5, THEME.TEXT_FADED);
+        THEME.TIME_LINE_SECONDARY = transparentize(0.5, THEME.TEXT_FADED);
         THEME.NEUTRAL_FOREGROUND = '#000000';
         THEME.NEUTRAL_BACKGROUND = '#ffffff';
     }
 
-    THEME.HIGH_CONTRAST_BACKGROUND = THEME.PRIMARY;
+    THEME.HIGH_CONTRAST_BACKGROUND = setLightness(
+        // luminanceOfPrimaryColor < 0.5 ? 0.75 : 0.65,
+        0.7,
+        THEME.PRIMARY
+    );
     THEME.HIGH_CONTRAST_TEXT = readableColor(THEME.HIGH_CONTRAST_BACKGROUND);
     THEME.SHADOW = transparentize(0.9, '#000000');
     THEME.TASK_BORDER = transparentize(0.5, THEME.PRIMARY);
@@ -193,10 +205,17 @@ const ICON_PACKS = {
     },
 };
 
+const ICON_WEIGHT_OVERRIDES = {
+    palette: 'light',
+};
+
 Object.keys(ICON_PACKS.FONT_AWESOME).forEach(key => {
     const ICON_NAME = ICON_PACKS.FONT_AWESOME[key];
     ICON_PACKS.FONT_AWESOME[key] = (
-        <Icon iconName={ICON_NAME} styleName="solid" />
+        <Icon
+            iconName={ICON_NAME}
+            styleName={ICON_WEIGHT_OVERRIDES[ICON_NAME] || 'solid'}
+        />
     );
 });
 

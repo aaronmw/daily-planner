@@ -5,6 +5,7 @@ import Box from './atoms/Box';
 import { ToggleButton } from './atoms/Button';
 import FlexBox from './atoms/FlexBox';
 import {
+    BORDER_RADIUS,
     COLOR_PICKER_HEIGHT,
     COLOR_PICKER_WIDTH,
     GRID_UNIT,
@@ -36,24 +37,20 @@ const WindowShader = ({ children, ...otherProps }) => {
     );
 };
 
-const StyledColorPaletteContainer = styled(Box).attrs({
+const StyledColorPaletteContainer = styled(FlexBox).attrs({
     isRounded: true,
-    paddingX: 1,
-    paddingY: 1,
+    paddingX: 0.5,
+    paddingY: 0.5,
+    spacing: 0.5,
 })(
     ({ theme }) => `
         background-color: ${theme.BACKGROUND};
-        display: grid;
-        gap: calc(${GRID_UNIT} * 0.25);
-        grid-template-columns: 1fr 1fr 1fr 1fr;
-        grid-template-rows: 1fr 1fr 1fr;
+        box-shadow: 0 0 10px 10px ${theme.SHADOW};
         position: fixed;
         left: 50%;
         top: 50%;
         transform: translate(-50%, -50%);
         z-index: 1100;
-        width: ${COLOR_PICKER_WIDTH};
-        height: ${COLOR_PICKER_HEIGHT};
         
         &:before {
             background-color: ${theme.SHADOW};
@@ -73,9 +70,11 @@ const ColorPaletteContainer = ({ children, ...otherProps }) => {
     );
 };
 
-const ColorChip = styled(Box).attrs({})`
-    border-radius: 400px;
+const ColorChip = styled(Box).attrs({ isFlexible: true })`
+    border-radius: ${BORDER_RADIUS};
+    height: calc(${GRID_UNIT} * 2);
     transform: scale(1);
+    width: calc(${GRID_UNIT} * 2);
     ${UNIFIED_TRANSITION};
 
     &:hover {

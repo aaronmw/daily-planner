@@ -151,10 +151,6 @@ const ListCard = ({
 
     useKeyboardShortcuts(keyMap, listCardElementRef);
 
-    const tracingElementStyles = theme => `
-        border-color: ${theme.HIGH_CONTRAST_TEXT}
-    `;
-
     return (
         <ThemeProvider theme={listPalette}>
             <Container
@@ -179,7 +175,7 @@ const ListCard = ({
                         flexGrow: 0,
                         flexShrink: 0,
                     }}
-                    tracingElementStyles={tracingElementStyles}
+                    tracerColor={listPalette.HIGH_CONTRAST_TEXT}
                     value={list.label}
                     onSave={newLabel => {
                         onUpdateList(listId, { label: newLabel });
