@@ -103,7 +103,7 @@ const EditInPlace = ({
 
     useEffect(() => {
         if (isEditing && inputRef.current) {
-            // inputRef.current.select();
+            inputRef.current.select();
             inputRef.current.focus();
         }
     }, [inputRef, isEditing]);
