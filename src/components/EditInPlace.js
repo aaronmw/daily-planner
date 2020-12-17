@@ -57,14 +57,14 @@ const Container = styled(Box).attrs({
 );
 
 const StyledTextarea = styled.textarea(
-    ({ theme }) => `
+    ({ theme }) => ` 
         display: block;
         height: 100%;
-        width: 100%;
+        width: 100%; 
         
         ::selection {
-            background-color: ${theme.HIGH_CONTRAST_TEXT};
-            color: ${theme.HIGH_CONTRAST_BACKGROUND};
+            background-color: ${theme.HIGH_CONTRAST_BACKGROUND}; 
+            color: white;
         }
     `
 );
@@ -97,36 +97,51 @@ const EditInPlace = ({
     const isEmpty = bufferedValue.trim() === '';
     const isSingleLine = !isMultiLine;
 
-    useEffect(() => {
-        setBufferedValue(value);
-    }, [value]);
-
-    useEffect(() => {
-        if (isEditing && inputRef.current) {
-            inputRef.current.select();
-            inputRef.current.focus();
-        }
-    }, [inputRef, isEditing]);
-
-    useEffect(() => {
-        const el = measuringElementRef.current;
-        if (el) {
-            setMeasuringElementHeight(el.offsetHeight);
-        }
-    }, [bufferedValue, isEditing, measuringElementRef]);
-
-    const handleClick = useCallback(() => {
-        if (isEditable && !isEditing) {
+    useEffect(
+        () => {
             setBufferedValue(value);
-            setIsEditing(true);
-        }
-    }, [isEditable, isEditing, setBufferedValue, setIsEditing, value]);
+        },
+        [value]
+    );
 
-    useEffect(() => {
-        if (isRemotelyActivated === true) {
-            handleClick();
-        }
-    }, [handleClick, isRemotelyActivated]);
+    useEffect(
+        () => {
+            if (isEditing && inputRef.current) {
+                inputRef.current.select();
+                inputRef.current.focus();
+            }
+        },
+        [inputRef, isEditing]
+    );
+
+    useEffect(
+        () => {
+            const el = measuringElementRef.current;
+            if (el) {
+                setMeasuringElementHeight(el.offsetHeight);
+            }
+        },
+        [bufferedValue, isEditing, measuringElementRef]
+    );
+
+    const handleClick = useCallback(
+        () => {
+            if (isEditable && !isEditing) {
+                setBufferedValue(value);
+                setIsEditing(true);
+            }
+        },
+        [isEditable, isEditing, setBufferedValue, setIsEditing, value]
+    );
+
+    useEffect(
+        () => {
+            if (isRemotelyActivated === true) {
+                handleClick();
+            }
+        },
+        [handleClick, isRemotelyActivated]
+    );
 
     const handleBlur = () => {
         onSave(bufferedValue);
@@ -137,50 +152,56 @@ const EditInPlace = ({
         setBufferedValue(evt.target.value);
     };
 
-    const textareaKeyMap = useMemo(() => {
-        const saveAndClose = () => {
-            onSave(bufferedValue);
-            setIsEditing(false);
-        };
+    const textareaKeyMap = useMemo(
+        () => {
+            const saveAndClose = () => {
+                onSave(bufferedValue);
+                setIsEditing(false);
+            };
 
-        const close = () => {
-            setBufferedValue(value);
-            setIsEditing(false);
-        };
+            const close = () => {
+                setBufferedValue(value);
+                setIsEditing(false);
+            };
 
-        return {
-            'cmd + escape': close,
-            'shift + escape': close,
-            'cmd + enter': saveAndClose,
-            'shift + enter': saveAndClose,
-            'escape': saveAndClose,
-            'enter': evt => {
-                if (
-                    evt.target.tagName.toLowerCase() === 'textarea' &&
-                    isSingleLine
-                ) {
-                    saveAndClose();
-                    evt.preventDefault();
-                    return false;
-                }
-            },
-        };
-    }, [bufferedValue, onSave, isSingleLine, value]);
+            return {
+                'cmd + escape': close,
+                'shift + escape': close,
+                'cmd + enter': saveAndClose,
+                'shift + enter': saveAndClose,
+                escape: saveAndClose,
+                enter: evt => {
+                    if (
+                        evt.target.tagName.toLowerCase() === 'textarea' &&
+                        isSingleLine
+                    ) {
+                        saveAndClose();
+                        evt.preventDefault();
+                        return false;
+                    }
+                },
+            };
+        },
+        [bufferedValue, onSave, isSingleLine, value]
+    );
 
     useKeyboardShortcuts(textareaKeyMap, inputRef);
 
-    const keyMap = useMemo(() => {
-        const enterEditMode = evt => {
-            if (evt.target === containerElementRef.current) {
-                evt.preventDefault();
-                handleClick();
-            }
-        };
+    const keyMap = useMemo(
+        () => {
+            const enterEditMode = evt => {
+                if (evt.target === containerElementRef.current) {
+                    evt.preventDefault();
+                    handleClick();
+                }
+            };
 
-        return {
-            enter: enterEditMode,
-        };
-    }, [handleClick, containerElementRef]);
+            return {
+                enter: enterEditMode,
+            };
+        },
+        [handleClick, containerElementRef]
+    );
 
     useKeyboardShortcuts(keyMap, containerElementRef);
 

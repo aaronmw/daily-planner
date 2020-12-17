@@ -11,7 +11,6 @@ import GlobalStyle from './components/atoms/GlobalStyles';
 import {
     buildPalette,
     COPY,
-    DEFAULT_LIST_PROPS,
     GRID_UNIT,
     ICONS,
     INITIAL_LISTS,
@@ -65,10 +64,9 @@ function App() {
     const [isTransitioning, setIsTransitioning] = useState(false);
     const unarchivedLists = useMemo(
         () =>
-            sortBy(
-                lists.filter(list => !list.isArchived),
-                [list => list.label]
-            ),
+            sortBy(lists.filter(list => !list.isArchived), [
+                list => list.label,
+            ]),
         [lists]
     );
     const currentListIndex = unarchivedLists.findIndex(
@@ -79,8 +77,8 @@ function App() {
     const primaryColorCode = selectedList
         ? selectedList.color_code
         : PRIMARY_COLORS[0]
-        ? PRIMARY_COLORS[0]
-        : '#FF0000';
+            ? PRIMARY_COLORS[0]
+            : '#FF0000';
 
     const palette = buildPalette(themeName, primaryColorCode);
     const incompleteTasks = useMemo(
@@ -223,13 +221,16 @@ function App() {
         [selectedListId, setIsShowingListManager, setSelectedTaskId, setTasks]
     );
 
-    useEffect(() => {
-        if (isCreatingTask) {
-            setIsShowingListManager(false);
-            const timer = setTimeout(() => setIsCreatingTask(false), 100);
-            return () => clearTimeout(timer);
-        }
-    }, [isCreatingTask, setIsCreatingTask, setIsShowingListManager]);
+    useEffect(
+        () => {
+            if (isCreatingTask) {
+                setIsShowingListManager(false);
+                const timer = setTimeout(() => setIsCreatingTask(false), 100);
+                return () => clearTimeout(timer);
+            }
+        },
+        [isCreatingTask, setIsCreatingTask, setIsShowingListManager]
+    );
 
     const onSelectTask = useCallback(
         taskId => {
@@ -351,22 +352,25 @@ function App() {
         ]
     );
 
-    const onChangeIsShowingTrashContents = useCallback(() => {
-        if (!isShowingSidebar) {
-            setIsShowingSidebar(true);
-        }
-        if (!isShowingListManager) {
-            setIsShowingListManager(true);
-        }
-        setIsShowingTrashContents(!isShowingTrashContents);
-    }, [
-        isShowingListManager,
-        isShowingSidebar,
-        isShowingTrashContents,
-        setIsShowingListManager,
-        setIsShowingSidebar,
-        setIsShowingTrashContents,
-    ]);
+    const onChangeIsShowingTrashContents = useCallback(
+        () => {
+            if (!isShowingSidebar) {
+                setIsShowingSidebar(true);
+            }
+            if (!isShowingListManager) {
+                setIsShowingListManager(true);
+            }
+            setIsShowingTrashContents(!isShowingTrashContents);
+        },
+        [
+            isShowingListManager,
+            isShowingSidebar,
+            isShowingTrashContents,
+            setIsShowingListManager,
+            setIsShowingSidebar,
+            setIsShowingTrashContents,
+        ]
+    );
 
     const deleteTask = useCallback(
         taskId => {
@@ -501,54 +505,66 @@ function App() {
         [deleteTask, selectedTaskId]
     );
 
-    const goBack = useCallback(() => {
-        setIsShowingTrashContents(current => {
-            if (current) {
-                return false;
-            }
-        });
+    const goBack = useCallback(
+        () => {
+            setIsShowingTrashContents(current => {
+                if (current) {
+                    return false;
+                }
+            });
 
-        setIsShowingListManager(current => !current);
-    }, [setIsShowingListManager, setIsShowingTrashContents]);
+            setIsShowingListManager(current => !current);
+        },
+        [setIsShowingListManager, setIsShowingTrashContents]
+    );
 
-    const keyMap = useMemo(() => {
-        return {
-            ...[15, 30, 45, 60, 90, 120].reduce((acc, duration, index) => {
-                return {
-                    ...acc,
-                    [index + 1]: setTaskDuration.bind(null, duration),
-                };
-            }, {}),
-            'cmd + arrowRight': moveTaskToTimeline,
-            'cmd + arrowLeft': moveTaskToTaskList,
-            'cmd + shift + arrowRight': selectListByRelativeIndex.bind(null, 1),
-            'cmd + shift + arrowLeft': selectListByRelativeIndex.bind(null, -1),
-            'cmd + shift + ]': selectListByRelativeIndex.bind(null, 1),
-            'cmd + shift + [': selectListByRelativeIndex.bind(null, -1),
-            'b': toggleTaskListVisibility,
-            'd': toggleDarkMode,
-            'e': toggleIsEditingCurrentTask,
-            'escape': goBack,
-            'l': toggleIsShowingListManager,
-            'n': createNewTask,
-            't': deleteCurrentTask,
-            'arrowUp': selectTaskByRelativeIndex.bind(null, -1),
-            'arrowDown': selectTaskByRelativeIndex.bind(null, 1),
-        };
-    }, [
-        createNewTask,
-        deleteCurrentTask,
-        goBack,
-        moveTaskToTaskList,
-        moveTaskToTimeline,
-        selectListByRelativeIndex,
-        selectTaskByRelativeIndex,
-        setTaskDuration,
-        toggleTaskListVisibility,
-        toggleDarkMode,
-        toggleIsEditingCurrentTask,
-        toggleIsShowingListManager,
-    ]);
+    const keyMap = useMemo(
+        () => {
+            return {
+                ...[15, 30, 45, 60, 90, 120].reduce((acc, duration, index) => {
+                    return {
+                        ...acc,
+                        [index + 1]: setTaskDuration.bind(null, duration),
+                    };
+                }, {}),
+                'cmd + arrowRight': moveTaskToTimeline,
+                'cmd + arrowLeft': moveTaskToTaskList,
+                'cmd + shift + arrowRight': selectListByRelativeIndex.bind(
+                    null,
+                    1
+                ),
+                'cmd + shift + arrowLeft': selectListByRelativeIndex.bind(
+                    null,
+                    -1
+                ),
+                'cmd + shift + ]': selectListByRelativeIndex.bind(null, 1),
+                'cmd + shift + [': selectListByRelativeIndex.bind(null, -1),
+                b: toggleTaskListVisibility,
+                d: toggleDarkMode,
+                e: toggleIsEditingCurrentTask,
+                escape: goBack,
+                l: toggleIsShowingListManager,
+                n: createNewTask,
+                t: deleteCurrentTask,
+                arrowUp: selectTaskByRelativeIndex.bind(null, -1),
+                arrowDown: selectTaskByRelativeIndex.bind(null, 1),
+            };
+        },
+        [
+            createNewTask,
+            deleteCurrentTask,
+            goBack,
+            moveTaskToTaskList,
+            moveTaskToTimeline,
+            selectListByRelativeIndex,
+            selectTaskByRelativeIndex,
+            setTaskDuration,
+            toggleTaskListVisibility,
+            toggleDarkMode,
+            toggleIsEditingCurrentTask,
+            toggleIsShowingListManager,
+        ]
+    );
 
     useKeyboardShortcuts(keyMap);
 
@@ -628,8 +644,8 @@ function App() {
                             isShowingTrashContents
                                 ? COPY.LABEL_FOR_TRASHED_LISTS
                                 : isShowingListManager
-                                ? COPY.LABEL_FOR_LIST_MANAGER
-                                : COPY.LABEL_FOR_TASK_DETAILS
+                                    ? COPY.LABEL_FOR_LIST_MANAGER
+                                    : COPY.LABEL_FOR_TASK_DETAILS
                         }
                         style={{
                             width: isShowingListManager
