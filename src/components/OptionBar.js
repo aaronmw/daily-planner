@@ -5,7 +5,7 @@ import { UNIFIED_TRANSITION } from './atoms/tokens';
 import ToolBar from './ToolBar';
 
 const OptionButton = styled(Button)(
-    ({ isSelected }) => `
+    ({ isSelected, theme }) => `
         background: transparent;
         color: inherit;
         font-weight: ${isSelected ? 900 : 100};
@@ -17,6 +17,10 @@ const OptionButton = styled(Button)(
         ${ToolBar}:hover > & {
             opacity: 1;
         }
+     
+        &:hover {
+            border-color: ${theme.HIGH_CONTRAST_BACKGROUND};
+        }   
     `
 );
 
