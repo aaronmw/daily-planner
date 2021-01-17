@@ -46,7 +46,7 @@ const Container = styled.div(
         flex-grow: ${isFlexible ? 1 : 0};
         flex-shrink: ${isFlexible ? 1 : 0};
         overflow: ${isScrollable ? 'auto' : ''};
-        
+
         ${[
             buildStyles('margin', margin, ['top', 'right', 'bottom', 'left']),
             buildStyles('margin', marginBottom, ['bottom']),

@@ -11,28 +11,26 @@ import React from 'react';
 import MOTIVATIONAL_DESCRIPTORS from './copy/motivational-descriptors';
 import Icon from './Icon';
 
-export const SIDEBAR_DEFAULT_WIDTH = '30vw';
-export const SIDEBAR_EXTENDED_WIDTH = '40vw';
-export const BORDER_RADIUS = '3px';
-export const BORDER_WIDTH = '1px';
-export const BULLET_SIZE = '10px';
-export const COLOR_PICKER_HEIGHT = '150px';
-export const COLOR_PICKER_WIDTH = '200px';
-export const DURATION_OPTIONS = [15, 30, 45, 60, 90, 120];
-export const GRID_UNIT = '25px';
-export const FONTS = {
+const SIDEBAR_DEFAULT_WIDTH = '30vw';
+const SIDEBAR_EXTENDED_WIDTH = '40vw';
+const BORDER_RADIUS = '3px';
+const BORDER_WIDTH = '1px';
+const BULLET_SIZE = '10px';
+const DURATION_OPTIONS = [15, 30, 45, 60, 90, 120];
+const GRID_UNIT = '25px';
+const FONTS = {
     NORMAL: { LINE_HEIGHT: '1.4em', SIZE: `calc(${GRID_UNIT} * 0.5)` },
     LARGE: { LINE_HEIGHT: '1.4em', SIZE: `calc(${GRID_UNIT} * 0.75)` },
 };
-export const HOURS_PER_SCREEN = 10;
-export const LIST_CARD_HEIGHT = `calc(${GRID_UNIT} * 8)`;
-export const LIST_CARD_SPACING = `calc(${GRID_UNIT} * 0.5)`;
-export const LIST_CARD_WIDTH = `calc((100% - (${LIST_CARD_SPACING} * 2)) / 3)`;
-export const MIN_SLOT_HEIGHT = GRID_UNIT;
-export const ROUTE_TRANSITION_ANIMATION_DURATION = 250;
-export const TIMELINE_FROM = '6:00';
-export const TIMELINE_TO = '30:00';
-export const UNIFIED_TRANSITION = 'transition: all 0.15s ease-in-out';
+const HOURS_PER_SCREEN = 10;
+const LIST_CARD_HEIGHT = `calc(${GRID_UNIT} * 8)`;
+const LIST_CARD_SPACING = `calc(${GRID_UNIT} * 0.5)`;
+const LIST_CARD_WIDTH = `calc((100% - (${LIST_CARD_SPACING} * 2)) / 3)`;
+const MIN_SLOT_HEIGHT = GRID_UNIT;
+const ROUTE_TRANSITION_ANIMATION_DURATION = 250;
+const TIMELINE_FROM = '6:00';
+const TIMELINE_TO = '30:00';
+const UNIFIED_TRANSITION = 'transition: all 0.15s ease-in-out';
 
 const COPY = {};
 COPY.MOTIVATIONAL_DESCRIPTORS = MOTIVATIONAL_DESCRIPTORS;
@@ -74,14 +72,15 @@ COPY.TIPS = {
 
 export { COPY };
 
-export const PRIMARY_COLORS = [];
+const PRIMARY_COLORS = [];
+
 const NUM_COLORS = 10;
 range(NUM_COLORS).map(
     num =>
         (PRIMARY_COLORS[num] = adjustHue((360 / NUM_COLORS) * num, '#D72127'))
 );
 
-export const INITIAL_LISTS = [
+const INITIAL_LISTS = [
     {
         id: 1,
         color_code: sample(PRIMARY_COLORS),
@@ -95,9 +94,9 @@ export const INITIAL_LISTS = [
     //     label: primaryColor,
     // })),
 ];
-export const INITIAL_SELECTED_LIST_ID = (INITIAL_LISTS[0] || {}).id;
+const INITIAL_SELECTED_LIST_ID = (INITIAL_LISTS[0] || {}).id;
 
-export const INITIAL_TASKS = Object.keys(COPY.TIPS).map(tipId => {
+const INITIAL_TASKS = Object.keys(COPY.TIPS).map(tipId => {
     const label = COPY.TIPS[tipId];
 
     return {
@@ -113,16 +112,16 @@ export const INITIAL_TASKS = Object.keys(COPY.TIPS).map(tipId => {
     };
 });
 
-export const INITIAL_SELECTED_TASK_ID = (INITIAL_TASKS[0] || {}).id;
+const INITIAL_SELECTED_TASK_ID = (INITIAL_TASKS[0] || {}).id;
 
-export const DEFAULT_LIST_PROPS = {
+const DEFAULT_LIST_PROPS = {
     id: Date.now(),
     color_code: '#FF0000',
     isArchived: false,
     label: 'New List',
 };
 
-export const buildPalette = (theme = 'LIGHT', colorCode = '#FF0000') => {
+const buildPalette = (theme = 'LIGHT', colorCode = '#FF0000') => {
     const THEME = {};
 
     THEME.PRIMARY = colorCode;
@@ -223,4 +222,30 @@ const ICONS = ICON_PACKS.FONT_AWESOME;
 
 ICONS.TASK_DEFAULT = '📌';
 
-export { ICONS };
+export {
+    BORDER_RADIUS,
+    BORDER_WIDTH,
+    buildPalette,
+    BULLET_SIZE,
+    DEFAULT_LIST_PROPS,
+    DURATION_OPTIONS,
+    FONTS,
+    GRID_UNIT,
+    HOURS_PER_SCREEN,
+    ICONS,
+    INITIAL_LISTS,
+    INITIAL_SELECTED_LIST_ID,
+    INITIAL_SELECTED_TASK_ID,
+    INITIAL_TASKS,
+    LIST_CARD_HEIGHT,
+    LIST_CARD_SPACING,
+    LIST_CARD_WIDTH,
+    MIN_SLOT_HEIGHT,
+    PRIMARY_COLORS,
+    ROUTE_TRANSITION_ANIMATION_DURATION,
+    SIDEBAR_DEFAULT_WIDTH,
+    SIDEBAR_EXTENDED_WIDTH,
+    TIMELINE_FROM,
+    TIMELINE_TO,
+    UNIFIED_TRANSITION,
+};

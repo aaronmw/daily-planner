@@ -47,14 +47,24 @@ const Container = styled(FlexBox).attrs({
         height: 100%;
         ${UNIFIED_TRANSITION};
         
-        &:active,
-        &:focus,
         &:hover {
             box-shadow:
                 0 0 0 2px ${theme.SHADED},
                 0 0 0 4px ${
                     theme[isActive ? 'TASK_BORDER_ACTIVE' : 'TASK_BORDER_HOVER']
                 };
+        }
+        
+        &:focus {
+            box-shadow:
+                0 0 0 2px ${theme.SHADED},
+                0 0 0 4px ${theme.TASK_BORDER_ACTIVE};
+        }
+        
+        &:active {
+            box-shadow:
+                0 0 0 2px ${theme.SHADED},
+                0 0 0 4px ${theme.TASK_BORDER_ACTIVE};
         }
     `
 );

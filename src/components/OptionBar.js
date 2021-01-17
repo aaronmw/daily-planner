@@ -20,7 +20,7 @@ const OptionButton = styled(Button)(
      
         &:hover {
             border-color: ${theme.HIGH_CONTRAST_BACKGROUND};
-        }   
+        }
     `
 );
 

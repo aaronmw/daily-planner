@@ -6,8 +6,6 @@ import { ToggleButton } from './atoms/Button';
 import FlexBox from './atoms/FlexBox';
 import {
     BORDER_RADIUS,
-    COLOR_PICKER_HEIGHT,
-    COLOR_PICKER_WIDTH,
     GRID_UNIT,
     ICONS,
     PRIMARY_COLORS,
@@ -51,7 +49,7 @@ const StyledColorPaletteContainer = styled(FlexBox).attrs({
         top: 50%;
         transform: translate(-50%, -50%);
         z-index: 1100;
-        
+
         &:before {
             background-color: ${theme.SHADOW};
             position: fixed;

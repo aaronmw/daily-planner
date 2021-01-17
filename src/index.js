@@ -1,4 +1,3 @@
-import random from 'lodash/random';
 import sample from 'lodash/sample';
 import sortBy from 'lodash/sortBy';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
@@ -69,23 +68,28 @@ function App() {
             ]),
         [lists]
     );
+
     const currentListIndex = unarchivedLists.findIndex(
         list => list.id === selectedListId
     );
+
     const selectedList = lists.find(list => list.id === selectedListId);
 
-    const primaryColorCode = selectedList
+    const primaryColorCode = selectedList.color_code
         ? selectedList.color_code
         : PRIMARY_COLORS[0]
             ? PRIMARY_COLORS[0]
             : '#FF0000';
 
     const palette = buildPalette(themeName, primaryColorCode);
+
     const incompleteTasks = useMemo(
         () => tasks.filter(task => !task.isComplete),
         [tasks]
     );
+
     const hasUnarchivedList = lists.filter(list => !list.isArchived).length;
+
     const isSidebarOpen = hasUnarchivedList && isShowingSidebar;
 
     useEffect(() => {
@@ -105,7 +109,7 @@ function App() {
     const onCreateList = useCallback(
         (overrides = {}) => {
             const newListId = Date.now();
-            const randomColorCode = random(0, PRIMARY_COLORS.length);
+            const randomColorCode = sample(PRIMARY_COLORS);
 
             setLists(currentLists =>
                 currentLists.concat([
@@ -149,14 +153,18 @@ function App() {
 
     const onSelectList = useCallback(
         listId => {
+            setSelectedListId(listId);
             const firstTaskIdInList = incompleteTasks.find(
                 task => task.list_id === listId
             );
-            setSelectedListId(listId);
-            setSelectedTaskId(firstTaskIdInList ? firstTaskIdInList.id : '');
+            if (firstTaskIdInList) {
+                setSelectedTaskId(firstTaskIdInList.id);
+            }
             setIsShowingSidebar(true);
             setIsShowingTrashContents(false);
             setIsShowingListManager(true);
+
+            document.querySelector(`[data-list-id="${listId}"]`).focus();
         },
         [
             incompleteTasks,
@@ -243,6 +251,8 @@ function App() {
             }
 
             setSelectedTaskId(taskId);
+
+            document.querySelector(`[data-task-id="${taskId}"]`).focus();
         },
         [
             isShowingListManager,
@@ -302,7 +312,28 @@ function App() {
                 onSelectList(listAtRelativeIndex.id);
             }
         },
-        [currentListIndex, onSelectList, selectedListId, unarchivedLists]
+        [currentListIndex, onSelectList, unarchivedLists]
+    );
+
+    const selectByRelativeIndex = useCallback(
+        (relativeIndex, isVertical = false) => {
+            const elementWithFocus = document.activeElement;
+            const isListCard = !!elementWithFocus.dataset.listId;
+
+            const selectionFunc = isListCard
+                ? selectListByRelativeIndex
+                : selectTaskByRelativeIndex;
+
+            const offset =
+                isVertical && isListCard
+                    ? relativeIndex >= 0
+                        ? 3
+                        : -3
+                    : relativeIndex;
+
+            selectionFunc(offset);
+        },
+        [selectListByRelativeIndex, selectTaskByRelativeIndex]
     );
 
     const transition = useCallback(
@@ -424,8 +455,7 @@ function App() {
     );
 
     const moveTaskToTimeline = useCallback(
-        evt => {
-            evt.preventDefault();
+        () => {
             onUpdateTask(selectedTaskId, {
                 scheduled: true,
             });
@@ -434,8 +464,7 @@ function App() {
     );
 
     const moveTaskToTaskList = useCallback(
-        evt => {
-            evt.preventDefault();
+        () => {
             onUpdateTask(selectedTaskId, {
                 scheduled: false,
             });
@@ -453,9 +482,7 @@ function App() {
     );
 
     const toggleTaskListVisibility = useCallback(
-        evt => {
-            evt.preventDefault();
-
+        () => {
             if (isShowingSidebar) {
                 setIsShowingTrashContents(false);
             }
@@ -466,40 +493,35 @@ function App() {
     );
 
     const toggleDarkMode = useCallback(
-        evt => {
-            evt.preventDefault();
+        () => {
             onChangeTheme(themeName === 'LIGHT' ? 'DARK' : 'LIGHT');
         },
         [onChangeTheme, themeName]
     );
 
     const toggleIsEditingCurrentTask = useCallback(
-        evt => {
-            evt.preventDefault();
+        () => {
             setIsCreatingTask(true);
         },
         [setIsCreatingTask]
     );
 
     const toggleIsShowingListManager = useCallback(
-        evt => {
-            evt.preventDefault();
+        () => {
             onChangeIsShowingListManager(!isShowingListManager);
         },
         [isShowingListManager, onChangeIsShowingListManager]
     );
 
     const createNewTask = useCallback(
-        evt => {
-            evt.preventDefault();
+        () => {
             onCreateTask();
         },
         [onCreateTask]
     );
 
     const deleteCurrentTask = useCallback(
-        evt => {
-            evt.preventDefault();
+        () => {
             deleteTask(selectedTaskId);
         },
         [deleteTask, selectedTaskId]
@@ -520,34 +542,51 @@ function App() {
 
     const keyMap = useMemo(
         () => {
+            const withPreventDefault = func => e => {
+                e.preventDefault();
+                func();
+            };
+
             return {
                 ...[15, 30, 45, 60, 90, 120].reduce((acc, duration, index) => {
                     return {
                         ...acc,
-                        [index + 1]: setTaskDuration.bind(null, duration),
+                        [index + 1]: () => setTaskDuration(duration),
                     };
                 }, {}),
-                'cmd + arrowRight': moveTaskToTimeline,
-                'cmd + arrowLeft': moveTaskToTaskList,
-                'cmd + shift + arrowRight': selectListByRelativeIndex.bind(
-                    null,
-                    1
+                'cmd + arrowRight': withPreventDefault(moveTaskToTimeline),
+                'cmd + arrowLeft': withPreventDefault(moveTaskToTaskList),
+                'cmd + shift + arrowRight': withPreventDefault(() =>
+                    selectListByRelativeIndex(1)
                 ),
-                'cmd + shift + arrowLeft': selectListByRelativeIndex.bind(
-                    null,
-                    -1
+                'cmd + shift + arrowLeft': withPreventDefault(() =>
+                    selectListByRelativeIndex(-1)
                 ),
-                'cmd + shift + ]': selectListByRelativeIndex.bind(null, 1),
-                'cmd + shift + [': selectListByRelativeIndex.bind(null, -1),
-                b: toggleTaskListVisibility,
-                d: toggleDarkMode,
-                e: toggleIsEditingCurrentTask,
-                escape: goBack,
-                l: toggleIsShowingListManager,
-                n: createNewTask,
-                t: deleteCurrentTask,
-                arrowUp: selectTaskByRelativeIndex.bind(null, -1),
-                arrowDown: selectTaskByRelativeIndex.bind(null, 1),
+                'cmd + shift + ]': withPreventDefault(() =>
+                    selectListByRelativeIndex(1)
+                ),
+                'cmd + shift + [': withPreventDefault(() =>
+                    selectListByRelativeIndex(-1)
+                ),
+                b: withPreventDefault(toggleTaskListVisibility),
+                d: withPreventDefault(toggleDarkMode),
+                e: withPreventDefault(toggleIsEditingCurrentTask),
+                escape: withPreventDefault(goBack),
+                l: withPreventDefault(toggleIsShowingListManager),
+                n: withPreventDefault(createNewTask),
+                t: withPreventDefault(deleteCurrentTask),
+                arrowUp: withPreventDefault(() =>
+                    selectByRelativeIndex(-1, true)
+                ),
+                arrowDown: withPreventDefault(() =>
+                    selectByRelativeIndex(1, true)
+                ),
+                arrowLeft: withPreventDefault(() =>
+                    selectListByRelativeIndex(-1)
+                ),
+                arrowRight: withPreventDefault(() =>
+                    selectListByRelativeIndex(1)
+                ),
             };
         },
         [
@@ -556,8 +595,8 @@ function App() {
             goBack,
             moveTaskToTaskList,
             moveTaskToTimeline,
+            selectByRelativeIndex,
             selectListByRelativeIndex,
-            selectTaskByRelativeIndex,
             setTaskDuration,
             toggleTaskListVisibility,
             toggleDarkMode,
