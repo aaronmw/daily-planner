@@ -105,14 +105,6 @@ const TaskDetails = ({ appActions = {}, appData = {} }) => {
                     </TaskHeaderIcon>
                 </TaskHeader>
 
-                <DurationOptionBar
-                    options={DURATION_OPTIONS}
-                    renderSelectedOption={option => <span>{option} mins</span>}
-                    selectedOption={scheduled_minutes}
-                    title={COPY.TIPS.SETTING_DURATION}
-                    onChange={handleSaveDuration}
-                />
-
                 <EditInPlace
                     isFlexible
                     isMultiLine
@@ -137,6 +129,14 @@ const TaskDetails = ({ appActions = {}, appData = {} }) => {
                     }}
                     value={notes}
                     onSave={handleSaveNotes}
+                />
+
+                <DurationOptionBar
+                    options={DURATION_OPTIONS}
+                    renderSelectedOption={option => <span>{option} mins</span>}
+                    selectedOption={scheduled_minutes}
+                    title={COPY.TIPS.SETTING_DURATION}
+                    onChange={handleSaveDuration}
                 />
             </>
         )
