@@ -20,7 +20,7 @@ const Container = styled(Box).attrs({
         user-select: ${isEditing ? 'text' : 'none'};
         width: auto;
         height: auto;
-    
+
         // Tracing element
         &:before {
             border:
@@ -46,7 +46,7 @@ const Container = styled(Box).attrs({
             left: calc(${GRID_UNIT} * 0.5 * -1);
             ${UNIFIED_TRANSITION};
         }
-        
+
         &:focus,
         &:hover {
             &:before {
@@ -57,13 +57,13 @@ const Container = styled(Box).attrs({
 );
 
 const StyledTextarea = styled.textarea(
-    ({ theme }) => ` 
+    ({ theme }) => `
         display: block;
         height: 100%;
-        width: 100%; 
-        
+        width: 100%;
+
         ::selection {
-            background-color: ${theme.HIGH_CONTRAST_BACKGROUND}; 
+            background-color: ${theme.HIGH_CONTRAST_BACKGROUND};
             color: white;
         }
     `
@@ -164,11 +164,127 @@ const EditInPlace = ({
                 setIsEditing(false);
             };
 
+            const getIndentedSelection = ({
+                selectionStart,
+                selectionEnd,
+                tabString,
+                outdent = false,
+            }) => {
+                const tabSize = tabString.length;
+                const textBeforeSelection = bufferedValue.substring(
+                    0,
+                    selectionStart
+                );
+                const textAfterSelection = bufferedValue.substring(
+                    selectionEnd
+                );
+                const textWithinSelection = bufferedValue.substring(
+                    selectionStart,
+                    selectionEnd
+                );
+
+                let newBuffer, newSelectionStart, newSelectionEnd;
+
+                if (outdent) {
+                    const trimmedTextWithinSelection = textWithinSelection.trimStart();
+                    const textBeforeTrimmedSelection = bufferedValue.substring(
+                        0,
+                        selectionEnd - trimmedTextWithinSelection.length
+                    );
+                    const tailSample = textBeforeTrimmedSelection.substring(
+                        textBeforeTrimmedSelection.length - tabSize
+                    );
+                    const isIndented = tailSample === tabString;
+
+                    if (!isIndented) {
+                        return {
+                            newBuffer: bufferedValue,
+                            newSelectionStart: selectionStart,
+                            newSelectionEnd: selectionEnd,
+                        };
+                    }
+
+                    newBuffer =
+                        textBeforeTrimmedSelection.substring(
+                            0,
+                            textBeforeTrimmedSelection.length - tabSize
+                        ) +
+                        trimmedTextWithinSelection +
+                        textAfterSelection;
+
+                    newSelectionStart =
+                        selectionEnd -
+                        trimmedTextWithinSelection.length -
+                        tabSize;
+
+                    newSelectionEnd =
+                        newSelectionStart + trimmedTextWithinSelection.length;
+                } else {
+                    newBuffer =
+                        textBeforeSelection +
+                        tabString +
+                        textWithinSelection +
+                        textAfterSelection;
+
+                    newSelectionStart = selectionStart + tabSize;
+                    newSelectionEnd = selectionEnd + tabSize;
+                }
+
+                return {
+                    newBuffer,
+                    newSelectionStart,
+                    newSelectionEnd,
+                };
+            };
+
+            const handleIndentation = (evt, options = { outdent: false }) => {
+                if (!isSingleLine) {
+                    const el = evt.target;
+                    const { selectionEnd, selectionStart } = el;
+
+                    const tabString = '  ';
+
+                    const {
+                        newBuffer,
+                        newSelectionStart,
+                        newSelectionEnd,
+                    } = getIndentedSelection({
+                        selectionStart,
+                        selectionEnd,
+                        tabString,
+                        outdent: options.outdent,
+                    });
+
+                    console.log({
+                        newBuffer,
+                        newSelectionStart,
+                        newSelectionEnd,
+                    });
+
+                    setBufferedValue(newBuffer);
+
+                    el.selectionStart = newSelectionStart;
+                    el.selectionEnd = newSelectionEnd;
+                }
+            };
+
             return {
                 'cmd + escape': close,
                 'shift + escape': close,
                 'cmd + enter': saveAndClose,
                 'shift + enter': saveAndClose,
+                tab: evt => {
+                    if (!isSingleLine) {
+                        evt.preventDefault();
+                        handleIndentation(evt);
+                    }
+                },
+                'shift + tab': evt => {
+                    if (!isSingleLine) {
+                        evt.preventDefault();
+                        handleIndentation(evt, { outdent: true });
+                    }
+                },
                 escape: saveAndClose,
                 enter: evt => {
                     if (
