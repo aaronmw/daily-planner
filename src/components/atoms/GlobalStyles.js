@@ -39,12 +39,14 @@ export default createGlobalStyle(
             color: ${theme.HIGH_CONTRAST_TEXT};
             background-color: ${theme.HIGH_CONTRAST_BACKGROUND};
         }
-        
+
         .markdown {
-            * + * {
+            * + *,
+            ul > *,
+            ol > * {
                 margin-top: calc(${GRID_UNIT} * 0.5);
             }
-            
+
             h1 {
                 color: ${theme.TEXT_FADED};
                 font-size: 1.4rem;
@@ -52,26 +54,29 @@ export default createGlobalStyle(
                 border-bottom: 2px dotted ${theme.TEXT_FADED};
                 padding-bottom: calc(${GRID_UNIT} * 0.25);
             }
-            
+
             * + h1 {
                 margin-top: ${GRID_UNIT};
             }
-        
+
             blockquote {
                 border-left: 2px dotted ${theme.TEXT_FADED};
                 font-style: italic;
                 padding: calc(${GRID_UNIT} * 0.5) ${GRID_UNIT};
             }
-        
+
             li {
                 padding-left: ${GRID_UNIT};
                 position: relative;
-        
+
+                // Bullet, centered by line height
                 &:before {
                     content: '';
                     box-sizing: border-box;
                     position: absolute;
-                    top: 5px;
+                    top: calc((${
+                        FONTS.NORMAL.LINE_HEIGHT
+                    } / 2) - (${BULLET_SIZE} / 2));
                     left: 0;
                     border: 2px dotted ${theme.TEXT_FADED};
                     border-radius: 100px;
