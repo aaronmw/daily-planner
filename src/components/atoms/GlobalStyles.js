@@ -83,6 +83,16 @@ export default createGlobalStyle(
                     width: ${BULLET_SIZE};
                     height: ${BULLET_SIZE};
                 }
+
+                li:after {
+                    content: '';
+                    position: absolute;
+                    top: calc(${GRID_UNIT} * -0.5);
+                    bottom: 0;
+                    left: calc((${GRID_UNIT} * -1) + (${BULLET_SIZE} / 2) - 1px);
+                    border-left: 2px solid ${theme.BORDER};
+                    opacity: 0.5;
+                }
             }
         }
     `
