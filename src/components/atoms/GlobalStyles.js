@@ -65,6 +65,14 @@ export default createGlobalStyle(
                 padding: calc(${GRID_UNIT} * 0.5) ${GRID_UNIT};
             }
 
+            code {
+                color: ${theme.PRIMARY};
+                background-color: ${theme.SHADED};
+                display: inline-block;
+                border-radius: 4px;
+                padding: 0 calc(${GRID_UNIT} * 0.25);
+            }
+
             li {
                 padding-left: ${GRID_UNIT};
                 position: relative;
