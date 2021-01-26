@@ -73,6 +73,10 @@ export default createGlobalStyle(
                 padding: 0 calc(${GRID_UNIT} * 0.25);
             }
 
+            del {
+                color: ${theme.TEXT_FADED};
+            }
+
             li {
                 padding-left: ${GRID_UNIT};
                 position: relative;
