@@ -41,7 +41,7 @@ export default createGlobalStyle(
         }
 
         .markdown {
-            * + *,
+            & > * + *,
             ul > *,
             ol > * {
                 margin-top: calc(${GRID_UNIT} * 0.5);
