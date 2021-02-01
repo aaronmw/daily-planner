@@ -1,13 +1,9 @@
-import React, {
-    memo,
-    useCallback,
-    useEffect,
-    useMemo,
-    useRef,
-    useState,
-} from 'react';
+import React, { memo, useCallback, useEffect, useRef, useState } from 'react';
 import styled from 'styled-components';
-import useKeyboardShortcuts from '../hooks/useKeyboardShortcuts';
+import useBulletedLists from '../hooks/useBulletedLists';
+import useKeyboardShortcut from '../hooks/useKeyboardShortcut';
+import useMarkdownShortcuts from '../hooks/useMarkdownShortcuts';
+import useTabIndentation from '../hooks/useTabIndentation';
 import Box from './atoms/Box';
 import { BORDER_RADIUS, GRID_UNIT, UNIFIED_TRANSITION } from './atoms/tokens';
 
@@ -75,6 +71,8 @@ const Canvas = styled(Box)(
     `
 );
 
+const keyboardShortcutNamespace = 'edit-in-place';
+
 const EditInPlace = ({
     canvasStyles = {},
     doubleClickToEdit = false,
@@ -97,51 +95,36 @@ const EditInPlace = ({
     const isEmpty = bufferedValue.trim() === '';
     const isSingleLine = !isMultiLine;
 
-    useEffect(
-        () => {
+    useEffect(() => {
+        setBufferedValue(value);
+    }, [value]);
+
+    useEffect(() => {
+        if (isEditing && inputRef.current) {
+            inputRef.current.select();
+            inputRef.current.focus();
+        }
+    }, [inputRef, isEditing]);
+
+    useEffect(() => {
+        const el = measuringElementRef.current;
+        if (el) {
+            setMeasuringElementHeight(el.offsetHeight);
+        }
+    }, [bufferedValue, isEditing, measuringElementRef]);
+
+    const handleClick = useCallback(() => {
+        if (isEditable && !isEditing) {
             setBufferedValue(value);
-        },
-        [value]
-    );
+            setIsEditing(true);
+        }
+    }, [isEditable, isEditing, setBufferedValue, setIsEditing, value]);
 
-    useEffect(
-        () => {
-            if (isEditing && inputRef.current) {
-                inputRef.current.select();
-                inputRef.current.focus();
-            }
-        },
-        [inputRef, isEditing]
-    );
-
-    useEffect(
-        () => {
-            const el = measuringElementRef.current;
-            if (el) {
-                setMeasuringElementHeight(el.offsetHeight);
-            }
-        },
-        [bufferedValue, isEditing, measuringElementRef]
-    );
-
-    const handleClick = useCallback(
-        () => {
-            if (isEditable && !isEditing) {
-                setBufferedValue(value);
-                setIsEditing(true);
-            }
-        },
-        [isEditable, isEditing, setBufferedValue, setIsEditing, value]
-    );
-
-    useEffect(
-        () => {
-            if (isRemotelyActivated === true) {
-                handleClick();
-            }
-        },
-        [handleClick, isRemotelyActivated]
-    );
+    useEffect(() => {
+        if (isRemotelyActivated === true) {
+            handleClick();
+        }
+    }, [handleClick, isRemotelyActivated]);
 
     const handleBlur = () => {
         onSave(bufferedValue);
@@ -152,174 +135,48 @@ const EditInPlace = ({
         setBufferedValue(evt.target.value);
     };
 
-    const textareaKeyMap = useMemo(
+    useKeyboardShortcut(
+        keyboardShortcutNamespace,
+        ['cmd + escape', 'shift + escape'],
         () => {
-            const saveAndClose = () => {
+            setBufferedValue(value);
+            setIsEditing(false);
+        },
+        inputRef
+    );
+
+    useKeyboardShortcut(
+        keyboardShortcutNamespace,
+        ['escape', 'cmd + enter', 'shift + enter'],
+        handleBlur,
+        inputRef
+    );
+
+    useKeyboardShortcut(
+        keyboardShortcutNamespace,
+        'enter',
+        evt => {
+            if (evt.target === containerElementRef.current) {
+                evt.preventDefault();
+                handleClick();
+            } else if (
+                evt.target.tagName.toLowerCase() === 'textarea' &&
+                isSingleLine
+            ) {
+                evt.preventDefault();
                 onSave(bufferedValue);
                 setIsEditing(false);
-            };
-
-            const close = () => {
-                setBufferedValue(value);
-                setIsEditing(false);
-            };
-
-            const getIndentedSelection = ({
-                selectionStart,
-                selectionEnd,
-                tabString,
-                outdent = false,
-            }) => {
-                const tabSize = tabString.length;
-                const textBeforeSelection = bufferedValue.substring(
-                    0,
-                    selectionStart
-                );
-                const textAfterSelection = bufferedValue.substring(
-                    selectionEnd
-                );
-                const textWithinSelection = bufferedValue.substring(
-                    selectionStart,
-                    selectionEnd
-                );
-
-                let newBuffer, newSelectionStart, newSelectionEnd;
-
-                if (outdent) {
-                    const trimmedTextWithinSelection = textWithinSelection.trimStart();
-                    const textBeforeTrimmedSelection = bufferedValue.substring(
-                        0,
-                        selectionEnd - trimmedTextWithinSelection.length
-                    );
-                    const tailSample = textBeforeTrimmedSelection.substring(
-                        textBeforeTrimmedSelection.length - tabSize
-                    );
-                    const isIndented = tailSample === tabString;
-
-                    if (!isIndented) {
-                        return {
-                            newBuffer: bufferedValue,
-                            newSelectionStart: selectionStart,
-                            newSelectionEnd: selectionEnd,
-                        };
-                    }
-
-                    newBuffer =
-                        textBeforeTrimmedSelection.substring(
-                            0,
-                            textBeforeTrimmedSelection.length - tabSize
-                        ) +
-                        trimmedTextWithinSelection +
-                        textAfterSelection;
-
-                    newSelectionStart =
-                        selectionEnd -
-                        trimmedTextWithinSelection.length -
-                        tabSize;
-
-                    newSelectionEnd =
-                        newSelectionStart + trimmedTextWithinSelection.length;
-                } else {
-                    newBuffer =
-                        textBeforeSelection +
-                        tabString +
-                        textWithinSelection +
-                        textAfterSelection;
-
-                    newSelectionStart = selectionStart + tabSize;
-                    newSelectionEnd = selectionEnd + tabSize;
-                }
-
-                return {
-                    newBuffer,
-                    newSelectionStart,
-                    newSelectionEnd,
-                };
-            };
-
-            const handleIndentation = (evt, options = { outdent: false }) => {
-                if (!isSingleLine) {
-                    const el = evt.target;
-                    const { selectionEnd, selectionStart } = el;
-
-                    const tabString = '  ';
-
-                    const {
-                        newBuffer,
-                        newSelectionStart,
-                        newSelectionEnd,
-                    } = getIndentedSelection({
-                        selectionStart,
-                        selectionEnd,
-                        tabString,
-                        outdent: options.outdent,
-                    });
-
-                    console.log({
-                        newBuffer,
-                        newSelectionStart,
-                        newSelectionEnd,
-                    });
-
-                    setBufferedValue(newBuffer);
-
-                    el.selectionStart = newSelectionStart;
-                    el.selectionEnd = newSelectionEnd;
-                }
-            };
-
-            return {
-                'cmd + escape': close,
-                'shift + escape': close,
-                'cmd + enter': saveAndClose,
-                'shift + enter': saveAndClose,
-                tab: evt => {
-                    if (!isSingleLine) {
-                        evt.preventDefault();
-                        handleIndentation(evt);
-                    }
-                },
-                'shift + tab': evt => {
-                    if (!isSingleLine) {
-                        evt.preventDefault();
-                        handleIndentation(evt, { outdent: true });
-                    }
-                },
-                escape: saveAndClose,
-                enter: evt => {
-                    if (
-                        evt.target.tagName.toLowerCase() === 'textarea' &&
-                        isSingleLine
-                    ) {
-                        saveAndClose();
-                        evt.preventDefault();
-                        return false;
-                    }
-                },
-            };
+                return false;
+            }
         },
-        [bufferedValue, onSave, isSingleLine, value]
+        inputRef
     );
 
-    useKeyboardShortcuts(textareaKeyMap, inputRef);
+    useTabIndentation(inputRef);
 
-    const keyMap = useMemo(
-        () => {
-            const enterEditMode = evt => {
-                if (evt.target === containerElementRef.current) {
-                    evt.preventDefault();
-                    handleClick();
-                }
-            };
+    useBulletedLists(inputRef);
 
-            return {
-                enter: enterEditMode,
-            };
-        },
-        [handleClick, containerElementRef]
-    );
-
-    useKeyboardShortcuts(keyMap, containerElementRef);
+    useMarkdownShortcuts(inputRef);
 
     return (
         <Container

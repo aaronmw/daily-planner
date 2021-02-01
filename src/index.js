@@ -33,8 +33,15 @@ import ToolBar from './components/ToolBar';
 import Trash from './components/Trash';
 import TrashedLists from './components/TrashedLists';
 import TrashedTasks from './components/TrashedTasks';
-import useKeyboardShortcuts from './hooks/useKeyboardShortcuts';
+import useKeyboardShortcut from './hooks/useKeyboardShortcut';
 import usePersistentState from './hooks/usePersistentState';
+
+const withPreventDefault = func => e => {
+    e.preventDefault();
+    func(e);
+};
+
+const keyboardShortcutNamespace = 'global';
 
 function App() {
     const [isShowingSidebar, setIsShowingSidebar] = usePersistentState(
@@ -63,9 +70,10 @@ function App() {
     const [isTransitioning, setIsTransitioning] = useState(false);
     const unarchivedLists = useMemo(
         () =>
-            sortBy(lists.filter(list => !list.isArchived), [
-                list => list.label,
-            ]),
+            sortBy(
+                lists.filter(list => !list.isArchived),
+                [list => list.label]
+            ),
         [lists]
     );
 
@@ -78,8 +86,8 @@ function App() {
     const primaryColorCode = selectedList.color_code
         ? selectedList.color_code
         : PRIMARY_COLORS[0]
-            ? PRIMARY_COLORS[0]
-            : '#FF0000';
+        ? PRIMARY_COLORS[0]
+        : '#FF0000';
 
     const palette = buildPalette(themeName, primaryColorCode);
 
@@ -229,16 +237,13 @@ function App() {
         [selectedListId, setIsShowingListManager, setSelectedTaskId, setTasks]
     );
 
-    useEffect(
-        () => {
-            if (isCreatingTask) {
-                setIsShowingListManager(false);
-                const timer = setTimeout(() => setIsCreatingTask(false), 100);
-                return () => clearTimeout(timer);
-            }
-        },
-        [isCreatingTask, setIsCreatingTask, setIsShowingListManager]
-    );
+    useEffect(() => {
+        if (isCreatingTask) {
+            setIsShowingListManager(false);
+            const timer = setTimeout(() => setIsCreatingTask(false), 100);
+            return () => clearTimeout(timer);
+        }
+    }, [isCreatingTask, setIsCreatingTask, setIsShowingListManager]);
 
     const onSelectTask = useCallback(
         taskId => {
@@ -383,25 +388,22 @@ function App() {
         ]
     );
 
-    const onChangeIsShowingTrashContents = useCallback(
-        () => {
-            if (!isShowingSidebar) {
-                setIsShowingSidebar(true);
-            }
-            if (!isShowingListManager) {
-                setIsShowingListManager(true);
-            }
-            setIsShowingTrashContents(!isShowingTrashContents);
-        },
-        [
-            isShowingListManager,
-            isShowingSidebar,
-            isShowingTrashContents,
-            setIsShowingListManager,
-            setIsShowingSidebar,
-            setIsShowingTrashContents,
-        ]
-    );
+    const onChangeIsShowingTrashContents = useCallback(() => {
+        if (!isShowingSidebar) {
+            setIsShowingSidebar(true);
+        }
+        if (!isShowingListManager) {
+            setIsShowingListManager(true);
+        }
+        setIsShowingTrashContents(!isShowingTrashContents);
+    }, [
+        isShowingListManager,
+        isShowingSidebar,
+        isShowingTrashContents,
+        setIsShowingListManager,
+        setIsShowingSidebar,
+        setIsShowingTrashContents,
+    ]);
 
     const deleteTask = useCallback(
         taskId => {
@@ -454,23 +456,17 @@ function App() {
         [setTasks]
     );
 
-    const moveTaskToTimeline = useCallback(
-        () => {
-            onUpdateTask(selectedTaskId, {
-                scheduled: true,
-            });
-        },
-        [onUpdateTask, selectedTaskId]
-    );
+    const moveTaskToTimeline = useCallback(() => {
+        onUpdateTask(selectedTaskId, {
+            scheduled: true,
+        });
+    }, [onUpdateTask, selectedTaskId]);
 
-    const moveTaskToTaskList = useCallback(
-        () => {
-            onUpdateTask(selectedTaskId, {
-                scheduled: false,
-            });
-        },
-        [onUpdateTask, selectedTaskId]
-    );
+    const moveTaskToTaskList = useCallback(() => {
+        onUpdateTask(selectedTaskId, {
+            scheduled: false,
+        });
+    }, [onUpdateTask, selectedTaskId]);
 
     const setTaskDuration = useCallback(
         duration => {
@@ -481,131 +477,114 @@ function App() {
         [onUpdateTask, selectedTaskId]
     );
 
-    const toggleTaskListVisibility = useCallback(
-        () => {
-            if (isShowingSidebar) {
-                setIsShowingTrashContents(false);
+    const toggleTaskListVisibility = useCallback(() => {
+        if (isShowingSidebar) {
+            setIsShowingTrashContents(false);
+        }
+
+        onChangeIsSidebarOpen(!isShowingSidebar);
+    }, [isShowingSidebar, onChangeIsSidebarOpen]);
+
+    const toggleDarkMode = useCallback(() => {
+        onChangeTheme(themeName === 'LIGHT' ? 'DARK' : 'LIGHT');
+    }, [onChangeTheme, themeName]);
+
+    const toggleIsEditingCurrentTask = useCallback(() => {
+        setIsCreatingTask(true);
+    }, [setIsCreatingTask]);
+
+    const toggleIsShowingListManager = useCallback(() => {
+        onChangeIsShowingListManager(!isShowingListManager);
+    }, [isShowingListManager, onChangeIsShowingListManager]);
+
+    const createNewTask = useCallback(() => {
+        onCreateTask();
+    }, [onCreateTask]);
+
+    const deleteCurrentTask = useCallback(() => {
+        deleteTask(selectedTaskId);
+    }, [deleteTask, selectedTaskId]);
+
+    const goBack = useCallback(() => {
+        setIsShowingTrashContents(current => {
+            if (current) {
+                return false;
             }
+        });
 
-            onChangeIsSidebarOpen(!isShowingSidebar);
-        },
-        [isShowingSidebar, onChangeIsSidebarOpen]
+        setIsShowingListManager(current => !current);
+    }, [setIsShowingListManager, setIsShowingTrashContents]);
+
+    useKeyboardShortcut(keyboardShortcutNamespace, [1, 2, 3, 4, 5, 6], evt => {
+        const durations = [15, 30, 45, 60, 90, 120];
+        const desiredDurationIndex = Number(evt.key) - 1;
+        setTaskDuration(durations[desiredDurationIndex]);
+    });
+    useKeyboardShortcut(
+        keyboardShortcutNamespace,
+        'cmd + arrowRight',
+        withPreventDefault(moveTaskToTimeline)
     );
-
-    const toggleDarkMode = useCallback(
-        () => {
-            onChangeTheme(themeName === 'LIGHT' ? 'DARK' : 'LIGHT');
-        },
-        [onChangeTheme, themeName]
+    useKeyboardShortcut(
+        keyboardShortcutNamespace,
+        'cmd + arrowLeft',
+        withPreventDefault(moveTaskToTaskList)
     );
-
-    const toggleIsEditingCurrentTask = useCallback(
-        () => {
-            setIsCreatingTask(true);
-        },
-        [setIsCreatingTask]
+    useKeyboardShortcut(
+        keyboardShortcutNamespace,
+        ['arrowRight', 'cmd + shift + arrowRight', 'cmd + shift + ]'],
+        withPreventDefault(() => selectListByRelativeIndex(1))
     );
-
-    const toggleIsShowingListManager = useCallback(
-        () => {
-            onChangeIsShowingListManager(!isShowingListManager);
-        },
-        [isShowingListManager, onChangeIsShowingListManager]
+    useKeyboardShortcut(
+        keyboardShortcutNamespace,
+        ['arrowLeft', 'cmd + shift + arrowLeft', 'cmd + shift + ['],
+        withPreventDefault(() => selectListByRelativeIndex(-1))
     );
-
-    const createNewTask = useCallback(
-        () => {
-            onCreateTask();
-        },
-        [onCreateTask]
+    useKeyboardShortcut(
+        keyboardShortcutNamespace,
+        'b',
+        withPreventDefault(toggleTaskListVisibility)
     );
-
-    const deleteCurrentTask = useCallback(
-        () => {
-            deleteTask(selectedTaskId);
-        },
-        [deleteTask, selectedTaskId]
+    useKeyboardShortcut(
+        keyboardShortcutNamespace,
+        'd',
+        withPreventDefault(toggleDarkMode)
     );
-
-    const goBack = useCallback(
-        () => {
-            setIsShowingTrashContents(current => {
-                if (current) {
-                    return false;
-                }
-            });
-
-            setIsShowingListManager(current => !current);
-        },
-        [setIsShowingListManager, setIsShowingTrashContents]
+    useKeyboardShortcut(
+        keyboardShortcutNamespace,
+        'e',
+        withPreventDefault(toggleIsEditingCurrentTask)
     );
-
-    const keyMap = useMemo(
-        () => {
-            const withPreventDefault = func => e => {
-                e.preventDefault();
-                func();
-            };
-
-            return {
-                ...[15, 30, 45, 60, 90, 120].reduce((acc, duration, index) => {
-                    return {
-                        ...acc,
-                        [index + 1]: () => setTaskDuration(duration),
-                    };
-                }, {}),
-                'cmd + arrowRight': withPreventDefault(moveTaskToTimeline),
-                'cmd + arrowLeft': withPreventDefault(moveTaskToTaskList),
-                'cmd + shift + arrowRight': withPreventDefault(() =>
-                    selectListByRelativeIndex(1)
-                ),
-                'cmd + shift + arrowLeft': withPreventDefault(() =>
-                    selectListByRelativeIndex(-1)
-                ),
-                'cmd + shift + ]': withPreventDefault(() =>
-                    selectListByRelativeIndex(1)
-                ),
-                'cmd + shift + [': withPreventDefault(() =>
-                    selectListByRelativeIndex(-1)
-                ),
-                b: withPreventDefault(toggleTaskListVisibility),
-                d: withPreventDefault(toggleDarkMode),
-                e: withPreventDefault(toggleIsEditingCurrentTask),
-                escape: withPreventDefault(goBack),
-                l: withPreventDefault(toggleIsShowingListManager),
-                n: withPreventDefault(createNewTask),
-                t: withPreventDefault(deleteCurrentTask),
-                arrowUp: withPreventDefault(() =>
-                    selectByRelativeIndex(-1, true)
-                ),
-                arrowDown: withPreventDefault(() =>
-                    selectByRelativeIndex(1, true)
-                ),
-                arrowLeft: withPreventDefault(() =>
-                    selectListByRelativeIndex(-1)
-                ),
-                arrowRight: withPreventDefault(() =>
-                    selectListByRelativeIndex(1)
-                ),
-            };
-        },
-        [
-            createNewTask,
-            deleteCurrentTask,
-            goBack,
-            moveTaskToTaskList,
-            moveTaskToTimeline,
-            selectByRelativeIndex,
-            selectListByRelativeIndex,
-            setTaskDuration,
-            toggleTaskListVisibility,
-            toggleDarkMode,
-            toggleIsEditingCurrentTask,
-            toggleIsShowingListManager,
-        ]
+    useKeyboardShortcut(
+        keyboardShortcutNamespace,
+        'escape',
+        withPreventDefault(goBack)
     );
-
-    useKeyboardShortcuts(keyMap);
+    useKeyboardShortcut(
+        keyboardShortcutNamespace,
+        'l',
+        withPreventDefault(toggleIsShowingListManager)
+    );
+    useKeyboardShortcut(
+        keyboardShortcutNamespace,
+        'n',
+        withPreventDefault(createNewTask)
+    );
+    useKeyboardShortcut(
+        keyboardShortcutNamespace,
+        't',
+        withPreventDefault(deleteCurrentTask)
+    );
+    useKeyboardShortcut(
+        keyboardShortcutNamespace,
+        'arrowUp',
+        withPreventDefault(() => selectByRelativeIndex(-1, true))
+    );
+    useKeyboardShortcut(
+        keyboardShortcutNamespace,
+        'arrowDown',
+        withPreventDefault(() => selectByRelativeIndex(1, true))
+    );
 
     const appActions = {
         onChangeIsSidebarOpen,
@@ -683,8 +662,8 @@ function App() {
                             isShowingTrashContents
                                 ? COPY.LABEL_FOR_TRASHED_LISTS
                                 : isShowingListManager
-                                    ? COPY.LABEL_FOR_LIST_MANAGER
-                                    : COPY.LABEL_FOR_TASK_DETAILS
+                                ? COPY.LABEL_FOR_LIST_MANAGER
+                                : COPY.LABEL_FOR_TASK_DETAILS
                         }
                         style={{
                             width: isShowingListManager

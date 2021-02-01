@@ -1,8 +1,8 @@
-import React, { useCallback, useMemo, useRef } from 'react';
+import React, { useCallback, useRef } from 'react';
 import styled, { ThemeProvider } from 'styled-components';
 import useDrag from '../hooks/useDrag';
 import useDrop from '../hooks/useDrop';
-import useKeyboardShortcuts from '../hooks/useKeyboardShortcuts';
+import useKeyboardShortcut from '../hooks/useKeyboardShortcut';
 import toInt from '../utils/toInt';
 import { GhostButton } from './atoms/Button';
 import FlexBox from './atoms/FlexBox';
@@ -46,7 +46,7 @@ const Container = styled(FlexBox).attrs({
         width: 100%;
         height: 100%;
         ${UNIFIED_TRANSITION};
-        
+
         &:hover {
             box-shadow:
                 0 0 0 2px ${theme.SHADED},
@@ -54,13 +54,13 @@ const Container = styled(FlexBox).attrs({
                     theme[isActive ? 'TASK_BORDER_ACTIVE' : 'TASK_BORDER_HOVER']
                 };
         }
-        
+
         &:focus {
             box-shadow:
                 0 0 0 2px ${theme.SHADED},
                 0 0 0 4px ${theme.TASK_BORDER_ACTIVE};
         }
-        
+
         &:active {
             box-shadow:
                 0 0 0 2px ${theme.SHADED},
@@ -92,19 +92,21 @@ export const ListCardContainer = styled(FlexBox).attrs({
         height: 100%;
         overflow: auto;
         padding-bottom: calc(${GRID_UNIT} * 1.5);
-        
+
         & > * {
             height: ${LIST_CARD_HEIGHT};
             margin-bottom: ${LIST_CARD_SPACING};
             margin-left: ${LIST_CARD_SPACING};
             width: ${LIST_CARD_WIDTH};
-            
+
             :nth-child(3n + 1) {
                 margin-left: 0;
             }
         }
     `
 );
+
+const keyboardShortcutNamespace = 'list-card';
 
 const ListCard = ({
     appActions,
@@ -151,15 +153,11 @@ const ListCard = ({
     const setListColor = colorCode =>
         onUpdateList(listId, { color_code: colorCode });
 
-    const keyMap = useMemo(
-        () => ({
-            enter: triggerClick,
-            space: triggerClick,
-        }),
-        [triggerClick]
+    useKeyboardShortcut(
+        keyboardShortcutNamespace,
+        [('enter', 'space')],
+        triggerClick
     );
-
-    useKeyboardShortcuts(keyMap, listCardElementRef);
 
     return (
         <ThemeProvider theme={listPalette}>
