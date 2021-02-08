@@ -1,11 +1,13 @@
 import getLineData from './getLineData';
 
 const wrapSelectedText = ({
-    text,
-    selectionStart,
-    selectionEnd,
-    insertBefore = '',
     insertAfter = '',
+    insertBefore = '',
+    mustHaveSelection = false,
+    selectionEnd,
+    selectionStart,
+    text,
+    wrapAtAnyCursorLocation = false,
 }) => {
     const returnObj = {
         newText: text,
@@ -19,22 +21,40 @@ const wrapSelectedText = ({
         selectionEnd,
     });
 
+    const hasSelectedText = selectionStart !== selectionEnd;
+
+    if (mustHaveSelection && !hasSelectedText) {
+        return returnObj;
+    }
+
     const {
         allTextBeforeSelection,
         allTextAfterSelection,
         allTextWithinSelection,
     } = selectionData;
 
-    returnObj.newText = [
-        allTextBeforeSelection,
-        insertBefore,
-        allTextWithinSelection,
-        insertAfter,
-        allTextAfterSelection,
-    ].join('');
+    const somethingRightOfCursor = /^\S/.test(allTextAfterSelection);
 
-    returnObj.newSelectionStart += insertBefore.length;
-    returnObj.newSelectionEnd += insertBefore.length;
+    const somethingLeftOfCursor = /\S$/.test(allTextBeforeSelection);
+
+    if (
+        !wrapAtAnyCursorLocation &&
+        !hasSelectedText &&
+        (somethingLeftOfCursor || somethingRightOfCursor)
+    ) {
+        return returnObj;
+    } else {
+        returnObj.newText = [
+            allTextBeforeSelection,
+            insertBefore,
+            allTextWithinSelection,
+            insertAfter,
+            allTextAfterSelection,
+        ].join('');
+
+        returnObj.newSelectionStart += insertBefore.length;
+        returnObj.newSelectionEnd += insertBefore.length;
+    }
 
     return returnObj;
 };

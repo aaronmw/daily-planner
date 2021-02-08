@@ -20,6 +20,7 @@ const extendBulletedListAtCursor = ({
     const {
         allTextBeforeSelection,
         allTextAfterSelection,
+        linesBeforeSelection,
         partialLineBeforeSelection,
     } = selectionData;
 
@@ -27,14 +28,31 @@ const extendBulletedListAtCursor = ({
 
     const lineStartsWithBullet = bulletMatcher.test(partialLineBeforeSelection);
 
+    const whiteSpaceAndBullet = lineStartsWithBullet
+        ? partialLineBeforeSelection.match(bulletMatcher)[0]
+        : null;
+
     const charactersToInsert = lineStartsWithBullet
         ? partialLineBeforeSelection.match(bulletMatcher)[0]
         : '';
 
-    returnObj.newText = `${allTextBeforeSelection}\n${charactersToInsert}${allTextAfterSelection}`;
+    const lineIsEmptyListItem =
+        partialLineBeforeSelection === whiteSpaceAndBullet &&
+        (allTextAfterSelection === '' || allTextAfterSelection[0] === '\n');
 
-    returnObj.newCursorPosition =
-        selectionStart + charactersToInsert.length + 1;
+    if (lineIsEmptyListItem) {
+        returnObj.newText = `${linesBeforeSelection.join(
+            '\n'
+        )}\n\n${allTextAfterSelection}`;
+
+        returnObj.newCursorPosition =
+            selectionStart - partialLineBeforeSelection.length + 1;
+    } else {
+        returnObj.newText = `${allTextBeforeSelection}\n${charactersToInsert}${allTextAfterSelection}`;
+
+        returnObj.newCursorPosition =
+            selectionStart + charactersToInsert.length + 1;
+    }
 
     return returnObj;
 };

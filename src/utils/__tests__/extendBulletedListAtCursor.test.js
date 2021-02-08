@@ -12,7 +12,7 @@ const tests = [
     {
         given: initialValue,
         selection: { after: '- Pears' },
-        it: 'Extends list if last in string',
+        it: 'Extends list if cursor is on a non-empty list item',
         expect: {
             newCursorPosition: 55,
             newText: [
@@ -54,6 +54,42 @@ const tests = [
                 `- Bananas`,
                 `- P`,
                 `- `,
+            ].join('\n'),
+        },
+    },
+    {
+        given: `${initialValue}\n- `,
+        selection: { after: 'Pears\n- ' },
+        it:
+            'If cursor on empty item (bullet, but no text typed), it is removed and a newline added',
+        expect: {
+            newCursorPosition: 54,
+            newText: [
+                `- Apples`,
+                `  - Granny Smith`,
+                `  - Gala`,
+                `- Bananas`,
+                `- Pears`,
+                ``,
+                ``,
+            ].join('\n'),
+        },
+    },
+    {
+        given: `${initialValue}\n`,
+        selection: { after: 'Pears\n' },
+        it:
+            'If cursor on a completely empty line, it should just enter a single line break',
+        expect: {
+            newCursorPosition: 54,
+            newText: [
+                `- Apples`,
+                `  - Granny Smith`,
+                `  - Gala`,
+                `- Bananas`,
+                `- Pears`,
+                ``,
+                ``,
             ].join('\n'),
         },
     },

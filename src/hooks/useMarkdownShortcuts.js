@@ -28,7 +28,6 @@ const KEY_MAP = {
         otherKeys: [],
         insertBefore: "'",
         insertAfter: "'",
-        mustHaveSelection: true,
     },
     '"': {
         otherKeys: ['shift'],
@@ -39,22 +38,24 @@ const KEY_MAP = {
         otherKeys: ['shift'],
         insertBefore: '> ',
         insertAfter: '',
-        mustHaveSelection: true,
     },
     'b': {
         otherKeys: ['cmd'],
         insertBefore: '**',
         insertAfter: '**',
+        wrapAtAnyCursorLocation: true,
     },
     'i': {
         otherKeys: ['cmd'],
         insertBefore: '_',
         insertAfter: '_',
+        wrapAtAnyCursorLocation: true,
     },
     'x': {
         otherKeys: ['shift'],
         insertBefore: '~',
         insertAfter: '~',
+        wrapAtAnyCursorLocation: true,
     },
 };
 
@@ -76,30 +77,39 @@ const useMarkdownShortcuts = elementRef => {
             }
 
             const keyMap = KEY_MAP[evt.key.toLowerCase()];
+
             const { selectionStart, selectionEnd } = targetElement;
-            const { insertBefore, insertAfter, mustHaveSelection } = keyMap;
 
-            if (mustHaveSelection && selectionEnd <= selectionStart) {
-                return true;
-            }
+            const {
+                insertBefore,
+                insertAfter,
+                mustHaveSelection,
+                wrapAtAnyCursorLocation,
+            } = keyMap;
 
-            evt.preventDefault();
+            const text = targetElement.value;
 
             const {
                 newText,
                 newSelectionStart,
                 newSelectionEnd,
             } = wrapSelectedText({
-                text: targetElement.value,
-                selectionStart,
-                selectionEnd,
-                insertBefore,
                 insertAfter,
+                insertBefore,
+                mustHaveSelection,
+                selectionEnd,
+                selectionStart,
+                text,
+                wrapAtAnyCursorLocation,
             });
 
-            triggerInputChange(targetElement, newText);
-            targetElement.selectionStart = newSelectionStart;
-            targetElement.selectionEnd = newSelectionEnd;
+            if (newText !== text) {
+                evt.preventDefault();
+
+                triggerInputChange(targetElement, newText);
+                targetElement.selectionStart = newSelectionStart;
+                targetElement.selectionEnd = newSelectionEnd;
+            }
         },
         elementRef
     );

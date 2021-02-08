@@ -57,18 +57,41 @@ const tests = [
             newSelectionEnd: 42,
         },
     },
+    {
+        given: initialValue,
+        selection: { after: 'jump' },
+        it: 'Does nothing if there is text to the right of the cursor',
+        expect: {
+            newText: [
+                `The quick brown`,
+                `fox jump****ed over`,
+                `the lazy dog.`,
+                `There were`,
+                `no casualties.`,
+            ].join('\n'),
+            newSelectionStart: 26,
+            newSelectionEnd: 26,
+        },
+    },
 ];
 
 tests.forEach(test => {
     it(test.it, () => {
+        const after = test.selection.after;
+        const from = test.selection.from;
+        const to = test.selection.to;
+        const selectionEnd = after
+            ? test.given.indexOf(after) + after.length
+            : test.given.indexOf(to) + to.length;
+        const selectionStart = after ? selectionEnd : test.given.indexOf(from);
+
         const resultObj = wrapSelectedText({
-            text: test.given,
-            selectionStart: test.given.indexOf(test.selection.from),
-            selectionEnd:
-                test.given.indexOf(test.selection.to) +
-                test.selection.to.length,
-            insertBefore: '**',
             insertAfter: '**',
+            insertBefore: '**',
+            selectionEnd,
+            selectionStart,
+            text: test.given,
+            wrapAtAnyCursorLocation: true,
         });
 
         Object.keys(test.expect).forEach(expectedProperty => {
