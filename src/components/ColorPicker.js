@@ -80,7 +80,7 @@ const ColorChip = styled(Box).attrs({ isFlexible: true })`
     }
 `;
 
-const ColorPicker = ({ palette, onPickColor, ...otherProps }) => {
+const ColorPicker = ({ onPickColor, ...otherProps }) => {
     const [isPickingColor, setIsPickingColor] = useState(false);
 
     const showPicker = () => {
