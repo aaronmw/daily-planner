@@ -1,10 +1,10 @@
 {
   "files": {
-    "main.js": "/daily-planner/static/js/main.90c2a54c.js",
+    "main.js": "/daily-planner/static/js/main.e84b0a7f.js",
     "index.html": "/daily-planner/index.html",
-    "main.90c2a54c.js.map": "/daily-planner/static/js/main.90c2a54c.js.map"
+    "main.e84b0a7f.js.map": "/daily-planner/static/js/main.e84b0a7f.js.map"
   },
   "entrypoints": [
-    "static/js/main.90c2a54c.js"
+    "static/js/main.e84b0a7f.js"
   ]
 }
