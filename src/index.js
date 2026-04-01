@@ -1,7 +1,7 @@
 import sample from 'lodash/sample';
 import sortBy from 'lodash/sortBy';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import ReactDOM from 'react-dom';
+import { createRoot } from 'react-dom/client';
 import { StyleSheetManager, ThemeProvider } from 'styled-components';
 import { PrimaryAppColumn } from './components/AppColumn';
 import { ToggleButton } from './components/atoms/Button';
@@ -740,4 +740,5 @@ function App() {
 }
 
 const rootElement = document.getElementById('root');
-ReactDOM.render(<App />, rootElement);
+const root = createRoot(rootElement);
+root.render(<App />);

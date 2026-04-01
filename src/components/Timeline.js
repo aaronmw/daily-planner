@@ -96,7 +96,6 @@ const Timeline = ({
     from,
     tasks,
     to,
-    onClickTask,
     ...otherProps
 }) => {
     const [timelineDropProps] = useDrop({ 'task-id': () => {} });

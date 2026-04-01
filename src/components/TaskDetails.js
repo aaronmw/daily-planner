@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react';
 import styled from 'styled-components';
-import marked from 'marked';
+import { marked } from 'marked';
 import EditInPlace from './EditInPlace';
 import OptionBar from './OptionBar';
 import Box from './atoms/Box';
