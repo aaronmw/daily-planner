@@ -91,7 +91,7 @@ const tests = [
 
 tests.forEach(test => {
     it(test.it, () => {
-        const { lines, lineData, selectionData } = getLineData({
+        const { lineData, selectionData } = getLineData({
             text: test.given,
             selectionStart: test.given.indexOf(test.selection.from),
             selectionEnd:

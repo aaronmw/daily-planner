@@ -1,8 +1,13 @@
+import React from 'react';
+
 export const withDebugLabel = (Component, label = false) => {
-    Component.defaultProps = {
-        ...Component.defaultProps,
-        'data-debug-label': label ? label : Component.name,
+    const debugLabel = label || Component.displayName || Component.name;
+
+    const DebugLabeledComponent = props => {
+        return <Component data-debug-label={debugLabel} {...props} />;
     };
 
-    return Component;
+    DebugLabeledComponent.displayName = `WithDebugLabel(${debugLabel})`;
+
+    return DebugLabeledComponent;
 };

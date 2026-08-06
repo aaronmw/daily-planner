@@ -1,62 +1,48 @@
 import React, { useCallback } from 'react';
-import styled from 'styled-components';
-import marked from 'marked';
+import { marked } from 'marked';
 import EditInPlace from './EditInPlace';
 import OptionBar from './OptionBar';
 import Box from './atoms/Box';
 import FlexBox from './atoms/FlexBox';
-import {
-    COPY,
-    ICONS,
-    DURATION_OPTIONS,
-    FONTS,
-    BORDER_WIDTH,
-} from './atoms/tokens';
+import { COPY, ICONS, DURATION_OPTIONS, FONTS } from './atoms/tokens';
 
-const TaskHeader = styled(FlexBox).attrs({
-    forwardedAs: 'h1',
-    align: 'center',
-    spacing: 1.5,
-    paddingX: 1,
-    paddingY: 0.75,
-})(
-    ({ theme }) => `
-        background-color: ${theme.SHADED};
-        font-size: ${FONTS.LARGE.SIZE};
-        font-weight: 900;
-        position: relative;
-    `
+const TaskHeader = ({ style, ...otherProps }) => (
+    <FlexBox
+        as="h1"
+        align="center"
+        spacing={1.5}
+        paddingX={1}
+        paddingY={0.75}
+        className="relative bg-planner-shaded font-black"
+        style={{ fontSize: FONTS.LARGE.SIZE, ...style }}
+        {...otherProps}
+    />
 );
 
-const TaskHeaderLabel = styled(Box)`
-    flex-grow: 1;
-    flex-shrink: 1;
-    align-self: center;
-`;
+const TaskHeaderLabel = props => (
+    <Box className="grow shrink self-center" {...props} />
+);
 
-const TaskHeaderIcon = styled(Box).attrs({
-    role: 'img',
-})`
-    align-self: flex-start;
-    flex-grow: 0;
-    flex-shrink: 0;
-    font-size: 3rem;
-    line-height: 1.4rem;
-    width: 3rem;
-`;
+const TaskHeaderIcon = props => (
+    <Box
+        role="img"
+        className="shrink-0 grow-0 self-start text-5xl leading-[1.4rem] w-12"
+        {...props}
+    />
+);
 
-const DurationOptionBar = styled(OptionBar)(
-    ({ theme }) => `
-        background-color: ${theme.SHADED};
-        border-top: ${BORDER_WIDTH} solid ${theme.BACKGROUND};
-    `
+const DurationOptionBar = props => (
+    <OptionBar
+        className="border-t border-planner-background bg-planner-shaded"
+        {...props}
+    />
 );
 
 const TaskDetails = ({ appActions = {}, appData = {} }) => {
     const { onUpdateTask } = appActions;
-    const { isCreatingTask, selectedTaskId, tasks } = appData;
-    const activeTask = tasks.find(task => task.id === selectedTaskId) || {};
-    const { icon, id, label, notes, scheduled_minutes } = activeTask;
+    const { isCreatingTask, plannerIndexes, selectedTaskId } = appData;
+    const activeTask = plannerIndexes.taskById.get(selectedTaskId) || {};
+    const { duration_minutes, icon, id, label, notes } = activeTask;
     const isEmpty = !activeTask.id;
 
     const handleUpdateTask = useCallback(
@@ -65,7 +51,7 @@ const TaskDetails = ({ appActions = {}, appData = {} }) => {
     );
 
     const handleSaveDuration = useCallback(
-        newDuration => handleUpdateTask('scheduled_minutes', newDuration),
+        newDuration => handleUpdateTask('duration_minutes', newDuration),
         [handleUpdateTask]
     );
 
@@ -90,8 +76,9 @@ const TaskDetails = ({ appActions = {}, appData = {} }) => {
                 <TaskHeader>
                     <TaskHeaderLabel>
                         <EditInPlace
-                            isRemotelyActivated={isCreatingTask}
+                            key={id}
                             placeholder={COPY.EMPTY_LABEL}
+                            startsEditing={isCreatingTask}
                             value={label}
                             onSave={handleSaveLabel}
                         />
@@ -134,7 +121,7 @@ const TaskDetails = ({ appActions = {}, appData = {} }) => {
                 <DurationOptionBar
                     options={DURATION_OPTIONS}
                     renderSelectedOption={option => <span>{option} mins</span>}
-                    selectedOption={scheduled_minutes}
+                    selectedOption={duration_minutes}
                     title={COPY.TIPS.SETTING_DURATION}
                     onChange={handleSaveDuration}
                 />

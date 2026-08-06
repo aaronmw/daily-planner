@@ -1,13 +1,15 @@
-import { useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 
 const useDrag = dataTypes => {
     const [isDragging, setIsDragging] = useState(false);
+    const dataTypesRef = useRef(dataTypes);
+    dataTypesRef.current = dataTypes;
 
-    const onDragEnd = () => {
+    const onDragEnd = useCallback(() => {
         setIsDragging(false);
-    };
+    }, []);
 
-    const onDragStart = evt => {
+    const onDragStart = useCallback(evt => {
         if (
             ['input', 'textarea'].includes(
                 document.activeElement.tagName.toLowerCase()
@@ -17,20 +19,27 @@ const useDrag = dataTypes => {
             return;
         }
 
-        Object.keys(dataTypes).map(dataType => {
-            evt.dataTransfer.setData(dataType, dataTypes[dataType]);
-            return dataType;
+        Object.keys(dataTypesRef.current).forEach(dataType => {
+            evt.dataTransfer.setData(dataType, dataTypesRef.current[dataType]);
         });
 
         setIsDragging(true);
-    };
+    }, []);
 
-    const dragProps = {
-        draggable: true,
-        isDragging,
-        onDragEnd,
-        onDragStart,
-    };
+    const dragProps = useMemo(() => {
+        const props = {
+            draggable: true,
+            onDragEnd,
+            onDragStart,
+        };
+
+        Object.defineProperty(props, 'isDragging', {
+            enumerable: false,
+            value: isDragging,
+        });
+
+        return props;
+    }, [isDragging, onDragEnd, onDragStart]);
 
     return [dragProps];
 };

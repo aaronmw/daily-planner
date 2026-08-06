@@ -1,12 +1,3 @@
-import range from 'lodash/range';
-import sample from 'lodash/sample';
-import {
-    adjustHue,
-    getLuminance,
-    readableColor,
-    setLightness,
-    transparentize,
-} from 'polished';
 import React from 'react';
 import MOTIVATIONAL_DESCRIPTORS from './copy/motivational-descriptors';
 import Icon from './Icon';
@@ -23,14 +14,19 @@ const FONTS = {
     LARGE: { LINE_HEIGHT: '1.4em', SIZE: `calc(${GRID_UNIT} * 0.75)` },
 };
 const HOURS_PER_SCREEN = 10;
-const LIST_CARD_HEIGHT = `calc(${GRID_UNIT} * 8)`;
+const INTERACTION_ANIMATION_DURATION = 150;
+const DEFAULT_RELATIVE_CARD_SIZING_ENABLED = true;
+const DEFAULT_THEME_MODE = 'SYSTEM';
 const LIST_CARD_SPACING = `calc(${GRID_UNIT} * 0.5)`;
 const LIST_CARD_WIDTH = `calc((100% - (${LIST_CARD_SPACING} * 2)) / 3)`;
 const MIN_SLOT_HEIGHT = GRID_UNIT;
 const ROUTE_TRANSITION_ANIMATION_DURATION = 250;
+const THEME_MODES = ['SYSTEM', 'LIGHT', 'DARK'];
 const TIMELINE_FROM = '6:00';
+const TIMELINE_HOURS_PER_SCREEN_MAX = 24;
+const TIMELINE_HOURS_PER_SCREEN_MIN = 4;
+const TIMELINE_HOURS_PER_SCREEN_STEP = 1;
 const TIMELINE_TO = '30:00';
-const UNIFIED_TRANSITION = 'transition: all 0.15s ease-in-out';
 
 const COPY = {};
 COPY.MOTIVATIONAL_DESCRIPTORS = MOTIVATIONAL_DESCRIPTORS;
@@ -41,10 +37,20 @@ COPY.EMPTY_TRASHED_TASKS = 'No Trashed Tasks';
 COPY.LABEL_FOR_LIST_MANAGER = 'Switch Lists';
 COPY.LABEL_FOR_RESTORING_LIST = 'Restore this List';
 COPY.LABEL_FOR_RESTORING_TASK = 'Restore this Task';
+COPY.LABEL_FOR_LIGHTING_MODE = 'Lighting Mode';
+COPY.LABEL_FOR_OPTIONS = 'Options';
+COPY.LABEL_FOR_RELATIVE_CARD_SIZING = 'Relative card sizing';
 COPY.LABEL_FOR_TASK_DETAILS = 'Back to Task';
 COPY.LABEL_FOR_TIMELINE = "Today's Schedule";
+COPY.LABEL_FOR_TIMELINE_SETTINGS = 'Timeline';
+COPY.LABEL_FOR_TIMELINE_ZOOM = 'Zoom';
 COPY.LABEL_FOR_TRASHED_LISTS = 'Trashed Lists';
 COPY.LABEL_FOR_TRASHED_TASKS = 'Trashed Tasks';
+COPY.LIGHTING_MODE_LABELS = {
+    SYSTEM: 'System',
+    LIGHT: 'Light',
+    DARK: 'Dark',
+};
 COPY.CREATE_LIST_LABEL = 'Create List';
 COPY.CREATE_TASK_LABEL = 'Create Task';
 COPY.NEW_LIST_LABEL = 'New List';
@@ -66,33 +72,162 @@ COPY.TIPS = {
         'Press keys [1] to [6] to quickly adjust your time estimate for the selected task',
     TOGGLE_TASK_LIST:
         'Press [B] to show / hide the side[B]ar of unscheduled tasks',
-    TOGGLE_DARK_MODE: 'Press [D] to toggle [D]ark Mode',
+    TOGGLE_DARK_MODE: 'Press [D] to cycle the lighting mode',
     TOGGLE_LIST_MANAGER: 'Press [L] to see your [L]ists',
 };
 
 export { COPY };
 
-const PRIMARY_COLORS = [];
+const TAILWIND_ACCENT_KEYS = [
+    'red',
+    'orange',
+    'amber',
+    'yellow',
+    'lime',
+    'green',
+    'emerald',
+    'teal',
+    'cyan',
+    'sky',
+];
 
-const NUM_COLORS = 10;
-range(NUM_COLORS).map(
-    num =>
-        (PRIMARY_COLORS[num] = adjustHue((360 / NUM_COLORS) * num, '#D72127'))
+const DEFAULT_ACCENT_KEY = TAILWIND_ACCENT_KEYS[0];
+
+const LEGACY_ACCENT_BY_COLOR = {
+    '#ff0000': 'red',
+    '#d72127': 'red',
+    '#d78821': 'orange',
+    '#b9d721': 'lime',
+    '#4bd721': 'green',
+    '#21d764': 'emerald',
+    '#21d7d1': 'teal',
+    '#2170d7': 'sky',
+    '#3f21d7': 'sky',
+    '#ad21d7': 'red',
+    '#d72194': 'red',
+};
+
+const toTitleCase = value =>
+    value.charAt(0).toUpperCase() + value.slice(1).replace('-', ' ');
+
+const buildAccentPalette = accentKey => ({
+    key: accentKey,
+    label: toTitleCase(accentKey),
+    value: `var(--color-${accentKey}-500)`,
+    palette: {
+        LIGHT: {
+            PRIMARY: `var(--color-${accentKey}-600)`,
+            BACKGROUND: 'var(--color-white)',
+            SHADED: `var(--color-${accentKey}-50)`,
+            TEXT: 'var(--color-slate-950)',
+            TEXT_FADED: 'var(--color-slate-600)',
+            BORDER: `var(--color-${accentKey}-200)`,
+            DOTTED_LINE: `var(--color-${accentKey}-400)`,
+            TIME_LINE_PRIMARY: 'var(--color-slate-600)',
+            TIME_LINE_SECONDARY: 'var(--color-slate-600)',
+            HIGH_CONTRAST_BACKGROUND: `var(--color-${accentKey}-500)`,
+            HIGH_CONTRAST_TEXT: 'var(--color-white)',
+            NEUTRAL_FOREGROUND: '#000000',
+            NEUTRAL_BACKGROUND: '#ffffff',
+            SHADOW: 'rgb(0 0 0 / 0.1)',
+            TASK_BORDER: `color-mix(in oklab, var(--color-${accentKey}-500) 45%, transparent)`,
+            TASK_BORDER_HOVER: `color-mix(in oklab, var(--color-${accentKey}-500) 55%, transparent)`,
+            TASK_BORDER_ACTIVE: `var(--color-${accentKey}-600)`,
+        },
+        DARK: {
+            PRIMARY: `var(--color-${accentKey}-400)`,
+            BACKGROUND: '#000000',
+            SHADED: `color-mix(in oklab, var(--color-${accentKey}-950) 48%, black)`,
+            TEXT: 'var(--color-slate-100)',
+            TEXT_FADED: 'var(--color-slate-400)',
+            BORDER: `color-mix(in oklab, var(--color-${accentKey}-800) 58%, black)`,
+            DOTTED_LINE: `var(--color-${accentKey}-300)`,
+            TIME_LINE_PRIMARY: 'var(--color-slate-400)',
+            TIME_LINE_SECONDARY: 'var(--color-slate-400)',
+            HIGH_CONTRAST_BACKGROUND: `var(--color-${accentKey}-400)`,
+            HIGH_CONTRAST_TEXT: 'var(--color-slate-950)',
+            NEUTRAL_FOREGROUND: '#ffffff',
+            NEUTRAL_BACKGROUND: '#000000',
+            SHADOW: 'rgb(0 0 0 / 0.1)',
+            TASK_BORDER: `color-mix(in oklab, var(--color-${accentKey}-400) 45%, transparent)`,
+            TASK_BORDER_HOVER: `color-mix(in oklab, var(--color-${accentKey}-400) 55%, transparent)`,
+            TASK_BORDER_ACTIVE: `var(--color-${accentKey}-400)`,
+        },
+    },
+});
+
+const ACCENT_SWATCHES = TAILWIND_ACCENT_KEYS.map(buildAccentPalette);
+const ACCENT_BY_KEY = ACCENT_SWATCHES.reduce(
+    (acc, swatch) => ({ ...acc, [swatch.key]: swatch }),
+    {}
 );
+
+const getAccentKey = accentInput => {
+    const input =
+        accentInput && typeof accentInput === 'object'
+            ? accentInput.accent_key || accentInput.color_code
+            : accentInput;
+
+    if (!input) {
+        return DEFAULT_ACCENT_KEY;
+    }
+
+    const normalizedInput = String(input).toLowerCase();
+
+    if (ACCENT_BY_KEY[normalizedInput]) {
+        return normalizedInput;
+    }
+
+    return LEGACY_ACCENT_BY_COLOR[normalizedInput] || DEFAULT_ACCENT_KEY;
+};
+
+const getListAccentKey = list => getAccentKey(list);
+
+const getNextThemeMode = themeMode => {
+    const currentModeIndex = THEME_MODES.indexOf(themeMode);
+
+    return currentModeIndex < 0
+        ? THEME_MODES[0]
+        : THEME_MODES[(currentModeIndex + 1) % THEME_MODES.length];
+};
+
+const PALETTE_VARIABLES = {
+    BACKGROUND: '--planner-background',
+    BORDER: '--planner-border',
+    DOTTED_LINE: '--planner-dotted-line',
+    HIGH_CONTRAST_BACKGROUND: '--planner-contrast',
+    HIGH_CONTRAST_TEXT: '--planner-contrast-text',
+    NEUTRAL_BACKGROUND: '--planner-neutral-background',
+    NEUTRAL_FOREGROUND: '--planner-neutral-foreground',
+    PRIMARY: '--planner-primary',
+    SHADED: '--planner-shaded',
+    SHADOW: '--planner-shadow',
+    TASK_BORDER: '--planner-task-border',
+    TASK_BORDER_ACTIVE: '--planner-task-border-active',
+    TASK_BORDER_HOVER: '--planner-task-border-hover',
+    TEXT: '--planner-text',
+    TEXT_FADED: '--planner-text-faded',
+};
+
+const buildThemeStyle = (theme = 'LIGHT', accentInput = DEFAULT_ACCENT_KEY) => {
+    const palette = buildPalette(theme, accentInput);
+
+    return Object.keys(PALETTE_VARIABLES).reduce(
+        (style, paletteKey) => ({
+            ...style,
+            [PALETTE_VARIABLES[paletteKey]]: palette[paletteKey],
+        }),
+        {}
+    );
+};
 
 const INITIAL_LISTS = [
     {
         id: 1,
-        color_code: sample(PRIMARY_COLORS),
+        accent_key: DEFAULT_ACCENT_KEY,
         isArchived: false,
         label: 'User Manual',
     },
-    // ...PRIMARY_COLORS.map((primaryColor, index) => ({
-    //     id: index + 2,
-    //     color_code: primaryColor,
-    //     isArchived: false,
-    //     label: primaryColor,
-    // })),
 ];
 const INITIAL_SELECTED_LIST_ID = (INITIAL_LISTS[0] || {}).id;
 
@@ -107,76 +242,23 @@ const INITIAL_TASKS = Object.keys(COPY.TIPS).map(tipId => {
         isComplete: false,
         notes: '',
         scheduled: false,
-        scheduled_minutes: 30,
+        duration_minutes: 30,
         scheduled_time: '9:00',
     };
 });
 
 const INITIAL_SELECTED_TASK_ID = (INITIAL_TASKS[0] || {}).id;
 
-const DEFAULT_LIST_PROPS = {
-    id: Date.now(),
-    color_code: '#FF0000',
-    isArchived: false,
-    label: 'New List',
-};
+const buildPalette = (theme = 'LIGHT', accentInput = DEFAULT_ACCENT_KEY) => {
+    const themeName = theme === 'LIGHT' ? 'LIGHT' : 'DARK';
+    const accentKey = getAccentKey(accentInput);
+    const accent = ACCENT_BY_KEY[accentKey];
 
-const buildPalette = (theme = 'LIGHT', colorCode = '#FF0000') => {
-    const THEME = {};
-
-    THEME.PRIMARY = colorCode;
-
-    const luminanceOfPrimaryColor = getLuminance(THEME.PRIMARY);
-
-    if (theme === 'DARK') {
-        THEME.BACKGROUND = '#000000';
-        THEME.SHADED = setLightness(0.1, THEME.PRIMARY);
-        THEME.TEXT = setLightness(0.95, THEME.PRIMARY);
-        THEME.TEXT_FADED = setLightness(0.75, THEME.PRIMARY);
-        THEME.BORDER = setLightness(0.2, THEME.PRIMARY);
-        THEME.DOTTED_LINE = setLightness(0.8, THEME.PRIMARY);
-        THEME.TIME_LINE_PRIMARY = THEME.TEXT_FADED;
-        THEME.TIME_LINE_SECONDARY = THEME.TEXT_FADED;
-        THEME.NEUTRAL_FOREGROUND = '#ffffff';
-        THEME.NEUTRAL_BACKGROUND = '#000000';
-    }
-
-    if (theme === 'LIGHT') {
-        THEME.PRIMARY = setLightness(
-            luminanceOfPrimaryColor < 0.5 ? 0.6 : 0.4,
-            THEME.PRIMARY
-        );
-
-        THEME.BACKGROUND = '#ffffff';
-        THEME.SHADED = setLightness(0.975, THEME.PRIMARY);
-        THEME.TEXT = setLightness(0.05, THEME.PRIMARY);
-        THEME.TEXT_FADED = setLightness(0.4, THEME.PRIMARY);
-        THEME.BORDER = setLightness(
-            luminanceOfPrimaryColor < 0.5 ? 0.85 : 0.6,
-            THEME.PRIMARY
-        );
-        THEME.DOTTED_LINE = setLightness(
-            luminanceOfPrimaryColor < 0.5 ? 0.8 : 0.45,
-            THEME.PRIMARY
-        );
-        THEME.TIME_LINE_PRIMARY = transparentize(0.5, THEME.TEXT_FADED);
-        THEME.TIME_LINE_SECONDARY = transparentize(0.5, THEME.TEXT_FADED);
-        THEME.NEUTRAL_FOREGROUND = '#000000';
-        THEME.NEUTRAL_BACKGROUND = '#ffffff';
-    }
-
-    THEME.HIGH_CONTRAST_BACKGROUND = setLightness(
-        // luminanceOfPrimaryColor < 0.5 ? 0.75 : 0.65,
-        0.7,
-        THEME.PRIMARY
-    );
-    THEME.HIGH_CONTRAST_TEXT = readableColor(THEME.HIGH_CONTRAST_BACKGROUND);
-    THEME.SHADOW = transparentize(0.9, '#000000');
-    THEME.TASK_BORDER = transparentize(0.5, THEME.PRIMARY);
-    THEME.TASK_BORDER_HOVER = transparentize(0.5, THEME.PRIMARY);
-    THEME.TASK_BORDER_ACTIVE = THEME.PRIMARY;
-
-    return THEME;
+    return {
+        ...accent.palette[themeName],
+        ACCENT_KEY: accentKey,
+        SWATCH: accent.value,
+    };
 };
 
 const ICON_PACKS = {
@@ -193,12 +275,15 @@ const ICON_PACKS = {
     },
     FONT_AWESOME: {
         COLOR_PICKER: 'palette',
-        DARK_MODE: 'moon-stars',
+        CHECK: 'check',
+        DARK_MODE: 'moon',
         END_ZONE: 'trash-alt',
         LEFT: 'long-arrow-left',
         LIGHT_MODE: 'sun',
         LIST_MANAGER: 'book',
+        OPTIONS: 'cog',
         RIGHT: 'long-arrow-right',
+        SYSTEM_MODE: 'desktop',
         TASK_DETAILS: 'thumbtack',
         TIP: 'gem',
     },
@@ -223,29 +308,38 @@ const ICONS = ICON_PACKS.FONT_AWESOME;
 ICONS.TASK_DEFAULT = '📌';
 
 export {
+    ACCENT_SWATCHES,
     BORDER_RADIUS,
     BORDER_WIDTH,
     buildPalette,
+    buildThemeStyle,
     BULLET_SIZE,
-    DEFAULT_LIST_PROPS,
+    DEFAULT_THEME_MODE,
+    DEFAULT_RELATIVE_CARD_SIZING_ENABLED,
+    DEFAULT_ACCENT_KEY,
     DURATION_OPTIONS,
     FONTS,
+    getAccentKey,
+    getListAccentKey,
+    getNextThemeMode,
     GRID_UNIT,
     HOURS_PER_SCREEN,
     ICONS,
+    INTERACTION_ANIMATION_DURATION,
     INITIAL_LISTS,
     INITIAL_SELECTED_LIST_ID,
     INITIAL_SELECTED_TASK_ID,
     INITIAL_TASKS,
-    LIST_CARD_HEIGHT,
     LIST_CARD_SPACING,
     LIST_CARD_WIDTH,
     MIN_SLOT_HEIGHT,
-    PRIMARY_COLORS,
     ROUTE_TRANSITION_ANIMATION_DURATION,
     SIDEBAR_DEFAULT_WIDTH,
     SIDEBAR_EXTENDED_WIDTH,
+    THEME_MODES,
     TIMELINE_FROM,
+    TIMELINE_HOURS_PER_SCREEN_MAX,
+    TIMELINE_HOURS_PER_SCREEN_MIN,
+    TIMELINE_HOURS_PER_SCREEN_STEP,
     TIMELINE_TO,
-    UNIFIED_TRANSITION,
 };

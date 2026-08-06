@@ -3,6 +3,7 @@ import uniq from 'lodash/uniq';
 import isInput from '../utils/isInput';
 
 const keyboardShortcutHandlers = {};
+const DEFAULT_SCOPING_ELEMENT_REF = {};
 
 const standardizeSequence = sequence =>
     String(sequence)
@@ -46,8 +47,6 @@ const handleAllKeyPresses = evt => {
     const currentSequence = buildKeySequenceFromEvent(evt);
     const handlers = keyboardShortcutHandlers[currentSequence] || {};
 
-    console.log(handlers);
-
     Object.keys(handlers).forEach(namespace => {
         handlers[namespace](evt);
     });
@@ -57,7 +56,7 @@ const useKeyboardShortcut = (
     namespace,
     oneOrMoreSequences,
     handler,
-    scopingElementRef = {}
+    scopingElementRef = DEFAULT_SCOPING_ELEMENT_REF
 ) => {
     if (!namespace.length) {
         throw new Error(

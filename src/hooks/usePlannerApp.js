@@ -1,49 +1,68 @@
 import sample from 'lodash/sample';
 import sortBy from 'lodash/sortBy';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import ReactDOM from 'react-dom';
-import { StyleSheetManager, ThemeProvider } from 'styled-components';
-import { PrimaryAppColumn } from './components/AppColumn';
-import { ToggleButton } from './components/atoms/Button';
-import FlexBox from './components/atoms/FlexBox';
-import GlobalStyle from './components/atoms/GlobalStyles';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-    buildPalette,
+    ACCENT_SWATCHES,
+    buildThemeStyle,
     COPY,
+    DEFAULT_RELATIVE_CARD_SIZING_ENABLED,
+    DEFAULT_THEME_MODE,
     GRID_UNIT,
+    HOURS_PER_SCREEN,
     ICONS,
+    getNextThemeMode,
     INITIAL_LISTS,
     INITIAL_SELECTED_LIST_ID,
     INITIAL_SELECTED_TASK_ID,
     INITIAL_TASKS,
-    PRIMARY_COLORS,
+    INTERACTION_ANIMATION_DURATION,
     ROUTE_TRANSITION_ANIMATION_DURATION,
     SIDEBAR_DEFAULT_WIDTH,
     SIDEBAR_EXTENDED_WIDTH,
-    TIMELINE_FROM,
-    TIMELINE_TO,
-} from './components/atoms/tokens';
-import Transition from './components/atoms/Transition';
-import ListManager from './components/ListManager';
-import Sidebar from './components/Sidebar';
-import TaskDetails from './components/TaskDetails';
-import TaskList from './components/TaskList';
-import Timeline from './components/Timeline';
-import ToolBar from './components/ToolBar';
-import Trash from './components/Trash';
-import TrashedLists from './components/TrashedLists';
-import TrashedTasks from './components/TrashedTasks';
-import useKeyboardShortcut from './hooks/useKeyboardShortcut';
-import usePersistentState from './hooks/usePersistentState';
+    THEME_MODES,
+    TIMELINE_HOURS_PER_SCREEN_MAX,
+    TIMELINE_HOURS_PER_SCREEN_MIN,
+    TIMELINE_HOURS_PER_SCREEN_STEP,
+} from '../components/atoms/tokens';
+import { getMinuteHeightCss } from '../utils/plannerGeometry';
+import { buildPlannerIndexes } from '../utils/plannerIndexes';
+import useKeyboardShortcut from './useKeyboardShortcut';
+import usePersistentState from './usePersistentState';
+import useSystemThemeName from './useSystemThemeName';
+
+const keyboardShortcutNamespace = 'global';
 
 const withPreventDefault = func => e => {
     e.preventDefault();
     func(e);
 };
 
-const keyboardShortcutNamespace = 'global';
+const getRelativeIndexOffset = (relativeIndex, itemCount) =>
+    relativeIndex >= 0
+        ? relativeIndex
+        : Math.abs(relativeIndex) * (itemCount - 1);
 
-function App() {
+const normalizeThemeMode = themeMode =>
+    THEME_MODES.includes(themeMode) ? themeMode : DEFAULT_THEME_MODE;
+
+const normalizeTimelineHoursPerScreen = hoursPerScreen => {
+    const numericHoursPerScreen = Number(hoursPerScreen);
+
+    if (!Number.isFinite(numericHoursPerScreen)) {
+        return HOURS_PER_SCREEN;
+    }
+
+    const steppedHoursPerScreen =
+        Math.round(numericHoursPerScreen / TIMELINE_HOURS_PER_SCREEN_STEP) *
+        TIMELINE_HOURS_PER_SCREEN_STEP;
+
+    return Math.min(
+        TIMELINE_HOURS_PER_SCREEN_MAX,
+        Math.max(TIMELINE_HOURS_PER_SCREEN_MIN, steppedHoursPerScreen)
+    );
+};
+
+export default function usePlannerApp() {
     const [isShowingSidebar, setIsShowingSidebar] = usePersistentState(
         'is-showing-sidebar',
         true
@@ -62,12 +81,26 @@ function App() {
         'selected-task-id',
         INITIAL_SELECTED_TASK_ID
     );
-    const [themeName, setThemeName] = usePersistentState('theme-name', 'DARK');
+    const [themeMode, setThemeMode] = usePersistentState(
+        'theme-mode',
+        DEFAULT_THEME_MODE
+    );
+    const [timelineHoursPerScreen, setTimelineHoursPerScreen] =
+        usePersistentState('timeline-hours-per-screen', HOURS_PER_SCREEN);
+    const [relativeCardSizingEnabled, setRelativeCardSizingEnabled] =
+        usePersistentState(
+            'relative-card-sizing-enabled',
+            DEFAULT_RELATIVE_CARD_SIZING_ENABLED
+        );
     const [isCreatingList, setIsCreatingList] = useState(false);
     const [isCreatingTask, setIsCreatingTask] = useState(false);
+    const [isCardSizingTransitioning, setIsCardSizingTransitioning] =
+        useState(false);
     const [isDraggingTask, setIsDraggingTask] = useState(false);
     const [isShowingTrashContents, setIsShowingTrashContents] = useState(false);
     const [isTransitioning, setIsTransitioning] = useState(false);
+    const cardSizingTransitionTimerRef = useRef(null);
+
     const unarchivedLists = useMemo(
         () =>
             sortBy(
@@ -76,33 +109,58 @@ function App() {
             ),
         [lists]
     );
-
-    const currentListIndex = unarchivedLists.findIndex(
-        list => list.id === selectedListId
+    const unarchivedListIndexById = useMemo(
+        () => new Map(unarchivedLists.map((list, index) => [list.id, index])),
+        [unarchivedLists]
     );
 
-    const selectedList = lists.find(list => list.id === selectedListId);
+    const systemThemeName = useSystemThemeName();
+    const normalizedThemeMode = normalizeThemeMode(themeMode);
+    const themeName =
+        normalizedThemeMode === 'SYSTEM'
+            ? systemThemeName
+            : normalizedThemeMode;
 
-    const primaryColorCode = selectedList.color_code
-        ? selectedList.color_code
-        : PRIMARY_COLORS[0]
-        ? PRIMARY_COLORS[0]
-        : '#FF0000';
-
-    const palette = buildPalette(themeName, primaryColorCode);
-
-    const incompleteTasks = useMemo(
-        () => tasks.filter(task => !task.isComplete),
-        [tasks]
+    const plannerIndexes = useMemo(
+        () =>
+            buildPlannerIndexes(lists, tasks, list =>
+                buildThemeStyle(themeName, list)
+            ),
+        [lists, tasks, themeName]
     );
+    const { listById } = plannerIndexes;
 
-    const hasUnarchivedList = lists.filter(list => !list.isArchived).length;
-
-    const isSidebarOpen = hasUnarchivedList && isShowingSidebar;
+    const currentListIndex = unarchivedListIndexById.get(selectedListId) ?? -1;
+    const selectedList = listById.get(selectedListId);
+    const normalizedTimelineHoursPerScreen = normalizeTimelineHoursPerScreen(
+        timelineHoursPerScreen
+    );
+    const effectiveRelativeCardSizingEnabled = relativeCardSizingEnabled;
+    const appThemeStyle = useMemo(
+        () => ({
+            ...(plannerIndexes.themeByListId.get(selectedListId) ||
+                buildThemeStyle(themeName, selectedList)),
+            '--planner-card-minute-height': getMinuteHeightCss(
+                normalizedTimelineHoursPerScreen
+            ),
+            '--planner-timeline-minute-height': getMinuteHeightCss(
+                normalizedTimelineHoursPerScreen
+            ),
+        }),
+        [
+            normalizedTimelineHoursPerScreen,
+            plannerIndexes.themeByListId,
+            selectedList,
+            selectedListId,
+            themeName,
+        ]
+    );
+    const isSidebarOpen = unarchivedLists.length > 0 && isShowingSidebar;
 
     useEffect(() => {
         const handleDragOver = () => setIsDraggingTask(true);
         const handleDragEnd = () => setIsDraggingTask(false);
+
         document.addEventListener('dragover', handleDragOver);
         document.addEventListener('dragend', handleDragEnd);
         document.addEventListener('drop', handleDragEnd);
@@ -114,16 +172,57 @@ function App() {
         };
     }, []);
 
+    useEffect(
+        () => () => {
+            if (cardSizingTransitionTimerRef.current !== null) {
+                clearTimeout(cardSizingTransitionTimerRef.current);
+            }
+        },
+        []
+    );
+
+    const onUpdateList = useCallback(
+        (listId, updates) => {
+            setLists(prevLists =>
+                prevLists.map(list =>
+                    list.id === listId
+                        ? {
+                              ...list,
+                              ...updates,
+                          }
+                        : list
+                )
+            );
+        },
+        [setLists]
+    );
+
+    const onUpdateTask = useCallback(
+        (taskId, updates) => {
+            setTasks(prevTasks =>
+                prevTasks.map(task =>
+                    task.id === taskId
+                        ? {
+                              ...task,
+                              ...updates,
+                          }
+                        : task
+                )
+            );
+        },
+        [setTasks]
+    );
+
     const onCreateList = useCallback(
         (overrides = {}) => {
             const newListId = Date.now();
-            const randomColorCode = sample(PRIMARY_COLORS);
+            const randomAccentKey = sample(ACCENT_SWATCHES).key;
 
             setLists(currentLists =>
                 currentLists.concat([
                     {
                         id: newListId,
-                        color_code: randomColorCode,
+                        accent_key: randomAccentKey,
                         isArchived: false,
                         label: `${sample(COPY.MOTIVATIONAL_DESCRIPTORS)} ${
                             COPY.NEW_LIST_LABEL
@@ -134,71 +233,35 @@ function App() {
             );
 
             setSelectedListId(newListId);
-
             setIsCreatingList(true);
-
             setTimeout(() => setIsCreatingList(false), 1000);
         },
         [setSelectedListId, setLists]
     );
 
-    const onUpdateList = useCallback(
-        (listId, updates) => {
-            setLists(prevLists =>
-                prevLists.map(list => {
-                    if (list.id === listId) {
-                        return {
-                            ...list,
-                            ...updates,
-                        };
-                    }
-                    return list;
-                })
-            );
-        },
-        [setLists]
-    );
-
     const onSelectList = useCallback(
         listId => {
             setSelectedListId(listId);
-            const firstTaskIdInList = incompleteTasks.find(
-                task => task.list_id === listId
-            );
-            if (firstTaskIdInList) {
-                setSelectedTaskId(firstTaskIdInList.id);
+            const firstTaskInList =
+                plannerIndexes.tasksByListId.get(listId)?.[0];
+
+            if (firstTaskInList) {
+                setSelectedTaskId(firstTaskInList.id);
             }
+
             setIsShowingSidebar(true);
             setIsShowingTrashContents(false);
             setIsShowingListManager(true);
-
-            document.querySelector(`[data-list-id="${listId}"]`).focus();
+            document.querySelector(`[data-list-id="${listId}"]`)?.focus();
         },
         [
-            incompleteTasks,
+            plannerIndexes.tasksByListId,
             setSelectedListId,
             setSelectedTaskId,
             setIsShowingSidebar,
             setIsShowingTrashContents,
             setIsShowingListManager,
         ]
-    );
-
-    const onUpdateTask = useCallback(
-        (taskId, updates) => {
-            setTasks(prevTasks =>
-                prevTasks.map(task => {
-                    if (task.id === taskId) {
-                        return {
-                            ...task,
-                            ...updates,
-                        };
-                    }
-                    return task;
-                })
-            );
-        },
-        [setTasks]
     );
 
     const onCreateTask = useCallback(
@@ -220,7 +283,7 @@ function App() {
                         }`,
                         notes: COPY.NEW_TASK_NOTES,
                         scheduled: false,
-                        scheduled_minutes: 30,
+                        duration_minutes: 30,
                         scheduled_time: `${currentHour}:${currentMinute}`,
                         ...overrides,
                     },
@@ -228,26 +291,29 @@ function App() {
             );
 
             setSelectedTaskId(newTaskId);
-
-            // This remotely activates the EditInPlace
             setIsCreatingTask(true);
-
             setIsShowingListManager(false);
         },
         [selectedListId, setIsShowingListManager, setSelectedTaskId, setTasks]
     );
 
     useEffect(() => {
-        if (isCreatingTask) {
-            setIsShowingListManager(false);
-            const timer = setTimeout(() => setIsCreatingTask(false), 100);
-            return () => clearTimeout(timer);
+        if (!isCreatingTask) {
+            return undefined;
         }
+
+        setIsShowingListManager(false);
+        const timer = setTimeout(() => setIsCreatingTask(false), 100);
+        return () => clearTimeout(timer);
     }, [isCreatingTask, setIsCreatingTask, setIsShowingListManager]);
 
     const onSelectTask = useCallback(
         taskId => {
-            const task = tasks.find(task => task.id === taskId);
+            const task = plannerIndexes.taskById.get(taskId);
+
+            if (!task) {
+                return;
+            }
 
             setSelectedListId(task.list_id);
 
@@ -256,12 +322,11 @@ function App() {
             }
 
             setSelectedTaskId(taskId);
-
-            document.querySelector(`[data-task-id="${taskId}"]`).focus();
+            document.querySelector(`[data-task-id="${taskId}"]`)?.focus();
         },
         [
             isShowingListManager,
-            tasks,
+            plannerIndexes.taskById,
             setIsShowingListManager,
             setSelectedTaskId,
             setSelectedListId,
@@ -270,47 +335,39 @@ function App() {
 
     const selectTaskByRelativeIndex = useCallback(
         relativeIndex => {
-            const tasksInList = tasks.filter(
-                task =>
-                    task.list_id === selectedListId &&
-                    !task.isComplete &&
-                    !task.scheduled
-            );
-
-            const numTasksInList = tasksInList.length;
-
+            const tasksInList =
+                plannerIndexes.unscheduledTasksByListId.get(selectedListId) ||
+                [];
             const indexOfCurrentTask = tasksInList.findIndex(
                 task => task.id === selectedTaskId
             );
-
-            const totalSteps =
-                relativeIndex >= 0
-                    ? relativeIndex
-                    : Math.abs(relativeIndex) * (numTasksInList - 1);
-
             const targetIndex =
-                (indexOfCurrentTask + totalSteps) % numTasksInList;
-
+                (indexOfCurrentTask +
+                    getRelativeIndexOffset(relativeIndex, tasksInList.length)) %
+                tasksInList.length;
             const taskAtRelativeIndex = tasksInList[targetIndex];
 
             if (taskAtRelativeIndex) {
                 onSelectTask(taskAtRelativeIndex.id);
             }
         },
-        [onSelectTask, selectedListId, selectedTaskId, tasks]
+        [
+            onSelectTask,
+            plannerIndexes.unscheduledTasksByListId,
+            selectedListId,
+            selectedTaskId,
+        ]
     );
 
     const selectListByRelativeIndex = useCallback(
         relativeIndex => {
-            const numLists = unarchivedLists.length;
-
-            const totalSteps =
-                relativeIndex >= 0
-                    ? relativeIndex
-                    : Math.abs(relativeIndex) * (numLists - 1);
-
-            const targetIndex = (currentListIndex + totalSteps) % numLists;
-
+            const targetIndex =
+                (currentListIndex +
+                    getRelativeIndexOffset(
+                        relativeIndex,
+                        unarchivedLists.length
+                    )) %
+                unarchivedLists.length;
             const listAtRelativeIndex = unarchivedLists[targetIndex];
 
             if (listAtRelativeIndex) {
@@ -324,11 +381,9 @@ function App() {
         (relativeIndex, isVertical = false) => {
             const elementWithFocus = document.activeElement;
             const isListCard = !!elementWithFocus.dataset.listId;
-
             const selectionFunc = isListCard
                 ? selectListByRelativeIndex
                 : selectTaskByRelativeIndex;
-
             const offset =
                 isVertical && isListCard
                     ? relativeIndex >= 0
@@ -341,17 +396,6 @@ function App() {
         [selectListByRelativeIndex, selectTaskByRelativeIndex]
     );
 
-    const transition = useCallback(
-        callback => {
-            setIsTransitioning(true);
-            setTimeout(() => {
-                callback();
-                setIsTransitioning(false);
-            }, ROUTE_TRANSITION_ANIMATION_DURATION / 2);
-        },
-        [setIsTransitioning]
-    );
-
     const onImmediatelySelectTask = useCallback(
         taskId => {
             onSelectTask(taskId);
@@ -361,16 +405,21 @@ function App() {
 
     const onTransitionToTask = useCallback(
         taskId => {
-            transition(() => onSelectTask(taskId));
+            setIsTransitioning(true);
+            setTimeout(() => {
+                onSelectTask(taskId);
+                setIsTransitioning(false);
+            }, ROUTE_TRANSITION_ANIMATION_DURATION / 2);
         },
-        [onSelectTask, transition]
+        [onSelectTask]
     );
 
     const onChangeIsSidebarOpen = setIsShowingSidebar;
 
     const onChangeIsShowingListManager = useCallback(
         newIsShowingListManager => {
-            transition(() => {
+            setIsTransitioning(true);
+            setTimeout(() => {
                 setIsShowingListManager(newIsShowingListManager);
 
                 if (newIsShowingListManager) {
@@ -378,13 +427,13 @@ function App() {
                 }
 
                 setIsShowingTrashContents(false);
-            });
+                setIsTransitioning(false);
+            }, ROUTE_TRANSITION_ANIMATION_DURATION / 2);
         },
         [
             setIsShowingSidebar,
             setIsShowingListManager,
             setIsShowingTrashContents,
-            transition,
         ]
     );
 
@@ -404,6 +453,58 @@ function App() {
         setIsShowingSidebar,
         setIsShowingTrashContents,
     ]);
+
+    const onChangeThemeMode = useCallback(
+        nextThemeMode => {
+            setThemeMode(normalizeThemeMode(nextThemeMode));
+        },
+        [setThemeMode]
+    );
+
+    const onChangeTimelineHoursPerScreen = useCallback(
+        nextHoursPerScreen => {
+            setTimelineHoursPerScreen(
+                normalizeTimelineHoursPerScreen(nextHoursPerScreen)
+            );
+        },
+        [setTimelineHoursPerScreen]
+    );
+
+    const onChangeRelativeCardSizingEnabled = useCallback(
+        nextRelativeCardSizingEnabled => {
+            if (cardSizingTransitionTimerRef.current !== null) {
+                clearTimeout(cardSizingTransitionTimerRef.current);
+            }
+
+            setIsCardSizingTransitioning(true);
+            setRelativeCardSizingEnabled(
+                Boolean(nextRelativeCardSizingEnabled)
+            );
+            cardSizingTransitionTimerRef.current = setTimeout(() => {
+                setIsCardSizingTransitioning(false);
+                cardSizingTransitionTimerRef.current = null;
+            }, INTERACTION_ANIMATION_DURATION);
+        },
+        [setRelativeCardSizingEnabled]
+    );
+
+    const onChangeTaskPosition = useCallback(
+        (taskId, newIndex) => {
+            setTasks(prevTasks => {
+                const tasksMinusTarget = prevTasks.filter(
+                    task => task.id !== taskId
+                );
+                const task = prevTasks.find(task => task.id === taskId);
+
+                return [].concat(
+                    tasksMinusTarget.slice(0, newIndex),
+                    [task],
+                    tasksMinusTarget.slice(newIndex)
+                );
+            });
+        },
+        [setTasks]
+    );
 
     const deleteTask = useCallback(
         taskId => {
@@ -431,29 +532,18 @@ function App() {
             onImmediatelySelectTask,
             onUpdateTask,
             selectedListId,
-            tasks,
             selectedTaskId,
+            tasks,
         ]
     );
 
-    const onChangeTheme = setThemeName;
-
-    const onChangeTaskPosition = useCallback(
-        (taskId, newIndex) => {
-            setTasks(prevTasks => {
-                const tasksMinusTarget = prevTasks.filter(
-                    task => task.id !== taskId
-                );
-                const task = prevTasks.find(task => task.id === taskId);
-
-                return [].concat(
-                    tasksMinusTarget.slice(0, newIndex),
-                    [task],
-                    tasksMinusTarget.slice(newIndex)
-                );
+    const setTaskDuration = useCallback(
+        duration => {
+            onUpdateTask(selectedTaskId, {
+                duration_minutes: duration,
             });
         },
-        [setTasks]
+        [onUpdateTask, selectedTaskId]
     );
 
     const moveTaskToTimeline = useCallback(() => {
@@ -468,15 +558,6 @@ function App() {
         });
     }, [onUpdateTask, selectedTaskId]);
 
-    const setTaskDuration = useCallback(
-        duration => {
-            onUpdateTask(selectedTaskId, {
-                scheduled_minutes: duration,
-            });
-        },
-        [onUpdateTask, selectedTaskId]
-    );
-
     const toggleTaskListVisibility = useCallback(() => {
         if (isShowingSidebar) {
             setIsShowingTrashContents(false);
@@ -485,13 +566,13 @@ function App() {
         onChangeIsSidebarOpen(!isShowingSidebar);
     }, [isShowingSidebar, onChangeIsSidebarOpen]);
 
-    const toggleDarkMode = useCallback(() => {
-        onChangeTheme(themeName === 'LIGHT' ? 'DARK' : 'LIGHT');
-    }, [onChangeTheme, themeName]);
+    const cycleThemeMode = useCallback(() => {
+        setThemeMode(getNextThemeMode(normalizedThemeMode));
+    }, [normalizedThemeMode, setThemeMode]);
 
     const toggleIsEditingCurrentTask = useCallback(() => {
         setIsCreatingTask(true);
-    }, [setIsCreatingTask]);
+    }, []);
 
     const toggleIsShowingListManager = useCallback(() => {
         onChangeIsShowingListManager(!isShowingListManager);
@@ -506,14 +587,18 @@ function App() {
     }, [deleteTask, selectedTaskId]);
 
     const goBack = useCallback(() => {
-        setIsShowingTrashContents(current => {
-            if (current) {
-                return false;
-            }
-        });
+        if (isShowingTrashContents) {
+            setIsShowingTrashContents(false);
+            setIsShowingListManager(false);
+            return;
+        }
 
         setIsShowingListManager(current => !current);
-    }, [setIsShowingListManager, setIsShowingTrashContents]);
+    }, [
+        isShowingTrashContents,
+        setIsShowingListManager,
+        setIsShowingTrashContents,
+    ]);
 
     useKeyboardShortcut(keyboardShortcutNamespace, [1, 2, 3, 4, 5, 6], evt => {
         const durations = [15, 30, 45, 60, 90, 120];
@@ -548,7 +633,7 @@ function App() {
     useKeyboardShortcut(
         keyboardShortcutNamespace,
         'd',
-        withPreventDefault(toggleDarkMode)
+        withPreventDefault(cycleThemeMode)
     );
     useKeyboardShortcut(
         keyboardShortcutNamespace,
@@ -586,36 +671,83 @@ function App() {
         withPreventDefault(() => selectByRelativeIndex(1, true))
     );
 
-    const appActions = {
-        onChangeIsSidebarOpen,
-        onChangeTaskPosition,
-        onChangeIsShowingListManager,
-        onChangeIsShowingTrashContents,
-        onChangeTheme,
-        onCreateList,
-        onCreateTask,
-        deleteTask,
-        onSelectList,
-        onImmediatelySelectTask,
-        onTransitionToTask,
-        onUpdateList,
-        onUpdateTask,
-    };
+    const appActions = useMemo(
+        () => ({
+            deleteTask,
+            onChangeIsShowingListManager,
+            onChangeIsShowingTrashContents,
+            onChangeIsSidebarOpen,
+            onChangeRelativeCardSizingEnabled,
+            onChangeTaskPosition,
+            onChangeThemeMode,
+            onChangeTimelineHoursPerScreen,
+            onCreateList,
+            onCreateTask,
+            onImmediatelySelectTask,
+            onSelectList,
+            onTransitionToTask,
+            onUpdateList,
+            onUpdateTask,
+        }),
+        [
+            deleteTask,
+            onChangeIsShowingListManager,
+            onChangeIsShowingTrashContents,
+            onChangeIsSidebarOpen,
+            onChangeRelativeCardSizingEnabled,
+            onChangeTaskPosition,
+            onChangeThemeMode,
+            onChangeTimelineHoursPerScreen,
+            onCreateList,
+            onCreateTask,
+            onImmediatelySelectTask,
+            onSelectList,
+            onTransitionToTask,
+            onUpdateList,
+            onUpdateTask,
+        ]
+    );
 
-    const appData = {
-        incompleteTasks,
-        isSidebarOpen,
-        isCreatingList,
-        isCreatingTask,
-        isDraggingTask,
-        isShowingListManager,
-        isShowingTrashContents,
-        lists,
-        selectedListId,
-        selectedTaskId,
-        tasks,
-        theme: themeName,
-    };
+    const appData = useMemo(
+        () => ({
+            effectiveRelativeCardSizingEnabled,
+            isCardSizingTransitioning,
+            isCreatingList,
+            isCreatingTask,
+            isDraggingTask,
+            isShowingListManager,
+            isShowingTrashContents,
+            isSidebarOpen,
+            lists,
+            plannerIndexes,
+            relativeCardSizingEnabled,
+            selectedListId,
+            selectedTaskId,
+            tasks,
+            theme: themeName,
+            themeMode: normalizedThemeMode,
+            timelineHoursPerScreen: normalizedTimelineHoursPerScreen,
+        }),
+        [
+            effectiveRelativeCardSizingEnabled,
+            isCardSizingTransitioning,
+            isCreatingList,
+            isCreatingTask,
+            isDraggingTask,
+            isShowingListManager,
+            isShowingTrashContents,
+            isSidebarOpen,
+            lists,
+            normalizedThemeMode,
+            normalizedTimelineHoursPerScreen,
+            plannerIndexes,
+            relativeCardSizingEnabled,
+            selectedListId,
+            selectedTaskId,
+            tasks,
+            themeName,
+        ]
+    );
 
     const columnWidths = isSidebarOpen
         ? {
@@ -631,113 +763,13 @@ function App() {
               timeline: SIDEBAR_EXTENDED_WIDTH,
           };
 
-    return (
-        <StyleSheetManager disableVendorPrefixes>
-            <ThemeProvider theme={palette}>
-                <GlobalStyle />
-                <Trash appActions={appActions} appData={appData} />
-                <FlexBox align="stretch" poop="poop">
-                    <Sidebar
-                        appActions={appActions}
-                        appData={appData}
-                        style={{
-                            width: columnWidths.sidebar,
-                        }}
-                    >
-                        {isShowingTrashContents ? (
-                            <TrashedTasks
-                                appActions={appActions}
-                                appData={appData}
-                            />
-                        ) : (
-                            <TaskList
-                                appActions={appActions}
-                                appData={appData}
-                            />
-                        )}
-                    </Sidebar>
-
-                    <PrimaryAppColumn
-                        label={
-                            isShowingTrashContents
-                                ? COPY.LABEL_FOR_TRASHED_LISTS
-                                : isShowingListManager
-                                ? COPY.LABEL_FOR_LIST_MANAGER
-                                : COPY.LABEL_FOR_TASK_DETAILS
-                        }
-                        style={{
-                            width: isShowingListManager
-                                ? columnWidths.listManager
-                                : columnWidths.taskDetails,
-                        }}
-                    >
-                        <ToolBar>
-                            <ToggleButton
-                                isActive={isShowingListManager}
-                                title={COPY.TIPS.TOGGLE_LIST_MANAGER}
-                                onClick={() =>
-                                    onChangeIsShowingListManager(
-                                        !isShowingListManager
-                                    )
-                                }
-                            >
-                                {isShowingListManager ? (
-                                    <FlexBox spacing={0.25}>
-                                        {ICONS.TASK_DETAILS}
-                                        <span>
-                                            {COPY.LABEL_FOR_TASK_DETAILS}
-                                        </span>
-                                    </FlexBox>
-                                ) : (
-                                    <FlexBox spacing={0.25}>
-                                        {ICONS.LIST_MANAGER}
-                                        <span>
-                                            {COPY.LABEL_FOR_LIST_MANAGER}
-                                        </span>
-                                    </FlexBox>
-                                )}
-                            </ToggleButton>
-                        </ToolBar>
-                        <Transition
-                            isTransitioning={isTransitioning}
-                            style={{ height: '100%' }}
-                        >
-                            {isShowingTrashContents ? (
-                                <TrashedLists
-                                    appActions={appActions}
-                                    appData={appData}
-                                />
-                            ) : isShowingListManager ? (
-                                <ListManager
-                                    appActions={appActions}
-                                    appData={appData}
-                                    lists={unarchivedLists}
-                                />
-                            ) : (
-                                <TaskDetails
-                                    appActions={appActions}
-                                    appData={appData}
-                                />
-                            )}
-                        </Transition>
-                    </PrimaryAppColumn>
-
-                    <Timeline
-                        appActions={appActions}
-                        appData={appData}
-                        selectedTaskId={selectedTaskId}
-                        from={TIMELINE_FROM}
-                        style={{
-                            width: columnWidths.timeline,
-                        }}
-                        tasks={incompleteTasks}
-                        to={TIMELINE_TO}
-                    />
-                </FlexBox>
-            </ThemeProvider>
-        </StyleSheetManager>
-    );
+    return {
+        appActions,
+        appData,
+        appThemeStyle,
+        columnWidths,
+        isTransitioning,
+        onChangeIsShowingListManager,
+        unarchivedLists,
+    };
 }
-
-const rootElement = document.getElementById('root');
-ReactDOM.render(<App />, rootElement);

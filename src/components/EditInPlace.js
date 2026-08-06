@@ -1,117 +1,83 @@
 import React, { memo, useCallback, useEffect, useRef, useState } from 'react';
-import styled from 'styled-components';
 import useBulletedLists from '../hooks/useBulletedLists';
 import useKeyboardShortcut from '../hooks/useKeyboardShortcut';
 import useMarkdownShortcuts from '../hooks/useMarkdownShortcuts';
 import useTabIndentation from '../hooks/useTabIndentation';
 import Box from './atoms/Box';
-import { BORDER_RADIUS, GRID_UNIT, UNIFIED_TRANSITION } from './atoms/tokens';
+import cx from '../utils/cx';
 
-const Container = styled(Box).attrs({
-    isFlexible: true,
-})(
-    ({ isEditable, isEditing, theme, tracerColor }) => `
-        cursor: ${isEditing ? 'text' : 'pointer'};
-        position: relative;
-        user-select: ${isEditing ? 'text' : 'none'};
-        width: auto;
-        height: auto;
-
-        // Tracing element
-        &:before {
-            border:
-                ${
-                    isEditing
-                        ? 'none'
-                        : `2px dashed ${tracerColor || theme.DOTTED_LINE}`
-                };
-            box-shadow:
-                ${
-                    isEditing
-                        ? `0 0 0 2px ${tracerColor || theme.PRIMARY}`
-                        : `0 0 0 0 ${tracerColor || theme.PRIMARY}`
-                };
-            border-radius: ${BORDER_RADIUS};
-            content: '';
-            opacity: ${isEditing ? 1 : 0};
-            pointer-events: none;
-            position: absolute;
-            top: calc(${GRID_UNIT} * 0.25 * -1);
-            right: calc(${GRID_UNIT} * 0.5 * -1);
-            bottom: calc(${GRID_UNIT} * 0.25 * -1);
-            left: calc(${GRID_UNIT} * 0.5 * -1);
-            ${UNIFIED_TRANSITION};
-        }
-
-        &:focus,
-        &:hover {
-            &:before {
-                opacity: ${isEditable ? 1 : 0};
-            }
-        }
-    `
+const Container = React.forwardRef(
+    (
+        { className, isEditable, isEditing, style, tracerColor, ...otherProps },
+        ref
+    ) => (
+        <Box
+            ref={ref}
+            isFlexible
+            className={cx('planner-edit-in-place', className)}
+            data-editable={isEditable}
+            data-editing={isEditing}
+            style={{
+                '--planner-tracer-color': tracerColor || undefined,
+                ...style,
+            }}
+            {...otherProps}
+        />
+    )
 );
 
-const StyledTextarea = styled.textarea(
-    ({ theme }) => `
-        display: block;
-        height: 100%;
-        width: 100%;
-
-        ::selection {
-            background-color: ${theme.HIGH_CONTRAST_BACKGROUND};
-            color: white;
-        }
-    `
-);
-
-const Canvas = styled(Box)(
-    ({ isEmpty }) => `
-        opacity: ${isEmpty ? 0.6 : 1};
-    `
+const Canvas = ({ className, isEmpty, ...otherProps }) => (
+    <Box className={cx(isEmpty && 'opacity-60', className)} {...otherProps} />
 );
 
 const keyboardShortcutNamespace = 'edit-in-place';
+const DEFAULT_CANVAS_STYLES = {};
+const defaultRender = value => value;
+const noop = () => {};
+
+const resizeTextarea = textarea => {
+    if (!textarea) {
+        return;
+    }
+
+    textarea.style.height = 'auto';
+    textarea.style.height = `${textarea.scrollHeight}px`;
+};
 
 const EditInPlace = ({
-    canvasStyles = {},
+    ariaLabel = null,
+    canvasStyles = DEFAULT_CANVAS_STYLES,
     doubleClickToEdit = false,
     isEditable = true,
     isMultiLine = false,
-    isRemotelyActivated = false,
     placeholder = 'Empty',
-    render = value => value,
+    render = defaultRender,
+    startsEditing = false,
     tracerColor = null,
     value = '',
-    onSave = () => {},
+    onSave = noop,
     ...otherProps
 }) => {
-    const [isEditing, setIsEditing] = useState(false);
-    const [bufferedValue, setBufferedValue] = useState(value);
-    const [measuringElementHeight, setMeasuringElementHeight] = useState(null);
+    const [isEditing, setIsEditing] = useState(startsEditing);
+    const [bufferedValue, setBufferedValue] = useState(
+        startsEditing ? value : ''
+    );
     const containerElementRef = useRef(null);
     const inputRef = useRef(null);
-    const measuringElementRef = useRef(null);
-    const isEmpty = bufferedValue.trim() === '';
+    const displayValue = isEditing ? bufferedValue : value;
+    const isEmpty = String(displayValue).trim() === '';
     const isSingleLine = !isMultiLine;
-
-    useEffect(() => {
-        setBufferedValue(value);
-    }, [value]);
+    const textareaLabel =
+        ariaLabel ||
+        (typeof placeholder === 'string' ? placeholder : 'Editable text');
 
     useEffect(() => {
         if (isEditing && inputRef.current) {
+            resizeTextarea(inputRef.current);
             inputRef.current.select();
             inputRef.current.focus();
         }
-    }, [inputRef, isEditing]);
-
-    useEffect(() => {
-        const el = measuringElementRef.current;
-        if (el) {
-            setMeasuringElementHeight(el.offsetHeight);
-        }
-    }, [bufferedValue, isEditing, measuringElementRef]);
+    }, [isEditing]);
 
     const handleClick = useCallback(() => {
         if (isEditable && !isEditing) {
@@ -120,19 +86,15 @@ const EditInPlace = ({
         }
     }, [isEditable, isEditing, setBufferedValue, setIsEditing, value]);
 
-    useEffect(() => {
-        if (isRemotelyActivated === true) {
-            handleClick();
-        }
-    }, [handleClick, isRemotelyActivated]);
-
-    const handleBlur = () => {
+    const handleBlur = useCallback(() => {
         onSave(bufferedValue);
         setIsEditing(false);
-    };
+    }, [bufferedValue, onSave, setIsEditing]);
 
     const handleChange = evt => {
-        setBufferedValue(evt.target.value);
+        const nextValue = evt.target.value;
+        setBufferedValue(nextValue);
+        resizeTextarea(evt.target);
     };
 
     useKeyboardShortcut(
@@ -164,8 +126,7 @@ const EditInPlace = ({
                 isSingleLine
             ) {
                 evt.preventDefault();
-                onSave(bufferedValue);
-                setIsEditing(false);
+                handleBlur();
                 return false;
             }
         },
@@ -191,31 +152,16 @@ const EditInPlace = ({
         >
             <Canvas isEmpty={isEmpty} style={{ ...canvasStyles }}>
                 {isEditing ? (
-                    <>
-                        <div
-                            ref={measuringElementRef}
-                            style={{
-                                position: 'absolute',
-                                pointerEvents: 'none',
-                                opacity: 0,
-                                whiteSpace: 'pre-wrap',
-                                width: '100%',
-                            }}
-                        >
-                            {bufferedValue}.
-                        </div>
-                        <StyledTextarea
-                            disabled={!isEditing}
-                            ref={inputRef}
-                            rows={1}
-                            style={{
-                                height: `${measuringElementHeight}px`,
-                            }}
-                            value={bufferedValue}
-                            onBlur={handleBlur}
-                            onChange={handleChange}
-                        />
-                    </>
+                    <textarea
+                        aria-label={textareaLabel}
+                        disabled={!isEditing}
+                        className="planner-edit-textarea"
+                        ref={inputRef}
+                        rows={1}
+                        value={bufferedValue}
+                        onBlur={handleBlur}
+                        onChange={handleChange}
+                    />
                 ) : (
                     render(isEmpty ? placeholder : value)
                 )}

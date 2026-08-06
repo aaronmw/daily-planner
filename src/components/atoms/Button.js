@@ -1,84 +1,41 @@
 import React, { useEffect, useRef, useState } from 'react';
-import styled, { css, keyframes } from 'styled-components';
 import toInt from '../../utils/toInt';
+import cx from '../../utils/cx';
 import FlexBox from './FlexBox';
-import { BORDER_RADIUS, BORDER_WIDTH, UNIFIED_TRANSITION } from './tokens';
+import { BORDER_RADIUS } from './tokens';
 
-const Button = styled(FlexBox).attrs({
-    forwardedAs: 'button',
-    justify: 'center',
-    paddingX: 0.5,
-    paddingY: 0.25,
-})(
-    ({ isInverted = false, theme }) => `
-        align-self: unset;
-        background-color: ${
-            theme[isInverted ? 'BACKGROUND' : 'HIGH_CONTRAST_BACKGROUND']
-        };
-        border: 2px solid transparent;
-        border-radius: ${BORDER_RADIUS};
-        color: ${theme[isInverted ? 'TEXT_FADED' : 'HIGH_CONTRAST_TEXT']};
-        cursor: pointer;
-        transform: translateY(0);
-        ${UNIFIED_TRANSITION};
-        transition-property: border, color;
-        
-        &:focus,
-        &:hover {
-            border-color: ${theme[isInverted ? 'PRIMARY' : 'BACKGROUND']};
-        }
-        &:active {
-            transform: translateY(2px);
-        }
-    `
-);
-
-const StyledGhostButton = styled(Button)(
-    ({ theme }) => `
-        background: unset; 
-        color: ${theme.TEXT_FADED};
-        position: relative;
-        width: 100%;
-        
-        &:focus,
-        &:hover {
-            color: ${theme.TEXT};
-            border-color: transparent;
-        }
-    `
-);
-
-const animation = keyframes`
-    from {
-        stroke-dashoffset: 0;
-    }
-    to {
-        stroke-dashoffset: 12px;
-    }
-`;
-
-const TracerSVGElement = styled.svg`
-    overflow: visible;
-    position: absolute;
-`;
-
-const Tracer = styled.rect(
-    ({ isAnimated, isResizing, theme }) => css`
-        animation-name: ${animation};
-        animation-duration: 0.5s;
-        animation-direction: normal;
-        animation-iteration-count: infinite;
-        animation-timing-function: linear;
-        animation-play-state: ${isAnimated ? 'running' : 'paused'};
-        fill: none;
-        stroke: ${isResizing
-            ? 'transparent'
-            : theme[isAnimated ? 'BORDER' : 'DOTTED_LINE']};
-        stroke-width: calc(${BORDER_WIDTH} * 2);
-        stroke-dasharray: 6px, 6px;
-        position: relative;
-        z-index: 1000;
-    `
+const Button = React.forwardRef(
+    (
+        {
+            children,
+            className,
+            isActive,
+            isInverted = false,
+            type = 'button',
+            ...otherProps
+        },
+        ref
+    ) => (
+        <FlexBox
+            as="button"
+            ref={ref}
+            justify="center"
+            paddingX={0.5}
+            paddingY={0.25}
+            type={type}
+            aria-pressed={typeof isActive === 'boolean' ? isActive : undefined}
+            className={cx(
+                'w-auto cursor-pointer select-none rounded-planner border-2 border-transparent transition-[background-color,border-color,color,transform] duration-150 ease-in-out active:translate-y-0.5 focus:outline-none',
+                isInverted
+                    ? 'bg-planner-background text-planner-text-faded hover:border-planner-primary focus:border-planner-primary'
+                    : 'bg-planner-contrast text-planner-contrast-text hover:border-planner-background focus:border-planner-background',
+                className
+            )}
+            {...otherProps}
+        >
+            {children}
+        </FlexBox>
+    )
 );
 
 const AnimatedTracer = ({ isAnimated, targetElementRef, ...otherProps }) => {
@@ -119,48 +76,71 @@ const AnimatedTracer = ({ isAnimated, targetElementRef, ...otherProps }) => {
     }, [viewBoxDimensions]);
 
     return (
-        <TracerSVGElement
+        <svg
+            className="pointer-events-none absolute inset-0 overflow-visible"
             preserveAspectRatio="none"
             viewBox={`0 0 ${viewBoxDimensions.width} ${viewBoxDimensions.height}`}
             xmlns="http://www.w3.org/2000/svg"
             {...otherProps}
         >
-            <Tracer
+            <rect
+                className="planner-ghost-tracer"
                 width={viewBoxDimensions.width}
                 height={viewBoxDimensions.height}
-                isAnimated={isAnimated}
-                isResizing={isResizing}
                 rx={toInt(BORDER_RADIUS) * 2}
+                style={{
+                    animationPlayState: isAnimated ? 'running' : 'paused',
+                    stroke: isResizing
+                        ? 'transparent'
+                        : isAnimated
+                          ? 'var(--planner-border)'
+                          : 'var(--planner-dotted-line)',
+                }}
                 x={0}
                 y={0}
             />
-        </TracerSVGElement>
+        </svg>
     );
 };
 
-export const GhostButton = ({ children, ...otherProps }) => {
-    const [isAnimated, setIsAnimated] = useState(false);
+export const GhostButton = React.forwardRef(
+    ({ children, className, ...otherProps }, forwardedRef) => {
+        const [isAnimated, setIsAnimated] = useState(false);
 
-    const buttonElementRef = useRef(null);
+        const buttonElementRef = useRef(null);
+        const setButtonRef = element => {
+            buttonElementRef.current = element;
 
-    return (
-        <StyledGhostButton
-            ref={buttonElementRef}
-            onMouseEnter={setIsAnimated.bind(null, true)}
-            onMouseLeave={setIsAnimated.bind(null, false)}
-            {...otherProps}
-        >
-            <AnimatedTracer
-                isAnimated={isAnimated}
-                targetElementRef={buttonElementRef}
-            />
-            {children}
-        </StyledGhostButton>
-    );
-};
+            if (typeof forwardedRef === 'function') {
+                forwardedRef(element);
+            } else if (forwardedRef) {
+                forwardedRef.current = element;
+            }
+        };
 
-export const ToggleButton = styled(Button).attrs(({ isInverted }) => ({
-    isInverted: !isInverted,
-}))``;
+        return (
+            <Button
+                ref={setButtonRef}
+                className={cx(
+                    'relative w-full bg-transparent text-planner-text-faded hover:border-transparent hover:text-planner-text focus:border-transparent focus:text-planner-text',
+                    className
+                )}
+                onMouseEnter={setIsAnimated.bind(null, true)}
+                onMouseLeave={setIsAnimated.bind(null, false)}
+                {...otherProps}
+            >
+                <AnimatedTracer
+                    isAnimated={isAnimated}
+                    targetElementRef={buttonElementRef}
+                />
+                {children}
+            </Button>
+        );
+    }
+);
+
+export const ToggleButton = ({ isInverted, ...otherProps }) => (
+    <Button isInverted={!isInverted} {...otherProps} />
+);
 
 export default Button;

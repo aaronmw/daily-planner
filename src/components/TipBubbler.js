@@ -1,43 +1,25 @@
 import sample from 'lodash/sample';
 import React from 'react';
-import styled from 'styled-components';
 import Box from './atoms/Box';
 import { ToggleButton } from './atoms/Button';
 import FlexBox from './atoms/FlexBox';
-import {
-    BORDER_RADIUS,
-    COLORS,
-    COPY,
-    FONTS,
-    GRID_UNIT,
-    ICONS,
-} from './atoms/tokens';
-
-const Container = styled(FlexBox)(
-    ({ theme }) => `
-        background-color: ${theme.HIGH_CONTRAST_BACKGROUND};
-        border-radius: ${BORDER_RADIUS};
-        bottom: ${GRID_UNIT};
-        color: ${theme.HIGH_CONTRAST_TEXT};
-        font-size: ${FONTS.LARGE.SIZE};
-        line-height: ${FONTS.LARGE.LINE_HEIGHT};
-        position: fixed;
-        right: calc(${GRID_UNIT} * 4);
-        width: 450px;
-        z-index: 100;
-    `
-);
+import { COPY, FONTS, ICONS } from './atoms/tokens';
 
 const TipBubbler = ({ ...props }) => {
     const currentTip = sample(COPY.TIPS);
 
     return (
-        <Container
+        <FlexBox
             align="flex-start"
             justify="stretch"
             paddingX={1}
             paddingY={0.5}
             spacing={0.5}
+            className="fixed bottom-[var(--spacing-grid)] right-[calc(var(--spacing-grid)*4)] z-[100] w-[450px] rounded-planner bg-planner-contrast text-planner-contrast-text"
+            style={{
+                fontSize: FONTS.LARGE.SIZE,
+                lineHeight: FONTS.LARGE.LINE_HEIGHT,
+            }}
             {...props}
         >
             <Box>{ICONS.TIP}</Box>
@@ -53,7 +35,7 @@ const TipBubbler = ({ ...props }) => {
                 <ToggleButton>{ICONS.LEFT}</ToggleButton>
                 <ToggleButton>{ICONS.RIGHT}</ToggleButton>
             </FlexBox>
-        </Container>
+        </FlexBox>
     );
 };
 

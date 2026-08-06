@@ -1,94 +1,77 @@
 import React, { useState } from 'react';
 import ReactDOM from 'react-dom';
-import styled from 'styled-components';
 import Box from './atoms/Box';
 import { ToggleButton } from './atoms/Button';
 import FlexBox from './atoms/FlexBox';
-import {
-    BORDER_RADIUS,
-    GRID_UNIT,
-    ICONS,
-    PRIMARY_COLORS,
-    UNIFIED_TRANSITION,
-} from './atoms/tokens';
+import { ACCENT_SWATCHES, ICONS } from './atoms/tokens';
+import cx from '../utils/cx';
 
-const Container = styled(FlexBox).attrs({
-    align: 'center',
-    justify: 'flex-end',
-    paddingX: 0.25,
-    paddingY: 0.25,
-})``;
-
-const StyledWindowShader = styled.div`
-    bottom: 0;
-    left: 0;
-    position: fixed;
-    right: 0;
-    top: 0;
-    z-index: 1099;
-`;
-
-const WindowShader = ({ children, ...otherProps }) => {
-    return ReactDOM.createPortal(
-        <StyledWindowShader {...otherProps}>{children}</StyledWindowShader>,
-        document.body
-    );
-};
-
-const StyledColorPaletteContainer = styled(FlexBox).attrs({
-    isRounded: true,
-    paddingX: 0.5,
-    paddingY: 0.5,
-    spacing: 0.5,
-})(
-    ({ theme }) => `
-        background-color: ${theme.BACKGROUND};
-        box-shadow: 0 0 10px 10px ${theme.SHADOW};
-        position: fixed;
-        left: 50%;
-        top: 50%;
-        transform: translate(-50%, -50%);
-        z-index: 1100;
-
-        &:before {
-            background-color: ${theme.SHADOW};
-            position: fixed;
-            width: 100vw;
-            height: 100vh;
-        }
-    `
+const Container = ({ className, ...otherProps }) => (
+    <FlexBox
+        align="center"
+        justify="flex-end"
+        paddingX={0.25}
+        paddingY={0.25}
+        className={className}
+        {...otherProps}
+    />
 );
 
-const ColorPaletteContainer = ({ children, ...otherProps }) => {
-    return ReactDOM.createPortal(
-        <StyledColorPaletteContainer {...otherProps}>
-            {children}
-        </StyledColorPaletteContainer>,
-        document.body
+const ClientPortal = ({ children, portalRoot }) => {
+    return portalRoot ? ReactDOM.createPortal(children, portalRoot) : null;
+};
+
+const WindowShader = ({ children, portalRoot, ...otherProps }) => {
+    return (
+        <ClientPortal portalRoot={portalRoot}>
+            <div className="fixed inset-0 z-[1099]" {...otherProps}>
+                {children}
+            </div>
+        </ClientPortal>
     );
 };
 
-const ColorChip = styled(Box).attrs({ isFlexible: true })`
-    border-radius: ${BORDER_RADIUS};
-    height: calc(${GRID_UNIT} * 2);
-    transform: scale(1);
-    width: calc(${GRID_UNIT} * 2);
-    ${UNIFIED_TRANSITION};
+const ColorPaletteContainer = ({ children, portalRoot, ...otherProps }) => {
+    return (
+        <ClientPortal portalRoot={portalRoot}>
+            <FlexBox
+                isRounded
+                paddingX={0.5}
+                paddingY={0.5}
+                spacing={0.5}
+                className="fixed left-1/2 top-1/2 z-[1100] bg-planner-background shadow-[0_0_10px_10px_var(--planner-shadow)] -translate-x-1/2 -translate-y-1/2"
+                {...otherProps}
+            >
+                {children}
+            </FlexBox>
+        </ClientPortal>
+    );
+};
 
-    &:hover {
-        transform: scale(1.1);
-    }
-`;
+const ColorChip = ({ className, isSelected, ...otherProps }) => (
+    <Box
+        isFlexible
+        className={cx(
+            'h-[calc(var(--spacing-grid)*2)] w-[calc(var(--spacing-grid)*2)] rounded-planner transition-transform duration-150 ease-in-out hover:scale-110',
+            isSelected && 'shadow-[0_0_0_2px_var(--planner-text)]',
+            className
+        )}
+        {...otherProps}
+    />
+);
 
-const ColorPicker = ({ palette, onPickColor, ...otherProps }) => {
+const ColorPicker = ({ accentKey, onPickColor, ...otherProps }) => {
     const [isPickingColor, setIsPickingColor] = useState(false);
+    const [portalRoot, setPortalRoot] = useState(null);
 
     const showPicker = () => {
+        setPortalRoot(document.body);
         setIsPickingColor(true);
     };
 
     const hidePicker = () => {
         setIsPickingColor(false);
+        setPortalRoot(null);
     };
 
     return (
@@ -98,24 +81,29 @@ const ColorPicker = ({ palette, onPickColor, ...otherProps }) => {
             </ToggleButton>
             {isPickingColor && (
                 <>
-                    <ColorPaletteContainer>
-                        {PRIMARY_COLORS.map(color => {
+                    <ColorPaletteContainer portalRoot={portalRoot}>
+                        {ACCENT_SWATCHES.map(swatch => {
                             return (
                                 <ColorChip
-                                    key={color}
+                                    key={swatch.key}
+                                    isSelected={accentKey === swatch.key}
+                                    title={swatch.label}
                                     style={{
-                                        backgroundColor: color,
+                                        backgroundColor: swatch.value,
                                     }}
-                                    onClick={onPickColor.bind(null, color)}
+                                    onClick={onPickColor.bind(null, swatch.key)}
                                 />
                             );
                         })}
                     </ColorPaletteContainer>
-                    <WindowShader onClick={hidePicker} />
+                    <WindowShader
+                        portalRoot={portalRoot}
+                        onClick={hidePicker}
+                    />
                 </>
             )}
         </Container>
     );
 };
 
-export default styled(ColorPicker)``;
+export default ColorPicker;

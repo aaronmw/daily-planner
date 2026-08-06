@@ -1,25 +1,23 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import useDrop from '../hooks/useDrop';
 import { SecondaryAppColumn } from './AppColumn';
-import { ToggleButton } from './atoms/Button';
-import { COPY, ICONS } from './atoms/tokens';
+import { COPY } from './atoms/tokens';
 import SidebarToggleButton from './TaskListToggleButton';
 import ToolBar from './ToolBar';
 
 const Sidebar = ({ appActions, appData, children, ...otherProps }) => {
-    const { onChangeIsSidebarOpen, onChangeTheme, onUpdateTask } = appActions;
+    const { onChangeIsSidebarOpen, onUpdateTask } = appActions;
 
     const {
         isShowingTrashContents,
         isSidebarOpen,
-        lists,
+        plannerIndexes,
         selectedListId,
-        theme,
     } = appData;
 
-    const [isTaskListForcedOpen, setIsTaskListForcedOpen] = useState(false);
+    const isTaskListForcedOpenRef = useRef(false);
 
-    const selectedList = lists.find(list => list.id === selectedListId);
+    const selectedList = plannerIndexes.listById.get(selectedListId);
 
     const [sidebarDropProps] = useDrop({
         'task-id': taskId => {
@@ -32,20 +30,21 @@ const Sidebar = ({ appActions, appData, children, ...otherProps }) => {
 
     useEffect(() => {
         if (!isSidebarOpen && sidebarDropProps.isTargetedForDrop) {
-            setIsTaskListForcedOpen(true);
+            isTaskListForcedOpenRef.current = true;
             onChangeIsSidebarOpen(true);
             return;
         }
 
-        if (isTaskListForcedOpen && !sidebarDropProps.isTargetedForDrop) {
-            setIsTaskListForcedOpen(false);
+        if (
+            isTaskListForcedOpenRef.current &&
+            !sidebarDropProps.isTargetedForDrop
+        ) {
+            isTaskListForcedOpenRef.current = false;
             onChangeIsSidebarOpen(false);
         }
     }, [
         sidebarDropProps.isTargetedForDrop,
-        isTaskListForcedOpen,
         isSidebarOpen,
-        setIsTaskListForcedOpen,
         onChangeIsSidebarOpen,
     ]);
 
@@ -55,8 +54,8 @@ const Sidebar = ({ appActions, appData, children, ...otherProps }) => {
                 !isSidebarOpen
                     ? ''
                     : isShowingTrashContents
-                    ? COPY.LABEL_FOR_TRASHED_TASKS
-                    : selectedList.label
+                      ? COPY.LABEL_FOR_TRASHED_TASKS
+                      : selectedList?.label || ''
             }
             {...sidebarDropProps}
             {...otherProps}
@@ -70,20 +69,7 @@ const Sidebar = ({ appActions, appData, children, ...otherProps }) => {
                 </ToolBar>
             ) : (
                 <>
-                    <ToolBar>
-                        <ToggleButton
-                            isActive={theme === 'DARK'}
-                            title={COPY.TIPS.TOGGLE_DARK_MODE}
-                            onClick={() =>
-                                onChangeTheme(
-                                    theme === 'LIGHT' ? 'DARK' : 'LIGHT'
-                                )
-                            }
-                        >
-                            {theme === 'LIGHT'
-                                ? ICONS.DARK_MODE
-                                : ICONS.LIGHT_MODE}
-                        </ToggleButton>
+                    <ToolBar justify="flex-end">
                         <SidebarToggleButton
                             isSidebarOpen={isSidebarOpen}
                             onChangeIsSidebarOpen={onChangeIsSidebarOpen}

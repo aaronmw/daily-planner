@@ -1,31 +1,9 @@
 import React, { memo } from 'react';
-import styled from 'styled-components';
 import range from 'lodash/range';
 import { TIMELINE_FROM } from './atoms/tokens';
-import minutesToHeight from '../utils/minutesToHeight';
 import minutesToTime from '../utils/minutesToTime';
 import strToHoursAndMinutes from '../utils/strToHoursAndMinutes';
 import useDrop from '../hooks/useDrop';
-
-const Container = styled.div`
-    bottom: 0;
-    height: 100%;
-    left: 0;
-    position: absolute;
-    right: 0;
-    top: 0;
-    width: 100%;
-`;
-
-const StyledTimelineDropTarget = styled.div(
-    ({ isTargetedForDrop, theme }) => `
-        position: relative;
-        width: 100%;
-        height: ${minutesToHeight(15)};
-        z-index: 1;
-        border-top: ${isTargetedForDrop ? `4px dotted ${theme.PRIMARY}` : ''};
-    `
-);
 
 const TimelineDropTarget = memo(
     ({ appActions, quarterInMinutes, ...otherProps }) => {
@@ -43,20 +21,29 @@ const TimelineDropTarget = memo(
                 }),
         });
 
-        return <StyledTimelineDropTarget {...dropProps} {...otherProps} />;
+        return (
+            <div
+                className="planner-timeline-drop-target relative z-[1] w-full"
+                data-drop-targeted={dropProps.isTargetedForDrop}
+                {...dropProps}
+                {...otherProps}
+            />
+        );
     }
 );
 
-const TimelineDropZone = memo(({ appActions, totalMinutes, ...otherProps }) => (
-    <Container {...otherProps}>
-        {range(totalMinutes / 15).map(quarterInMinutes => (
-            <TimelineDropTarget
-                key={quarterInMinutes}
-                appActions={appActions}
-                quarterInMinutes={quarterInMinutes}
-            />
-        ))}
-    </Container>
-));
+const TimelineDropZone = memo(
+    ({ appActions, totalMinutes, ...otherProps }) => (
+        <div className="absolute inset-0 h-full w-full" {...otherProps}>
+            {range(totalMinutes / 15).map(quarterInMinutes => (
+                <TimelineDropTarget
+                    key={quarterInMinutes}
+                    appActions={appActions}
+                    quarterInMinutes={quarterInMinutes}
+                />
+            ))}
+        </div>
+    )
+);
 
 export default TimelineDropZone;

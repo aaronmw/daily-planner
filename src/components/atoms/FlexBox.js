@@ -1,32 +1,39 @@
-import styled from 'styled-components';
-import { GRID_UNIT } from './tokens';
+import React, { forwardRef } from 'react';
 import Box from './Box';
+import cx from '../../utils/cx';
 
-export default styled(Box)(
-    ({
-        align = 'center',
-        direction = 'row',
-        justify = 'stretch',
-        spacing = 0,
-        wrapped = false,
-    }) => `
-        align-items: ${align};
-        align-content: ${wrapped ? align : ''};
-        display: flex;
-        flex-direction: ${direction};
-        flex-wrap: ${wrapped ? 'wrap' : 'nowrap'};
-        justify-content: ${justify};
-        
-        ${
-            spacing
-                ? `
-                    & > * + * {
-                        margin-${
-                            direction === 'row' ? 'left' : 'top'
-                        }: calc(${spacing} * ${GRID_UNIT});
-                    }
-                `
-                : ''
-        }
-    `
+const toGridValue = value =>
+    typeof value === 'number' ? `calc(${value} * var(--spacing-grid))` : value;
+
+const FlexBox = forwardRef(
+    (
+        {
+            align = 'center',
+            className,
+            direction = 'row',
+            justify = 'stretch',
+            spacing = 0,
+            wrapped = false,
+            style,
+            ...otherProps
+        },
+        ref
+    ) => (
+        <Box
+            ref={ref}
+            className={cx('flex', className)}
+            style={{
+                alignContent: wrapped ? align : undefined,
+                alignItems: align,
+                flexDirection: direction,
+                flexWrap: wrapped ? 'wrap' : 'nowrap',
+                gap: spacing ? toGridValue(spacing) : undefined,
+                justifyContent: justify,
+                ...style,
+            }}
+            {...otherProps}
+        />
+    )
 );
+
+export default FlexBox;

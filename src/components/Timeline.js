@@ -1,92 +1,30 @@
-import React, { Fragment, memo, useEffect, useRef, useState } from 'react';
-import styled from 'styled-components';
-import { transparentize } from 'polished';
+import React, {
+    Fragment,
+    memo,
+    useCallback,
+    useEffect,
+    useLayoutEffect,
+    useMemo,
+    useRef,
+    useState,
+} from 'react';
 import range from 'lodash/range';
 import useDrop from '../hooks/useDrop';
 import AppColumn from './AppColumn';
 import TaskCard from './TaskCard';
 import TimelineDropZone from './TimelineDropZone';
 import strToHoursAndMinutes from '../utils/strToHoursAndMinutes';
-import minutesToHeight from '../utils/minutesToHeight';
-import { COPY, GRID_UNIT } from './atoms/tokens';
+import { getAnchoredScrollTop } from '../utils/plannerGeometry';
+import { getVisibleScheduledTasks } from '../utils/plannerIndexes';
+import { COPY, INTERACTION_ANIMATION_DURATION } from './atoms/tokens';
 
-const LINE_LABEL_WIDTH = '80px';
+const easeInOut = progress =>
+    progress < 0.5
+        ? 2 * progress * progress
+        : 1 - Math.pow(-2 * progress + 2, 2) / 2;
 
-const Container = styled(AppColumn).attrs({
-    label: COPY.LABEL_FOR_TIMELINE,
-})``;
-
-const TimelineContainer = styled.div(
-    ({ isTargetedForDrop, theme }) => `
-        bottom: 0;
-        box-shadow: ${
-            isTargetedForDrop
-                ? `0 0 0 5px ${theme.TASK_BORDER_HOVER} inset`
-                : 'initial'
-        };
-        left: 0;
-        overflow: auto;
-        position: absolute;
-        right: 0;
-        top: 0;
-        user-select: none;
-    `
-);
-
-const HalfHourRow = styled.div`
-    position: relative;
-    height: ${minutesToHeight(30)};
-`;
-
-const HalfHourLabel = styled.div(
-    ({ hideLabel, isFaded, theme }) => `
-        color: ${
-            hideLabel
-                ? 'transparent'
-                : transparentize(isFaded ? 1 : 0, theme.TEXT_FADED)
-        };
-        padding-right: calc(100% - ${LINE_LABEL_WIDTH} + (${GRID_UNIT} * 0.5));
-        position: absolute;
-        text-align: right;
-        top: 0;
-        transform: translateY(-50%);
-        width: 100%;
-
-        &:before {
-            background-color: ${theme.BORDER};
-            content: '';
-            height: 1px;
-            left: ${LINE_LABEL_WIDTH};
-            opacity: ${isFaded ? 0.5 : 1};
-            position: absolute;
-            right: 0;
-            top: 50%;
-        }
-    `
-);
-
-const ScheduledTaskCard = styled(TaskCard)(
-    ({ isAnotherTaskBeingDragged, offsetMinutes }) => `
-        left: calc(${GRID_UNIT} * 3);
-        pointer-events: ${isAnotherTaskBeingDragged ? 'none' : 'all'};
-        position: absolute;
-        right: ${GRID_UNIT};
-        top: ${minutesToHeight(offsetMinutes)};
-        width: auto;
-    `
-);
-
-const CurrentTimeMarker = styled.div(
-    ({ offsetMinutes }) => `
-        background-color: red;
-        height: 1px;
-        left: 0;
-        pointer-events: none;
-        position: absolute;
-        right: 0;
-        top: ${minutesToHeight(offsetMinutes)};
-        z-index: 10;
-    `
+const Container = props => (
+    <AppColumn label={COPY.LABEL_FOR_TIMELINE} {...props} />
 );
 
 const Timeline = ({
@@ -94,24 +32,59 @@ const Timeline = ({
     appData,
     selectedTaskId,
     from,
-    tasks,
     to,
-    onClickTask,
     ...otherProps
 }) => {
     const [timelineDropProps] = useDrop({ 'task-id': () => {} });
     const [currentTime, setCurrentTime] = useState(null);
     const [currentHour, currentMinute] = strToHoursAndMinutes(currentTime);
     const [fromHour, fromMinutes] = strToHoursAndMinutes(from);
-    const { isDraggingTask } = appData;
+    const { isDraggingTask, plannerIndexes, timelineHoursPerScreen } = appData;
     const [isLoaded, setIsLoaded] = useState(false);
-    const scheduledTasks = tasks.filter(task => task.scheduled);
     const [toHour, toMinutes] = strToHoursAndMinutes(to);
     const totalHours = toHour - fromHour;
     const totalMinutes =
         toHour * 60 + toMinutes - (fromHour * 60 + fromMinutes);
     const currentTimeMarkerRef = useRef(null);
     const timelineContainerRef = useRef(null);
+    const zoomAnimationFrameRef = useRef(null);
+    const animatedPixelsPerMinuteRef = useRef(null);
+    const previousHoursPerScreenRef = useRef(timelineHoursPerScreen);
+    const timelineStartMinute = fromHour * 60 + fromMinutes;
+    const [visibleRange, setVisibleRange] = useState({
+        visibleEndMinute: timelineStartMinute + timelineHoursPerScreen * 60,
+        visibleStartMinute: timelineStartMinute,
+    });
+
+    const updateVisibleRange = useCallback(() => {
+        const container = timelineContainerRef.current;
+
+        if (!container || container.clientHeight <= 0) {
+            return;
+        }
+
+        const pixelsPerMinute =
+            animatedPixelsPerMinuteRef.current ||
+            container.clientHeight / (timelineHoursPerScreen * 60);
+        const visibleStartMinute =
+            timelineStartMinute + container.scrollTop / pixelsPerMinute;
+
+        setVisibleRange({
+            visibleEndMinute:
+                visibleStartMinute + container.clientHeight / pixelsPerMinute,
+            visibleStartMinute,
+        });
+    }, [timelineHoursPerScreen, timelineStartMinute]);
+
+    const scheduledTasks = useMemo(
+        () =>
+            getVisibleScheduledTasks(plannerIndexes.scheduledTaskEntries, {
+                maxDurationMinutes: plannerIndexes.maxScheduledDurationMinutes,
+                overscanMinutes: 60,
+                ...visibleRange,
+            }),
+        [plannerIndexes, visibleRange]
+    );
 
     useEffect(() => {
         const updateTime = () => {
@@ -137,10 +110,132 @@ const Timeline = ({
         }
     }, [isLoaded, currentTimeMarkerRef, timelineContainerRef]);
 
+    useEffect(() => {
+        const container = timelineContainerRef.current;
+
+        if (!container) {
+            return undefined;
+        }
+
+        let scrollFrame = null;
+        const handleScroll = () => {
+            if (scrollFrame !== null) {
+                return;
+            }
+
+            scrollFrame = requestAnimationFrame(() => {
+                scrollFrame = null;
+                updateVisibleRange();
+            });
+        };
+
+        container.addEventListener('scroll', handleScroll, { passive: true });
+        updateVisibleRange();
+
+        return () => {
+            container.removeEventListener('scroll', handleScroll);
+            if (scrollFrame !== null) {
+                cancelAnimationFrame(scrollFrame);
+            }
+        };
+    }, [updateVisibleRange]);
+
+    useLayoutEffect(() => {
+        const container = timelineContainerRef.current;
+        const previousHoursPerScreen = previousHoursPerScreenRef.current;
+        previousHoursPerScreenRef.current = timelineHoursPerScreen;
+
+        if (
+            !container ||
+            container.clientHeight <= 0 ||
+            previousHoursPerScreen === timelineHoursPerScreen
+        ) {
+            return undefined;
+        }
+
+        if (zoomAnimationFrameRef.current !== null) {
+            cancelAnimationFrame(zoomAnimationFrameRef.current);
+        }
+
+        const currentPixelsPerMinute =
+            animatedPixelsPerMinuteRef.current ||
+            container.clientHeight / (previousHoursPerScreen * 60);
+        const nextPixelsPerMinute =
+            container.clientHeight / (timelineHoursPerScreen * 60);
+        const currentScrollTop = container.scrollTop;
+        const nextScrollTop = getAnchoredScrollTop(
+            currentScrollTop,
+            currentPixelsPerMinute,
+            nextPixelsPerMinute
+        );
+        const reduceMotion = window.matchMedia(
+            '(prefers-reduced-motion: reduce)'
+        ).matches;
+
+        if (reduceMotion) {
+            animatedPixelsPerMinuteRef.current = nextPixelsPerMinute;
+            container.scrollTop = nextScrollTop;
+            updateVisibleRange();
+            return undefined;
+        }
+
+        const startedAt = performance.now();
+        const animateZoom = now => {
+            const progress = Math.min(
+                1,
+                (now - startedAt) / INTERACTION_ANIMATION_DURATION
+            );
+            const easedProgress = easeInOut(progress);
+            const currentAnimatedPixelsPerMinute =
+                currentPixelsPerMinute +
+                (nextPixelsPerMinute - currentPixelsPerMinute) * easedProgress;
+
+            animatedPixelsPerMinuteRef.current = currentAnimatedPixelsPerMinute;
+            container.scrollTop =
+                currentScrollTop +
+                (nextScrollTop - currentScrollTop) * easedProgress;
+            updateVisibleRange();
+
+            if (progress < 1) {
+                zoomAnimationFrameRef.current =
+                    requestAnimationFrame(animateZoom);
+            } else {
+                zoomAnimationFrameRef.current = null;
+            }
+        };
+
+        zoomAnimationFrameRef.current = requestAnimationFrame(animateZoom);
+
+        return () => {
+            if (zoomAnimationFrameRef.current !== null) {
+                cancelAnimationFrame(zoomAnimationFrameRef.current);
+                zoomAnimationFrameRef.current = null;
+            }
+        };
+    }, [timelineHoursPerScreen, updateVisibleRange]);
+
+    const cancelZoomAnchor = () => {
+        if (zoomAnimationFrameRef.current !== null) {
+            cancelAnimationFrame(zoomAnimationFrameRef.current);
+            zoomAnimationFrameRef.current = null;
+        }
+
+        const container = timelineContainerRef.current;
+        if (container?.clientHeight) {
+            animatedPixelsPerMinuteRef.current =
+                container.clientHeight / (timelineHoursPerScreen * 60);
+            updateVisibleRange();
+        }
+    };
+
     return (
         <Container {...otherProps}>
-            <TimelineContainer
+            <div
+                className="planner-timeline-container absolute inset-0 overflow-auto select-none"
+                data-drop-targeted={timelineDropProps.isTargetedForDrop}
                 ref={timelineContainerRef}
+                onTouchStart={cancelZoomAnchor}
+                onWheel={cancelZoomAnchor}
                 {...timelineDropProps}
             >
                 {scheduledTasks.map(task => {
@@ -151,24 +246,34 @@ const Timeline = ({
                         hours * 60 + mins - (fromHour * 60 + fromMinutes);
 
                     return (
-                        <ScheduledTaskCard
+                        <TaskCard
                             key={task.id}
-                            appActions={appActions}
-                            appData={appData}
-                            isAnotherTaskBeingDragged={isDraggingTask}
+                            cardThemeStyle={plannerIndexes.themeByListId.get(
+                                task.list_id
+                            )}
+                            cardContext="timeline"
                             isActive={selectedTaskId === task.id}
-                            offsetMinutes={offsetMinutes}
+                            isInteractionDisabled={isDraggingTask}
+                            isShowingListManager={appData.isShowingListManager}
+                            className="planner-timeline-task-card absolute left-[calc(var(--spacing-grid)*3)] right-[var(--spacing-grid)]"
+                            onImmediatelySelectTask={
+                                appActions.onImmediatelySelectTask
+                            }
+                            onTransitionToTask={appActions.onTransitionToTask}
+                            startOffsetMinutes={offsetMinutes}
                             task={task}
                         />
                     );
                 })}
-                <CurrentTimeMarker
+                <div
                     ref={currentTimeMarkerRef}
-                    offsetMinutes={
-                        currentHour * 60 +
-                        currentMinute -
-                        (fromHour * 60 + fromMinutes)
-                    }
+                    className="planner-current-time-marker pointer-events-none absolute left-0 right-0 z-10 h-px bg-red-600"
+                    style={{
+                        '--planner-current-time-offset-minutes':
+                            currentHour * 60 +
+                            currentMinute -
+                            (fromHour * 60 + fromMinutes),
+                    }}
                 />
                 <TimelineDropZone
                     appActions={appActions}
@@ -176,19 +281,22 @@ const Timeline = ({
                 />
                 {range(totalHours).map(hour => (
                     <Fragment key={hour}>
-                        <HalfHourRow>
-                            <HalfHourLabel hideLabel={hour === 0}>
+                        <div className="planner-timeline-half-hour relative">
+                            <div
+                                className="planner-timeline-label"
+                                data-hidden={hour === 0}
+                            >
                                 {(fromHour + hour) % 12 || 12}:00
-                            </HalfHourLabel>
-                        </HalfHourRow>
-                        <HalfHourRow>
-                            <HalfHourLabel isFaded>
+                            </div>
+                        </div>
+                        <div className="planner-timeline-half-hour relative">
+                            <div className="planner-timeline-label" data-faded>
                                 {(fromHour + hour) % 12 || 12}:30
-                            </HalfHourLabel>
-                        </HalfHourRow>
+                            </div>
+                        </div>
                     </Fragment>
                 ))}
-            </TimelineContainer>
+            </div>
         </Container>
     );
 };

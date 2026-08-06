@@ -1,27 +1,14 @@
 import React from 'react';
-import styled from 'styled-components';
 import Button from './atoms/Button';
-import { UNIFIED_TRANSITION } from './atoms/tokens';
+import cx from '../utils/cx';
 import ToolBar from './ToolBar';
 
-const OptionButton = styled(Button)(
-    ({ isSelected, theme }) => `
-        background: transparent;
-        color: inherit;
-        font-weight: ${isSelected ? 900 : 100};
-        opacity: ${isSelected ? 1 : 0.75};
-        width: auto;
-        ${UNIFIED_TRANSITION};
-        
-        ${ToolBar}:focus-within > &,
-        ${ToolBar}:hover > & {
-            opacity: 1;
-        }
-     
-        &:hover {
-            border-color: ${theme.HIGH_CONTRAST_BACKGROUND};
-        }
-    `
+const OptionButton = ({ className, isSelected, ...otherProps }) => (
+    <Button
+        className={cx('planner-option-button', className)}
+        data-selected={isSelected}
+        {...otherProps}
+    />
 );
 
 const OptionBar = ({

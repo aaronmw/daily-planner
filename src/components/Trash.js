@@ -1,73 +1,7 @@
 import React from 'react';
-import styled, { css, keyframes } from 'styled-components';
 import useDrop from '../hooks/useDrop';
 import FlexBox from './atoms/FlexBox';
-import { COPY, GRID_UNIT, ICONS, UNIFIED_TRANSITION } from './atoms/tokens';
-
-const DROP_ZONE_SIZE = `calc(${GRID_UNIT} * 4)`;
-
-const pulsingAnimation = ({ from, to }) => keyframes`
-    0% {
-        transform: scale(${from});
-    }
-    100% {
-        transform: scale(${to});
-    }
-`;
-
-const AnimatedContainer = styled(FlexBox)(
-    ({ isDraggingTask, isTargetedForDrop }) => css`
-        animation-direction: alternate;
-        animation-duration: 300ms;
-        animation-iteration-count: infinite;
-        animation-name: ${isTargetedForDrop
-            ? pulsingAnimation({ from: 1.6, to: 2.4 })
-            : isDraggingTask
-            ? pulsingAnimation({ from: 1, to: 1.6 })
-            : 'unset'};
-        animation-timing-function: ease-in-out;
-        bottom: 0;
-        height: ${DROP_ZONE_SIZE};
-        position: fixed;
-        right: 0;
-        transform-origin: bottom right;
-        transform: scale(${isDraggingTask ? 1.5 : 1});
-        width: ${DROP_ZONE_SIZE};
-        z-index: 1000;
-        ${UNIFIED_TRANSITION};
-    `
-);
-
-const TrashDropZone = styled(AnimatedContainer)(
-    ({ isDraggingTask }) => `
-        pointer-events: ${isDraggingTask ? 'all' : 'none'};
-    `
-);
-
-const TrashIconContainer = styled(AnimatedContainer).attrs({
-    align: 'center',
-    justify: 'center',
-    padding: 1,
-})(
-    ({ isDraggingTask, isShowingTrashContents, isTargetedForDrop, theme }) => `
-        color: ${
-            isTargetedForDrop
-                ? '#FF0000'
-                : theme[
-                      isDraggingTask || isShowingTrashContents
-                          ? 'PRIMARY'
-                          : 'TEXT_FADED'
-                  ]
-        };
-        cursor: pointer;
-        font-size: 3rem;
-        opacity: ${!isTargetedForDrop && !isDraggingTask ? 0.6 : 1};
-        
-        &:hover {
-            color: ${theme.PRIMARY};
-        }
-    `
-);
+import { COPY, ICONS } from './atoms/tokens';
 
 const Trash = ({ appActions, appData, ...otherProps }) => {
     const {
@@ -77,12 +11,8 @@ const Trash = ({ appActions, appData, ...otherProps }) => {
         onUpdateList,
     } = appActions;
 
-    const {
-        isDraggingTask,
-        isShowingTrashContents,
-        lists,
-        selectedListId,
-    } = appData;
+    const { isDraggingTask, isShowingTrashContents, lists, selectedListId } =
+        appData;
 
     const [dropProps] = useDrop({
         'list-id': listId => {
@@ -106,19 +36,36 @@ const Trash = ({ appActions, appData, ...otherProps }) => {
     const handleClick = () =>
         onChangeIsShowingTrashContents(!isShowingTrashContents);
 
+    const isTargetedForDrop = dropProps.isTargetedForDrop;
+    const isActive =
+        isTargetedForDrop || isDraggingTask || isShowingTrashContents;
+    const trashColor = isTargetedForDrop
+        ? '#FF0000'
+        : isDraggingTask || isShowingTrashContents
+          ? 'var(--planner-primary)'
+          : 'var(--planner-text-faded)';
+
     return (
         <>
-            <TrashIconContainer
-                isDraggingTask={isDraggingTask}
-                isShowingTrashContents={isShowingTrashContents}
-                isTargetedForDrop={dropProps.isTargetedForDrop}
+            <FlexBox
+                align="center"
+                justify="center"
+                padding={1}
+                className="planner-trash-anchor planner-trash-icon"
+                data-active={isActive}
+                data-dragging={isDraggingTask}
+                data-targeted={isTargetedForDrop}
+                style={{ color: trashColor }}
                 title={COPY.TIPS.DELETE_TASK}
                 onClick={handleClick}
             >
                 {ICONS.END_ZONE}
-            </TrashIconContainer>
-            <TrashDropZone
-                isDraggingTask={isDraggingTask}
+            </FlexBox>
+            <FlexBox
+                className="planner-trash-anchor"
+                data-dragging={isDraggingTask}
+                data-targeted={isTargetedForDrop}
+                style={{ pointerEvents: isDraggingTask ? 'all' : 'none' }}
                 {...dropProps}
                 {...otherProps}
             />

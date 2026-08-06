@@ -1,10 +1,10 @@
-const inputTypes = [
-    window.HTMLInputElement,
-    window.HTMLSelectElement,
-    window.HTMLTextAreaElement,
-];
-
 const triggerInputChange = (node, value = '') => {
+    const inputTypes = [
+        window.HTMLInputElement,
+        window.HTMLSelectElement,
+        window.HTMLTextAreaElement,
+    ];
+
     // only process the change on elements we know have a value setter in their constructor
     if (inputTypes.indexOf(node.__proto__.constructor) > -1) {
         const setValue = Object.getOwnPropertyDescriptor(

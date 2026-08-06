@@ -1,54 +1,63 @@
-import React, { memo } from 'react';
+import React, { memo, useCallback } from 'react';
 import FlexBox from './atoms/FlexBox';
-import { COPY, LIST_CARD_WIDTH } from './atoms/tokens';
-import ListCard, { ListCardContainer } from './ListCard';
+import { COPY } from './atoms/tokens';
+import ListCard from './ListCard';
 import TrashedCard from './TrashedCard';
+import VirtualListGrid from './VirtualListGrid';
+
+const getListKey = list => list.id;
 
 const TrashedLists = ({ appActions, appData, ...otherProps }) => {
-    const { onUpdateList } = appActions;
+    const { onUpdateList, onUpdateTask } = appActions;
+    const deletedLists = appData.plannerIndexes.trashedLists;
+    const renderList = useCallback(
+        list => (
+            <TrashedCard
+                className="h-full"
+                restoreButtonTitle={COPY.LABEL_FOR_RESTORING_LIST}
+                onRestore={() => onUpdateList(list.id, { isArchived: false })}
+            >
+                <ListCard
+                    isActive={list.id === appData.selectedListId}
+                    isCreatingList={appData.isCreatingList}
+                    isEditable={false}
+                    list={list}
+                    listId={list.id}
+                    listThemeStyle={appData.plannerIndexes.themeByListId.get(
+                        list.id
+                    )}
+                    onUpdateList={onUpdateList}
+                    onUpdateTask={onUpdateTask}
+                    tasks={
+                        appData.plannerIndexes.tasksByListId.get(list.id) || []
+                    }
+                    style={{ marginLeft: 0 }}
+                />
+            </TrashedCard>
+        ),
+        [appData, onUpdateList, onUpdateTask]
+    );
 
-    const { lists } = appData;
-
-    const deletedLists = lists.filter(list => list.isArchived);
-
-    const hasDeletedLists = deletedLists.length;
-
-    const handleRestoreList = listId =>
-        onUpdateList(listId, { isArchived: false });
+    if (!deletedLists.length) {
+        return (
+            <FlexBox
+                align="center"
+                isFlexible
+                justify="center"
+                style={{ opacity: 0.6 }}
+            >
+                {COPY.EMPTY_TRASHED_LISTS}
+            </FlexBox>
+        );
+    }
 
     return (
-        <>
-            {!hasDeletedLists && (
-                <FlexBox
-                    align="center"
-                    isFlexible
-                    justify="center"
-                    style={{ opacity: 0.6 }}
-                >
-                    {COPY.EMPTY_TRASHED_LISTS}
-                </FlexBox>
-            )}
-            {!!hasDeletedLists && (
-                <ListCardContainer {...otherProps}>
-                    {deletedLists.map(list => (
-                        <TrashedCard
-                            key={list.id}
-                            restoreButtonTitle={COPY.LABEL_FOR_RESTORING_LIST}
-                            style={{ width: LIST_CARD_WIDTH }}
-                            onRestore={handleRestoreList.bind(this, list.id)}
-                        >
-                            <ListCard
-                                appActions={appActions}
-                                appData={appData}
-                                isEditable={false}
-                                listId={list.id}
-                                style={{ marginLeft: 0 }}
-                            />
-                        </TrashedCard>
-                    ))}
-                </ListCardContainer>
-            )}
-        </>
+        <VirtualListGrid
+            {...otherProps}
+            getItemKey={getListKey}
+            items={deletedLists}
+            renderItem={renderList}
+        />
     );
 };
 
