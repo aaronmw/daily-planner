@@ -12,8 +12,9 @@ export default function RootLayout({ children }) {
             <body>
                 {children}
                 <Script
-                    src="https://kit.fontawesome.com/fc8b5f7417.js"
+                    src="https://kit.fontawesome.com/44d855bf5c.js"
                     crossOrigin="anonymous"
+                    referrerPolicy="no-referrer"
                     strategy="afterInteractive"
                 />
             </body>

@@ -1,7 +1,7 @@
 import sample from 'lodash/sample';
 import React from 'react';
 import Box from './atoms/Box';
-import { ToggleButton } from './atoms/Button';
+import { IconButton } from './atoms/Button';
 import FlexBox from './atoms/FlexBox';
 import { COPY, FONTS, ICONS } from './atoms/tokens';
 
@@ -32,8 +32,12 @@ const TipBubbler = ({ ...props }) => {
                 justify="space-between"
                 spacing={0.25}
             >
-                <ToggleButton>{ICONS.LEFT}</ToggleButton>
-                <ToggleButton>{ICONS.RIGHT}</ToggleButton>
+                <IconButton aria-label="Previous tip" title="Previous tip">
+                    {ICONS.LEFT}
+                </IconButton>
+                <IconButton aria-label="Next tip" title="Next tip">
+                    {ICONS.RIGHT}
+                </IconButton>
             </FlexBox>
         </FlexBox>
     );

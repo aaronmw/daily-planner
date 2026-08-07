@@ -1,7 +1,7 @@
 import React, { useCallback } from 'react';
-import { marked } from 'marked';
-import EditInPlace from './EditInPlace';
+import EditableText from './EditableText';
 import OptionBar from './OptionBar';
+import TaskNotesEditor from './TaskNotesEditor';
 import Box from './atoms/Box';
 import FlexBox from './atoms/FlexBox';
 import { COPY, ICONS, DURATION_OPTIONS, FONTS } from './atoms/tokens';
@@ -38,11 +38,19 @@ const DurationOptionBar = props => (
     />
 );
 
-const TaskDetails = ({ appActions = {}, appData = {} }) => {
+const EMPTY_APP_ACTIONS = Object.freeze({});
+const EMPTY_APP_DATA = Object.freeze({
+    plannerIndexes: Object.freeze({ taskById: new Map() }),
+});
+
+const TaskDetails = ({
+    appActions = EMPTY_APP_ACTIONS,
+    appData = EMPTY_APP_DATA,
+}) => {
     const { onUpdateTask } = appActions;
     const { isCreatingTask, plannerIndexes, selectedTaskId } = appData;
     const activeTask = plannerIndexes.taskById.get(selectedTaskId) || {};
-    const { duration_minutes, icon, id, label, notes } = activeTask;
+    const { duration_minutes, icon, id, label } = activeTask;
     const isEmpty = !activeTask.id;
 
     const handleUpdateTask = useCallback(
@@ -65,17 +73,12 @@ const TaskDetails = ({ appActions = {}, appData = {} }) => {
         [handleUpdateTask]
     );
 
-    const handleSaveNotes = useCallback(
-        newNotes => handleUpdateTask('notes', newNotes),
-        [handleUpdateTask]
-    );
-
     return (
         !isEmpty && (
             <>
                 <TaskHeader>
                     <TaskHeaderLabel>
-                        <EditInPlace
+                        <EditableText
                             key={id}
                             placeholder={COPY.EMPTY_LABEL}
                             startsEditing={isCreatingTask}
@@ -84,7 +87,7 @@ const TaskDetails = ({ appActions = {}, appData = {} }) => {
                         />
                     </TaskHeaderLabel>
                     <TaskHeaderIcon>
-                        <EditInPlace
+                        <EditableText
                             placeholder={ICONS.TASK_DEFAULT}
                             value={icon}
                             onSave={handleSaveIcon}
@@ -92,30 +95,11 @@ const TaskDetails = ({ appActions = {}, appData = {} }) => {
                     </TaskHeaderIcon>
                 </TaskHeader>
 
-                <EditInPlace
-                    isFlexible
-                    isMultiLine
-                    margin={1}
-                    placeholder={COPY.EMPTY_NOTES}
-                    render={rawNotes => (
-                        <div
-                            className="markdown"
-                            dangerouslySetInnerHTML={{
-                                __html: marked(rawNotes),
-                            }}
-                        />
-                    )}
-                    canvasStyles={{
-                        bottom: 0,
-                        fontSize: FONTS.LARGE.SIZE,
-                        left: 0,
-                        overflow: 'auto',
-                        position: 'absolute',
-                        right: 0,
-                        top: 0,
-                    }}
-                    value={notes}
-                    onSave={handleSaveNotes}
+                <TaskNotesEditor
+                    key={id}
+                    appActions={appActions}
+                    appData={appData}
+                    task={activeTask}
                 />
 
                 <DurationOptionBar

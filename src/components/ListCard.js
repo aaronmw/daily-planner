@@ -1,14 +1,15 @@
-import React, { memo, useCallback, useRef } from 'react';
+import React, { memo, useCallback, useMemo, useRef } from 'react';
 import useDrag from '../hooks/useDrag';
 import useDrop from '../hooks/useDrop';
+import useElementRect from '../hooks/useElementRect';
 import isSurfaceActivationKey from '../utils/isSurfaceActivationKey';
 import toInt from '../utils/toInt';
 import cx from '../utils/cx';
 import { GhostButton } from './atoms/Button';
 import FlexBox from './atoms/FlexBox';
-import { COPY, FONTS, getListAccentKey } from './atoms/tokens';
+import { COPY, getListAccentKey } from './atoms/tokens';
 import ColorPicker from './ColorPicker';
-import EditInPlace from './EditInPlace';
+import EditableText from './EditableText';
 import VirtualCollection from './VirtualCollection';
 
 const Container = React.forwardRef(
@@ -33,6 +34,7 @@ const Container = React.forwardRef(
 export const GhostListCard = ({ className, ...otherProps }) => (
     <GhostButton
         align="center"
+        data-grid-navigation-target
         justify="center"
         className={cx('h-full w-full', className)}
         {...otherProps}
@@ -53,7 +55,18 @@ export const ListCardContainer = ({ className, ...otherProps }) => (
 );
 
 const getPreviewTaskKey = task => task.id;
-const estimatePreviewTaskSize = () => 15;
+const PREVIEW_GAP = 6.25;
+const PREVIEW_LINE_HEIGHT = 1.4;
+const PREVIEW_MIN_FONT_SIZE = 6.25;
+const PREVIEW_MAX_FONT_SIZE = 12.5;
+const EMPTY_TASKS = [];
+
+const handleListCardKeyDown = evt => {
+    if (isSurfaceActivationKey(evt)) {
+        evt.preventDefault();
+        evt.currentTarget.click();
+    }
+};
 
 const ListCard = ({
     isActive,
@@ -63,14 +76,38 @@ const ListCard = ({
     listThemeStyle,
     onUpdateList,
     onUpdateTask,
+    selectedListId,
     isEditable = true,
     style,
-    tasks = [],
+    tasks = EMPTY_TASKS,
     ...otherProps
 }) => {
     const listAccentKey = getListAccentKey(list);
 
     const listCardElementRef = useRef(null);
+    const previewElementRef = useRef(null);
+    const { height: previewHeight } = useElementRect(previewElementRef);
+    const previewFontSize = useMemo(() => {
+        if (!tasks.length || !previewHeight) {
+            return PREVIEW_MAX_FONT_SIZE;
+        }
+
+        const availableTextHeight = Math.max(
+            0,
+            previewHeight - PREVIEW_GAP * (tasks.length - 1)
+        );
+        const fittedFontSize =
+            availableTextHeight / (tasks.length * PREVIEW_LINE_HEIGHT);
+
+        return Math.min(
+            PREVIEW_MAX_FONT_SIZE,
+            Math.max(PREVIEW_MIN_FONT_SIZE, fittedFontSize)
+        );
+    }, [previewHeight, tasks.length]);
+    const estimatePreviewTaskSize = useCallback(
+        () => previewFontSize * PREVIEW_LINE_HEIGHT,
+        [previewFontSize]
+    );
 
     const [dragProps] = useDrag({ 'list-id': listId });
 
@@ -86,33 +123,33 @@ const ListCard = ({
         },
     });
 
-    const setListColor = accentKey =>
-        onUpdateList(listId, { accent_key: accentKey });
-    const handleKeyDown = evt => {
-        if (isSurfaceActivationKey(evt)) {
-            evt.preventDefault();
-            evt.currentTarget.click();
-        }
-    };
+    const setListColor = useCallback(
+        accentKey => onUpdateList(listId, { accent_key: accentKey }),
+        [listId, onUpdateList]
+    );
     const renderPreviewTask = useCallback(
         task => (
             <FlexBox
                 align="flex-start"
+                className="planner-list-card-preview-task"
                 paddingX={0.25}
                 spacing={0.25}
                 style={{
-                    fontSize: `calc(${FONTS.NORMAL.SIZE} / 2)`,
+                    fontSize: previewFontSize,
                 }}
             >
                 <span>{task.icon}</span>
-                <span>{task.label}</span>
+                <span className="planner-list-card-preview-task-label">
+                    {task.label}
+                </span>
             </FlexBox>
         ),
-        []
+        [previewFontSize]
     );
 
     return (
         <Container
+            data-grid-navigation-target
             data-list-id={listId}
             isActive={isActive}
             isTargetedForDrop={dropProps.isTargetedForDrop}
@@ -126,9 +163,9 @@ const ListCard = ({
             {...dragProps}
             {...dropProps}
             {...otherProps}
-            onKeyDown={handleKeyDown}
+            onKeyDown={handleListCardKeyDown}
         >
-            <EditInPlace
+            <EditableText
                 key={listId}
                 isEditable={isEditable}
                 marginX={0.75}
@@ -155,8 +192,13 @@ const ListCard = ({
                 paddingEnd={0}
                 paddingStart={0}
                 renderItem={renderPreviewTask}
+                scrollElementRef={previewElementRef}
             />
-            <ColorPicker accentKey={listAccentKey} onPickColor={setListColor} />
+            <ColorPicker
+                accentKey={listAccentKey}
+                className="planner-list-card-theme-control"
+                onPickColor={setListColor}
+            />
         </Container>
     );
 };

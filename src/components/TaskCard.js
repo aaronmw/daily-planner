@@ -1,4 +1,4 @@
-import React, { memo, useState } from 'react';
+import React, { memo, useLayoutEffect, useRef, useState } from 'react';
 import useDrag from '../hooks/useDrag';
 import isSurfaceActivationKey from '../utils/isSurfaceActivationKey';
 import cx from '../utils/cx';
@@ -43,9 +43,9 @@ const Container = React.forwardRef(
     )
 );
 
-const CardLabel = ({ className, ...otherProps }) => (
+const CardLabel = ({ className, isSingleLine, ...otherProps }) => (
     <FlexBox
-        align="flex-start"
+        align={isSingleLine ? 'center' : 'flex-start'}
         isFlexible
         className={cx('planner-task-card-label', className)}
         {...otherProps}
@@ -96,8 +96,47 @@ const TaskCard = ({
     const [isMouseOver, setIsMouseOver] = useState(false);
 
     const { duration_minutes, icon, id, label } = task;
+    const labelTextRef = useRef(null);
+    const [isSingleLine, setIsSingleLine] = useState(
+        () => !String(label).includes('\n')
+    );
 
     const [dragProps] = useDrag({ 'task-id': id });
+
+    useLayoutEffect(() => {
+        const labelTextElement = labelTextRef.current;
+
+        if (!labelTextElement) {
+            return undefined;
+        }
+
+        const measureLineCount = () => {
+            const lineHeight = Number.parseFloat(
+                window.getComputedStyle(labelTextElement).lineHeight
+            );
+            const renderedHeight =
+                labelTextElement.getBoundingClientRect().height;
+            const nextIsSingleLine =
+                !String(label).includes('\n') &&
+                Number.isFinite(lineHeight) &&
+                renderedHeight <= lineHeight * 1.25;
+
+            setIsSingleLine(current =>
+                current === nextIsSingleLine ? current : nextIsSingleLine
+            );
+        };
+
+        measureLineCount();
+
+        if (typeof ResizeObserver === 'undefined') {
+            return undefined;
+        }
+
+        const observer = new ResizeObserver(measureLineCount);
+        observer.observe(labelTextElement);
+
+        return () => observer.disconnect();
+    }, [label]);
 
     const handleClick = () => {
         if (isShowingListManager) {
@@ -124,6 +163,7 @@ const TaskCard = ({
             isActive={isActive}
             isDragging={dragProps.isDragging}
             isMouseOver={isMouseOver}
+            data-single-line={isSingleLine}
             tabIndex={0}
             title={COPY.TIPS.MOVE_TASK_BETWEEN_TASK_LIST_AND_TIMELINE}
             style={{
@@ -144,7 +184,14 @@ const TaskCard = ({
             {...dragProps}
             {...otherProps}
         >
-            <CardLabel>{label}</CardLabel>
+            <CardLabel isSingleLine={isSingleLine}>
+                <span
+                    className="planner-task-card-label-text"
+                    ref={labelTextRef}
+                >
+                    {label}
+                </span>
+            </CardLabel>
             <CardIcon durationMinutes={duration_minutes}>{icon}</CardIcon>
         </Container>
     );

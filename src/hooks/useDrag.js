@@ -1,9 +1,12 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
 
 const useDrag = dataTypes => {
     const [isDragging, setIsDragging] = useState(false);
     const dataTypesRef = useRef(dataTypes);
-    dataTypesRef.current = dataTypes;
+
+    useLayoutEffect(() => {
+        dataTypesRef.current = dataTypes;
+    }, [dataTypes]);
 
     const onDragEnd = useCallback(() => {
         setIsDragging(false);

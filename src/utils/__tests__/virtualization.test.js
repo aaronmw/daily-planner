@@ -1,7 +1,4 @@
-import {
-    getListGridMetrics,
-    getTaskEstimatedSize,
-} from '../virtualization';
+import { getListGridMetrics, getTaskEstimatedSize } from '../virtualization';
 
 describe('virtual collection estimates', () => {
     it('estimates relative task rows from the shared timeline scale', () => {
@@ -36,6 +33,19 @@ describe('virtual collection estimates', () => {
         ).toEqual({
             cardHeight: 362.5,
             cardWidth: 241.66666666666666,
+        });
+    });
+
+    it('preserves five 2:3 portrait cards in a wider list grid', () => {
+        expect(
+            getListGridMetrics(950, {
+                columns: 5,
+                gap: 12.5,
+                paddingInline: 25,
+            })
+        ).toEqual({
+            cardHeight: 255,
+            cardWidth: 170,
         });
     });
 });

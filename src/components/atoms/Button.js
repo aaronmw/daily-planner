@@ -143,4 +143,28 @@ export const ToggleButton = ({ isInverted, ...otherProps }) => (
     <Button isInverted={!isInverted} {...otherProps} />
 );
 
+export const IconButton = React.forwardRef(
+    ({ children, className, isInverted = true, style, ...otherProps }, ref) => (
+        <Button
+            ref={ref}
+            className={cx('shrink-0', className)}
+            isInverted={isInverted}
+            paddingX={0}
+            paddingY={0}
+            style={{
+                height: 'var(--spacing-icon-slot)',
+                minHeight: 'var(--spacing-icon-slot)',
+                minWidth: 'var(--spacing-icon-slot)',
+                width: 'var(--spacing-icon-slot)',
+                ...style,
+            }}
+            {...otherProps}
+        >
+            <span aria-hidden="true" className="planner-icon-button-slot">
+                {children}
+            </span>
+        </Button>
+    )
+);
+
 export default Button;

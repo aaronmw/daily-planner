@@ -13,9 +13,12 @@ const VirtualCollection = ({
     paddingEnd = 37.5,
     paddingStart = 25,
     renderItem,
+    scrollElementRef: providedScrollElementRef,
     selectedIndex = -1,
 }) => {
-    const scrollElementRef = useRef(null);
+    const internalScrollElementRef = useRef(null);
+    const scrollElementRef =
+        providedScrollElementRef || internalScrollElementRef;
     const virtualizer = useVirtualizer({
         count: items.length,
         estimateSize,
@@ -47,7 +50,7 @@ const VirtualCollection = ({
         });
 
         return () => cancelAnimationFrame(frame);
-    }, [focusSelected, selectedIndex, virtualizer]);
+    }, [focusSelected, scrollElementRef, selectedIndex, virtualizer]);
 
     return (
         <div
@@ -68,7 +71,10 @@ const VirtualCollection = ({
                             transform: `translateY(${virtualItem.start}px)`,
                         }}
                     >
-                        {renderItem(items[virtualItem.index], virtualItem.index)}
+                        {renderItem(
+                            items[virtualItem.index],
+                            virtualItem.index
+                        )}
                     </div>
                 ))}
             </div>

@@ -4,15 +4,9 @@ import FlexBox from './atoms/FlexBox';
 import { COPY, ICONS } from './atoms/tokens';
 
 const Trash = ({ appActions, appData, ...otherProps }) => {
-    const {
-        onChangeIsShowingTrashContents,
-        deleteTask,
-        onSelectList,
-        onUpdateList,
-    } = appActions;
+    const { deleteTask, onSelectList, onUpdateList } = appActions;
 
-    const { isDraggingTask, isShowingTrashContents, lists, selectedListId } =
-        appData;
+    const { isDraggingTask, lists, selectedListId } = appData;
 
     const [dropProps] = useDrop({
         'list-id': listId => {
@@ -33,43 +27,30 @@ const Trash = ({ appActions, appData, ...otherProps }) => {
         'task-id': deleteTask,
     });
 
-    const handleClick = () =>
-        onChangeIsShowingTrashContents(!isShowingTrashContents);
-
     const isTargetedForDrop = dropProps.isTargetedForDrop;
-    const isActive =
-        isTargetedForDrop || isDraggingTask || isShowingTrashContents;
     const trashColor = isTargetedForDrop
         ? '#FF0000'
-        : isDraggingTask || isShowingTrashContents
+        : isDraggingTask
           ? 'var(--planner-primary)'
           : 'var(--planner-text-faded)';
 
     return (
-        <>
-            <FlexBox
-                align="center"
-                justify="center"
-                padding={1}
-                className="planner-trash-anchor planner-trash-icon"
-                data-active={isActive}
-                data-dragging={isDraggingTask}
-                data-targeted={isTargetedForDrop}
-                style={{ color: trashColor }}
-                title={COPY.TIPS.DELETE_TASK}
-                onClick={handleClick}
-            >
-                {ICONS.END_ZONE}
-            </FlexBox>
-            <FlexBox
-                className="planner-trash-anchor"
-                data-dragging={isDraggingTask}
-                data-targeted={isTargetedForDrop}
-                style={{ pointerEvents: isDraggingTask ? 'all' : 'none' }}
-                {...dropProps}
-                {...otherProps}
-            />
-        </>
+        <FlexBox
+            align="center"
+            justify="center"
+            className="planner-trash-drop-target"
+            data-dragging={isDraggingTask}
+            data-targeted={isTargetedForDrop}
+            style={{
+                color: trashColor,
+                pointerEvents: isDraggingTask ? 'all' : 'none',
+            }}
+            title={COPY.TIPS.DELETE_TASK}
+            {...dropProps}
+            {...otherProps}
+        >
+            <span aria-hidden="true">{ICONS.END_ZONE}</span>
+        </FlexBox>
     );
 };
 

@@ -1,15 +1,22 @@
 import React from 'react';
-import { ToggleButton } from './atoms/Button';
+import { IconButton } from './atoms/Button';
 import { COPY, ICONS } from './atoms/tokens';
 
-const TaskListToggleButton = ({ isSidebarOpen, onChangeIsSidebarOpen }) => (
-    <ToggleButton
-        isActive={isSidebarOpen}
-        title={COPY.TIPS.TOGGLE_TASK_LIST}
-        onClick={() => onChangeIsSidebarOpen(!isSidebarOpen)}
-    >
-        {isSidebarOpen ? ICONS.LEFT : ICONS.RIGHT}
-    </ToggleButton>
-);
+const TaskListToggleButton = ({ isSidebarOpen, onChangeIsSidebarOpen }) => {
+    const label = isSidebarOpen
+        ? COPY.LABEL_FOR_COLLAPSE_TASK_LIST
+        : COPY.LABEL_FOR_EXPAND_TASK_LIST;
+
+    return (
+        <IconButton
+            aria-label={label}
+            isActive={isSidebarOpen}
+            title={`${label}. ${COPY.TIPS.TOGGLE_TASK_LIST}`}
+            onClick={() => onChangeIsSidebarOpen(!isSidebarOpen)}
+        >
+            {isSidebarOpen ? ICONS.COLLAPSE_TASK_LIST : ICONS.EXPAND_TASK_LIST}
+        </IconButton>
+    );
+};
 
 export default TaskListToggleButton;

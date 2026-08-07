@@ -43,7 +43,6 @@ const PlannerLayout = ({ planner }) => {
             className="planner-root min-h-dvh bg-planner-background text-planner-text font-planner"
             style={appThemeStyle}
         >
-            <OptionsMenu appActions={appActions} appData={appData} />
             <Trash appActions={appActions} appData={appData} />
             <FlexBox align="stretch" style={{ height: '100dvh' }}>
                 <Sidebar
@@ -64,13 +63,6 @@ const PlannerLayout = ({ planner }) => {
                 </Sidebar>
 
                 <PrimaryAppColumn
-                    label={
-                        isShowingTrashContents
-                            ? COPY.LABEL_FOR_TRASHED_LISTS
-                            : isShowingListManager
-                              ? COPY.LABEL_FOR_LIST_MANAGER
-                              : COPY.LABEL_FOR_TASK_DETAILS
-                    }
                     style={{
                         width: isShowingListManager
                             ? columnWidths.listManager
@@ -113,6 +105,9 @@ const PlannerLayout = ({ planner }) => {
                             <ListManager
                                 isCreatingList={appData.isCreatingList}
                                 lists={unarchivedLists}
+                                onChangeIsShowingListManager={
+                                    onChangeIsShowingListManager
+                                }
                                 onCreateList={appActions.onCreateList}
                                 onSelectList={appActions.onSelectList}
                                 onUpdateList={appActions.onUpdateList}
@@ -137,6 +132,12 @@ const PlannerLayout = ({ planner }) => {
                 <Timeline
                     appActions={appActions}
                     appData={appData}
+                    headerActions={
+                        <OptionsMenu
+                            appActions={appActions}
+                            appData={appData}
+                        />
+                    }
                     selectedTaskId={selectedTaskId}
                     from={TIMELINE_FROM}
                     style={{

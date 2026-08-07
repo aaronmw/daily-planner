@@ -10,11 +10,13 @@ const BULLET_SIZE = '10px';
 const DURATION_OPTIONS = [15, 30, 45, 60, 90, 120];
 const GRID_UNIT = '25px';
 const FONTS = {
-    NORMAL: { LINE_HEIGHT: '1.4em', SIZE: `calc(${GRID_UNIT} * 0.5)` },
-    LARGE: { LINE_HEIGHT: '1.4em', SIZE: `calc(${GRID_UNIT} * 0.75)` },
+    NORMAL: { LINE_HEIGHT: '1.6', SIZE: `calc(${GRID_UNIT} * 0.5)` },
+    LARGE: { LINE_HEIGHT: '1.6', SIZE: `calc(${GRID_UNIT} * 0.75)` },
 };
 const HOURS_PER_SCREEN = 10;
 const INTERACTION_ANIMATION_DURATION = 150;
+const DEFAULT_FOCUS_ASSIST_ENABLED = true;
+const DEFAULT_HIGHLIGHT_INCOMPLETE_SENTENCES_ENABLED = true;
 const DEFAULT_RELATIVE_CARD_SIZING_ENABLED = true;
 const DEFAULT_THEME_MODE = 'SYSTEM';
 const LIST_CARD_SPACING = `calc(${GRID_UNIT} * 0.5)`;
@@ -35,15 +37,22 @@ COPY.EMPTY_NOTES = '...notes?';
 COPY.EMPTY_TRASHED_LISTS = 'No Trashed Lists';
 COPY.EMPTY_TRASHED_TASKS = 'No Trashed Tasks';
 COPY.LABEL_FOR_LIST_MANAGER = 'Switch Lists';
+COPY.LABEL_FOR_COLLAPSE_TASK_LIST = 'Collapse task list';
+COPY.LABEL_FOR_EXPAND_TASK_LIST = 'Expand task list';
 COPY.LABEL_FOR_RESTORING_LIST = 'Restore this List';
 COPY.LABEL_FOR_RESTORING_TASK = 'Restore this Task';
 COPY.LABEL_FOR_LIGHTING_MODE = 'Lighting Mode';
 COPY.LABEL_FOR_OPTIONS = 'Options';
+COPY.LABEL_FOR_EDITING_SETTINGS = 'Editing';
+COPY.LABEL_FOR_FOCUS_ASSIST = 'Focus Assist';
+COPY.LABEL_FOR_HIGHLIGHT_INCOMPLETE = 'Highlight incomplete';
+COPY.LABEL_FOR_LIST_COLOR = 'Choose list color';
 COPY.LABEL_FOR_RELATIVE_CARD_SIZING = 'Relative card sizing';
 COPY.LABEL_FOR_TASK_DETAILS = 'Back to Task';
 COPY.LABEL_FOR_TIMELINE = "Today's Schedule";
 COPY.LABEL_FOR_TIMELINE_SETTINGS = 'Timeline';
 COPY.LABEL_FOR_TIMELINE_ZOOM = 'Zoom';
+COPY.LABEL_FOR_DELETED_ITEMS = 'Deleted items';
 COPY.LABEL_FOR_TRASHED_LISTS = 'Trashed Lists';
 COPY.LABEL_FOR_TRASHED_TASKS = 'Trashed Tasks';
 COPY.LIGHTING_MODE_LABELS = {
@@ -235,6 +244,7 @@ const INITIAL_TASKS = Object.keys(COPY.TIPS).map(tipId => {
     const label = COPY.TIPS[tipId];
 
     return {
+        attachments: [],
         icon: '☝️',
         id: tipId,
         list_id: INITIAL_SELECTED_LIST_ID,
@@ -274,33 +284,29 @@ const ICON_PACKS = {
         TIP: '☝️',
     },
     FONT_AWESOME: {
+        COLLAPSE_TASK_LIST: 'arrow-left-to-line',
         COLOR_PICKER: 'palette',
         CHECK: 'check',
         DARK_MODE: 'moon',
         END_ZONE: 'trash-alt',
+        EXPAND_TASK_LIST: 'arrow-right-from-line',
         LEFT: 'long-arrow-left',
         LIGHT_MODE: 'sun',
         LIST_MANAGER: 'book',
         OPTIONS: 'cog',
+        PAPERCLIP: 'paperclip',
         RIGHT: 'long-arrow-right',
+        SPINNER: 'spinner-third',
         SYSTEM_MODE: 'desktop',
         TASK_DETAILS: 'thumbtack',
         TIP: 'gem',
+        WARNING: 'triangle-exclamation',
     },
-};
-
-const ICON_WEIGHT_OVERRIDES = {
-    palette: 'light',
 };
 
 Object.keys(ICON_PACKS.FONT_AWESOME).forEach(key => {
     const ICON_NAME = ICON_PACKS.FONT_AWESOME[key];
-    ICON_PACKS.FONT_AWESOME[key] = (
-        <Icon
-            iconName={ICON_NAME}
-            styleName={ICON_WEIGHT_OVERRIDES[ICON_NAME] || 'solid'}
-        />
-    );
+    ICON_PACKS.FONT_AWESOME[key] = <Icon iconName={ICON_NAME} />;
 });
 
 const ICONS = ICON_PACKS.FONT_AWESOME;
@@ -314,6 +320,8 @@ export {
     buildPalette,
     buildThemeStyle,
     BULLET_SIZE,
+    DEFAULT_FOCUS_ASSIST_ENABLED,
+    DEFAULT_HIGHLIGHT_INCOMPLETE_SENTENCES_ENABLED,
     DEFAULT_THEME_MODE,
     DEFAULT_RELATIVE_CARD_SIZING_ENABLED,
     DEFAULT_ACCENT_KEY,

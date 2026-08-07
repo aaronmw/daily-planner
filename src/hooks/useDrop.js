@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
 
 const onDragOver = evt => {
     evt.preventDefault();
@@ -8,7 +8,10 @@ const useDrop = dataTypeHandlers => {
     const [isTargetedForDrop, setIsTargetedForDrop] = useState(false);
     const dataTypeHandlersRef = useRef(dataTypeHandlers);
     const targetedElement = useRef(null);
-    dataTypeHandlersRef.current = dataTypeHandlers;
+
+    useLayoutEffect(() => {
+        dataTypeHandlersRef.current = dataTypeHandlers;
+    }, [dataTypeHandlers]);
 
     const onDragEnter = useCallback(evt => {
         evt.preventDefault();

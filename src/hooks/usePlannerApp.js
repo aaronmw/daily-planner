@@ -5,9 +5,10 @@ import {
     ACCENT_SWATCHES,
     buildThemeStyle,
     COPY,
+    DEFAULT_FOCUS_ASSIST_ENABLED,
+    DEFAULT_HIGHLIGHT_INCOMPLETE_SENTENCES_ENABLED,
     DEFAULT_RELATIVE_CARD_SIZING_ENABLED,
     DEFAULT_THEME_MODE,
-    GRID_UNIT,
     HOURS_PER_SCREEN,
     ICONS,
     getNextThemeMode,
@@ -26,11 +27,28 @@ import {
 } from '../components/atoms/tokens';
 import { getMinuteHeightCss } from '../utils/plannerGeometry';
 import { buildPlannerIndexes } from '../utils/plannerIndexes';
+import {
+    ATTACHMENT_REQUEST_HEADER,
+    ATTACHMENT_REQUEST_HEADER_VALUE,
+    createAttachmentClientId,
+    createPendingAttachment,
+    insertAttachmentPlaceholders,
+} from '../utils/attachments';
+import {
+    beginTaskAttachmentUploads,
+    normalizeTasksForHydration,
+    rejectTaskAttachmentUpload,
+    removeReadyTaskAttachment,
+    resolveTaskAttachmentUpload,
+} from '../utils/taskAttachments';
+import useAttachmentUploads from './useAttachmentUploads';
 import useKeyboardShortcut from './useKeyboardShortcut';
 import usePersistentState from './usePersistentState';
 import useSystemThemeName from './useSystemThemeName';
 
 const keyboardShortcutNamespace = 'global';
+const waitForInteractionMotion = () =>
+    new Promise(resolve => setTimeout(resolve, INTERACTION_ANIMATION_DURATION));
 
 const withPreventDefault = func => e => {
     e.preventDefault();
@@ -76,7 +94,11 @@ export default function usePlannerApp() {
         'is-showing-list-manager',
         true
     );
-    const [tasks, setTasks] = usePersistentState('tasks', INITIAL_TASKS);
+    const [tasks, setTasks] = usePersistentState(
+        'tasks',
+        INITIAL_TASKS,
+        normalizeTasksForHydration
+    );
     const [selectedTaskId, setSelectedTaskId] = usePersistentState(
         'selected-task-id',
         INITIAL_SELECTED_TASK_ID
@@ -92,6 +114,17 @@ export default function usePlannerApp() {
             'relative-card-sizing-enabled',
             DEFAULT_RELATIVE_CARD_SIZING_ENABLED
         );
+    const [focusAssistEnabled, setFocusAssistEnabled] = usePersistentState(
+        'focus-assist-enabled',
+        DEFAULT_FOCUS_ASSIST_ENABLED
+    );
+    const [
+        highlightIncompleteSentencesEnabled,
+        setHighlightIncompleteSentencesEnabled,
+    ] = usePersistentState(
+        'highlight-incomplete-sentences-enabled',
+        DEFAULT_HIGHLIGHT_INCOMPLETE_SENTENCES_ENABLED
+    );
     const [isCreatingList, setIsCreatingList] = useState(false);
     const [isCreatingTask, setIsCreatingTask] = useState(false);
     const [isCardSizingTransitioning, setIsCardSizingTransitioning] =
@@ -99,6 +132,8 @@ export default function usePlannerApp() {
     const [isDraggingTask, setIsDraggingTask] = useState(false);
     const [isShowingTrashContents, setIsShowingTrashContents] = useState(false);
     const [isTransitioning, setIsTransitioning] = useState(false);
+    const [attachmentRemovalStateById, setAttachmentRemovalStateById] =
+        useState({});
     const cardSizingTransitionTimerRef = useRef(null);
 
     const unarchivedLists = useMemo(
@@ -213,6 +248,165 @@ export default function usePlannerApp() {
         [setTasks]
     );
 
+    const updateTaskWith = useCallback(
+        (taskId, updateTask) => {
+            setTasks(currentTasks =>
+                currentTasks.map(task =>
+                    task.id === taskId ? updateTask(task) : task
+                )
+            );
+        },
+        [setTasks]
+    );
+
+    const onBeginAttachmentUploads = useCallback(
+        (taskId, pendingAttachments, notes) => {
+            updateTaskWith(taskId, task =>
+                beginTaskAttachmentUploads(task, pendingAttachments, notes)
+            );
+        },
+        [updateTaskWith]
+    );
+
+    const onResolveAttachmentUpload = useCallback(
+        (taskId, clientId, readyAttachment) => {
+            updateTaskWith(taskId, task =>
+                resolveTaskAttachmentUpload(task, clientId, readyAttachment)
+            );
+        },
+        [updateTaskWith]
+    );
+
+    const onRejectAttachmentUpload = useCallback(
+        (taskId, clientId) => {
+            updateTaskWith(taskId, task =>
+                rejectTaskAttachmentUpload(task, clientId)
+            );
+        },
+        [updateTaskWith]
+    );
+
+    const attachmentUploads = useAttachmentUploads({
+        onReject: onRejectAttachmentUpload,
+        onResolve: onResolveAttachmentUpload,
+    });
+
+    const onPasteTaskAttachments = useCallback(
+        (taskId, files, editorState) => {
+            const uploadEntries = files.map(file => {
+                const pending = createPendingAttachment(
+                    file,
+                    createAttachmentClientId()
+                );
+
+                return { file, pending };
+            });
+            const insertion = insertAttachmentPlaceholders(
+                editorState.text,
+                editorState.selection,
+                uploadEntries.map(entry => entry.pending)
+            );
+
+            onBeginAttachmentUploads(
+                taskId,
+                uploadEntries.map(entry => entry.pending),
+                insertion.text
+            );
+            attachmentUploads.queueUploads(taskId, uploadEntries);
+
+            return insertion;
+        },
+        [attachmentUploads.queueUploads, onBeginAttachmentUploads]
+    );
+
+    const onCancelAttachmentUpload = useCallback(
+        clientId => {
+            attachmentUploads.cancelUpload(clientId);
+        },
+        [attachmentUploads.cancelUpload]
+    );
+
+    const onDismissFailedAttachmentUpload = useCallback(
+        clientId => {
+            attachmentUploads.dismissFailedUpload(clientId);
+        },
+        [attachmentUploads.dismissFailedUpload]
+    );
+
+    const onRemoveTaskAttachment = useCallback(
+        async (taskId, attachment, attachmentIndex = 0) => {
+            if (
+                !attachment?.id ||
+                ['pending', 'removing'].includes(
+                    attachmentRemovalStateById[attachment.id]?.status
+                )
+            ) {
+                return;
+            }
+
+            setAttachmentRemovalStateById(currentState => ({
+                ...currentState,
+                [attachment.id]: { status: 'pending' },
+            }));
+
+            try {
+                const response = await fetch(attachment.url, {
+                    headers: {
+                        [ATTACHMENT_REQUEST_HEADER]:
+                            ATTACHMENT_REQUEST_HEADER_VALUE,
+                    },
+                    method: 'DELETE',
+                });
+
+                if (!response.ok) {
+                    const body = await response.json().catch(() => ({}));
+                    throw new Error(
+                        body.error || 'The attachment could not be removed.'
+                    );
+                }
+
+                updateTaskWith(taskId, task =>
+                    removeReadyTaskAttachment(task, attachment.id)
+                );
+                attachmentUploads.pushDraftMutation({
+                    task_id: taskId,
+                    type: 'remove-markdown',
+                    url: attachment.url,
+                });
+                setAttachmentRemovalStateById(currentState => ({
+                    ...currentState,
+                    [attachment.id]: {
+                        attachment,
+                        attachment_index: attachmentIndex,
+                        status: 'removing',
+                        task_id: taskId,
+                    },
+                }));
+                await waitForInteractionMotion();
+                setAttachmentRemovalStateById(currentState => {
+                    const nextState = { ...currentState };
+                    delete nextState[attachment.id];
+                    return nextState;
+                });
+            } catch (error) {
+                setAttachmentRemovalStateById(currentState => ({
+                    ...currentState,
+                    [attachment.id]: {
+                        error:
+                            error?.message ||
+                            'The attachment could not be removed.',
+                        status: 'error',
+                    },
+                }));
+            }
+        },
+        [
+            attachmentRemovalStateById,
+            attachmentUploads.pushDraftMutation,
+            updateTaskWith,
+        ]
+    );
+
     const onCreateList = useCallback(
         (overrides = {}) => {
             const newListId = Date.now();
@@ -240,7 +434,7 @@ export default function usePlannerApp() {
     );
 
     const onSelectList = useCallback(
-        listId => {
+        (listId, { preserveSidebarState = false } = {}) => {
             setSelectedListId(listId);
             const firstTaskInList =
                 plannerIndexes.tasksByListId.get(listId)?.[0];
@@ -249,7 +443,9 @@ export default function usePlannerApp() {
                 setSelectedTaskId(firstTaskInList.id);
             }
 
-            setIsShowingSidebar(true);
+            if (!preserveSidebarState) {
+                setIsShowingSidebar(true);
+            }
             setIsShowingTrashContents(false);
             setIsShowingListManager(true);
             document.querySelector(`[data-list-id="${listId}"]`)?.focus();
@@ -274,6 +470,7 @@ export default function usePlannerApp() {
             setTasks(currentTasks =>
                 [
                     {
+                        attachments: [],
                         icon: ICONS.TASK_DEFAULT,
                         id: newTaskId,
                         list_id: selectedListId,
@@ -377,25 +574,6 @@ export default function usePlannerApp() {
         [currentListIndex, onSelectList, unarchivedLists]
     );
 
-    const selectByRelativeIndex = useCallback(
-        (relativeIndex, isVertical = false) => {
-            const elementWithFocus = document.activeElement;
-            const isListCard = !!elementWithFocus.dataset.listId;
-            const selectionFunc = isListCard
-                ? selectListByRelativeIndex
-                : selectTaskByRelativeIndex;
-            const offset =
-                isVertical && isListCard
-                    ? relativeIndex >= 0
-                        ? 3
-                        : -3
-                    : relativeIndex;
-
-            selectionFunc(offset);
-        },
-        [selectListByRelativeIndex, selectTaskByRelativeIndex]
-    );
-
     const onImmediatelySelectTask = useCallback(
         taskId => {
             onSelectTask(taskId);
@@ -437,18 +615,17 @@ export default function usePlannerApp() {
         ]
     );
 
-    const onChangeIsShowingTrashContents = useCallback(() => {
+    const onShowTrashContents = useCallback(() => {
         if (!isShowingSidebar) {
             setIsShowingSidebar(true);
         }
         if (!isShowingListManager) {
             setIsShowingListManager(true);
         }
-        setIsShowingTrashContents(!isShowingTrashContents);
+        setIsShowingTrashContents(true);
     }, [
         isShowingListManager,
         isShowingSidebar,
-        isShowingTrashContents,
         setIsShowingListManager,
         setIsShowingSidebar,
         setIsShowingTrashContents,
@@ -486,6 +663,22 @@ export default function usePlannerApp() {
             }, INTERACTION_ANIMATION_DURATION);
         },
         [setRelativeCardSizingEnabled]
+    );
+
+    const onChangeFocusAssistEnabled = useCallback(
+        nextFocusAssistEnabled => {
+            setFocusAssistEnabled(Boolean(nextFocusAssistEnabled));
+        },
+        [setFocusAssistEnabled]
+    );
+
+    const onChangeHighlightIncompleteSentencesEnabled = useCallback(
+        nextHighlightIncompleteSentencesEnabled => {
+            setHighlightIncompleteSentencesEnabled(
+                Boolean(nextHighlightIncompleteSentencesEnabled)
+            );
+        },
+        [setHighlightIncompleteSentencesEnabled]
     );
 
     const onChangeTaskPosition = useCallback(
@@ -663,19 +856,22 @@ export default function usePlannerApp() {
     useKeyboardShortcut(
         keyboardShortcutNamespace,
         'arrowUp',
-        withPreventDefault(() => selectByRelativeIndex(-1, true))
+        withPreventDefault(() => selectTaskByRelativeIndex(-1))
     );
     useKeyboardShortcut(
         keyboardShortcutNamespace,
         'arrowDown',
-        withPreventDefault(() => selectByRelativeIndex(1, true))
+        withPreventDefault(() => selectTaskByRelativeIndex(1))
     );
 
     const appActions = useMemo(
         () => ({
+            onBeginAttachmentUploads,
+            onCancelAttachmentUpload,
             deleteTask,
+            onChangeFocusAssistEnabled,
+            onChangeHighlightIncompleteSentencesEnabled,
             onChangeIsShowingListManager,
-            onChangeIsShowingTrashContents,
             onChangeIsSidebarOpen,
             onChangeRelativeCardSizingEnabled,
             onChangeTaskPosition,
@@ -683,16 +879,25 @@ export default function usePlannerApp() {
             onChangeTimelineHoursPerScreen,
             onCreateList,
             onCreateTask,
+            onDismissFailedAttachmentUpload,
             onImmediatelySelectTask,
             onSelectList,
+            onShowTrashContents,
+            onPasteTaskAttachments,
+            onRejectAttachmentUpload,
+            onRemoveTaskAttachment,
+            onResolveAttachmentUpload,
             onTransitionToTask,
             onUpdateList,
             onUpdateTask,
         }),
         [
+            onBeginAttachmentUploads,
+            onCancelAttachmentUpload,
             deleteTask,
+            onChangeFocusAssistEnabled,
+            onChangeHighlightIncompleteSentencesEnabled,
             onChangeIsShowingListManager,
-            onChangeIsShowingTrashContents,
             onChangeIsSidebarOpen,
             onChangeRelativeCardSizingEnabled,
             onChangeTaskPosition,
@@ -700,8 +905,14 @@ export default function usePlannerApp() {
             onChangeTimelineHoursPerScreen,
             onCreateList,
             onCreateTask,
+            onDismissFailedAttachmentUpload,
             onImmediatelySelectTask,
             onSelectList,
+            onShowTrashContents,
+            onPasteTaskAttachments,
+            onRejectAttachmentUpload,
+            onRemoveTaskAttachment,
+            onResolveAttachmentUpload,
             onTransitionToTask,
             onUpdateList,
             onUpdateTask,
@@ -710,7 +921,14 @@ export default function usePlannerApp() {
 
     const appData = useMemo(
         () => ({
+            attachmentDraftMutations: attachmentUploads.draftMutations,
+            attachmentRemovalStateById,
+            attachmentUploadProgressByClientId:
+                attachmentUploads.progressByClientId,
             effectiveRelativeCardSizingEnabled,
+            focusAssistEnabled,
+            failedAttachmentUploads: attachmentUploads.failedUploads,
+            highlightIncompleteSentencesEnabled,
             isCardSizingTransitioning,
             isCreatingList,
             isCreatingTask,
@@ -729,7 +947,13 @@ export default function usePlannerApp() {
             timelineHoursPerScreen: normalizedTimelineHoursPerScreen,
         }),
         [
+            attachmentRemovalStateById,
+            attachmentUploads.draftMutations,
+            attachmentUploads.failedUploads,
+            attachmentUploads.progressByClientId,
             effectiveRelativeCardSizingEnabled,
+            focusAssistEnabled,
+            highlightIncompleteSentencesEnabled,
             isCardSizingTransitioning,
             isCreatingList,
             isCreatingTask,
@@ -757,9 +981,9 @@ export default function usePlannerApp() {
               timeline: SIDEBAR_DEFAULT_WIDTH,
           }
         : {
-              sidebar: `calc(${GRID_UNIT} * 2)`,
-              listManager: `calc((100vw - ${SIDEBAR_EXTENDED_WIDTH}) - ${GRID_UNIT} * 2)`,
-              taskDetails: `calc((100vw - ${SIDEBAR_EXTENDED_WIDTH}) - ${GRID_UNIT} * 2)`,
+              sidebar: 'var(--spacing-icon-slot)',
+              listManager: `calc((100vw - ${SIDEBAR_EXTENDED_WIDTH}) - var(--spacing-icon-slot))`,
+              taskDetails: `calc((100vw - ${SIDEBAR_EXTENDED_WIDTH}) - var(--spacing-icon-slot))`,
               timeline: SIDEBAR_EXTENDED_WIDTH,
           };
 

@@ -2,6 +2,8 @@ import {
     ACCENT_SWATCHES,
     buildThemeStyle,
     DEFAULT_ACCENT_KEY,
+    DEFAULT_FOCUS_ASSIST_ENABLED,
+    DEFAULT_HIGHLIGHT_INCOMPLETE_SENTENCES_ENABLED,
     DEFAULT_RELATIVE_CARD_SIZING_ENABLED,
     getAccentKey,
     getListAccentKey,
@@ -56,6 +58,7 @@ describe('Tailwind-backed theme tokens', () => {
     it('uses duration_minutes as the canonical task duration', () => {
         expect(INITIAL_TASKS.length).toBeGreaterThan(0);
         INITIAL_TASKS.forEach(task => {
+            expect(task.attachments).toEqual([]);
             expect(task.duration_minutes).toBe(30);
             expect(task).not.toHaveProperty('scheduled_minutes');
         });
@@ -63,6 +66,11 @@ describe('Tailwind-backed theme tokens', () => {
 
     it('enables relative card sizing by default', () => {
         expect(DEFAULT_RELATIVE_CARD_SIZING_ENABLED).toBe(true);
+    });
+
+    it('enables sentence-aware editing preferences by default', () => {
+        expect(DEFAULT_FOCUS_ASSIST_ENABLED).toBe(true);
+        expect(DEFAULT_HIGHLIGHT_INCOMPLETE_SENTENCES_ENABLED).toBe(true);
     });
 
     it('cycles lighting modes in menu order', () => {

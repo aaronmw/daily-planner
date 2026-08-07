@@ -10,4 +10,10 @@ const config = {
     testMatch: ['<rootDir>/src/**/__tests__/**/*.test.js'],
 };
 
-module.exports = createJestConfig(config);
+module.exports = async () => ({
+    ...(await createJestConfig(config)()),
+    transformIgnorePatterns: [
+        'node_modules/(?!(mdast-util-.*|unist-util-.*|micromark.*|decode-named-character-reference|character-entities.*|devlop|vfile.*)/)',
+        '^.+\\.module\\.(css|sass|scss)$',
+    ],
+});

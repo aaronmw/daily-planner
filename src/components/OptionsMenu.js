@@ -6,6 +6,7 @@ import React, {
     useState,
 } from 'react';
 import cx from '../utils/cx';
+import { IconButton } from './atoms/Button';
 import {
     COPY,
     ICONS,
@@ -125,9 +126,33 @@ const OptionsMenuToggle = ({ isChecked, isOpen, label, onChange }) => (
     </button>
 );
 
+const OptionsMenuAction = ({ icon, isCurrent, isOpen, label, onClick }) => (
+    <button
+        type="button"
+        aria-current={isCurrent ? 'page' : undefined}
+        className={cx(
+            'planner-options-menu-item',
+            icon && 'planner-options-menu-item-has-leading-icon'
+        )}
+        onClick={onClick}
+        tabIndex={isOpen ? 0 : -1}
+    >
+        {icon ? (
+            <span
+                className="planner-options-menu-item-icon-slot"
+                aria-hidden="true"
+            >
+                {icon}
+            </span>
+        ) : null}
+        <span className="planner-options-menu-item-label">{label}</span>
+    </button>
+);
+
 const OptionsMenu = ({ appActions, appData }) => {
     const [isOpen, setIsOpen] = useState(false);
     const menuId = useId();
+    const editingGroupLabelId = `${menuId}-editing-label`;
     const lightingModeLabelId = `${menuId}-lighting-mode-label`;
     const timelineGroupLabelId = `${menuId}-timeline-label`;
     const zoomInputId = `${menuId}-timeline-zoom`;
@@ -137,12 +162,21 @@ const OptionsMenu = ({ appActions, appData }) => {
     const triggerRef = useRef(null);
 
     const {
+        onChangeFocusAssistEnabled,
+        onChangeHighlightIncompleteSentencesEnabled,
         onChangeRelativeCardSizingEnabled,
         onChangeThemeMode,
         onChangeTimelineHoursPerScreen,
+        onShowTrashContents,
     } = appActions;
-    const { relativeCardSizingEnabled, themeMode, timelineHoursPerScreen } =
-        appData;
+    const {
+        focusAssistEnabled,
+        highlightIncompleteSentencesEnabled,
+        isShowingTrashContents,
+        relativeCardSizingEnabled,
+        themeMode,
+        timelineHoursPerScreen,
+    } = appData;
     const hasCustomLightingMode = themeMode !== THEME_MODES[0];
 
     useLayoutEffect(() => {
@@ -242,10 +276,15 @@ const OptionsMenu = ({ appActions, appData }) => {
         selectThemeMode(THEME_MODES[nextModeIndex]);
     };
 
+    const showDeletedItems = () => {
+        onShowTrashContents();
+        setIsOpen(false);
+        requestAnimationFrame(() => triggerRef.current?.focus());
+    };
+
     return (
         <div className="planner-options-menu-control" ref={controlRef}>
-            <button
-                type="button"
+            <IconButton
                 aria-controls={menuId}
                 aria-expanded={isOpen}
                 aria-haspopup="dialog"
@@ -259,13 +298,8 @@ const OptionsMenu = ({ appActions, appData }) => {
                 onClick={() => setIsOpen(current => !current)}
                 ref={triggerRef}
             >
-                <span
-                    className="planner-options-menu-icon-slot"
-                    aria-hidden="true"
-                >
-                    {ICONS.OPTIONS}
-                </span>
-            </button>
+                {ICONS.OPTIONS}
+            </IconButton>
 
             <dialog
                 id={menuId}
@@ -346,6 +380,39 @@ const OptionsMenu = ({ appActions, appData }) => {
                             onChange={onChangeRelativeCardSizingEnabled}
                         />
                     </OptionsMenuGroup>
+                    <OptionsMenuGroup
+                        label={COPY.LABEL_FOR_EDITING_SETTINGS}
+                        labelId={editingGroupLabelId}
+                        role="group"
+                    >
+                        <OptionsMenuToggle
+                            isChecked={focusAssistEnabled}
+                            isOpen={isOpen}
+                            label={COPY.LABEL_FOR_FOCUS_ASSIST}
+                            onChange={onChangeFocusAssistEnabled}
+                        />
+                        <OptionsMenuToggle
+                            isChecked={highlightIncompleteSentencesEnabled}
+                            isOpen={isOpen}
+                            label={COPY.LABEL_FOR_HIGHLIGHT_INCOMPLETE}
+                            onChange={
+                                onChangeHighlightIncompleteSentencesEnabled
+                            }
+                        />
+                    </OptionsMenuGroup>
+                    <div
+                        aria-label={COPY.LABEL_FOR_DELETED_ITEMS}
+                        className="planner-options-menu-group"
+                        role="group"
+                    >
+                        <OptionsMenuAction
+                            icon={ICONS.END_ZONE}
+                            isCurrent={isShowingTrashContents}
+                            isOpen={isOpen}
+                            label={COPY.LABEL_FOR_DELETED_ITEMS}
+                            onClick={showDeletedItems}
+                        />
+                    </div>
                 </div>
             </dialog>
         </div>

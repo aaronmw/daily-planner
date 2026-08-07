@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import ReactDOM from 'react-dom';
 import Box from './atoms/Box';
-import { ToggleButton } from './atoms/Button';
+import { IconButton } from './atoms/Button';
 import FlexBox from './atoms/FlexBox';
-import { ACCENT_SWATCHES, ICONS } from './atoms/tokens';
+import { ACCENT_SWATCHES, COPY, ICONS } from './atoms/tokens';
 import cx from '../utils/cx';
 
 const Container = ({ className, ...otherProps }) => (
@@ -76,9 +76,14 @@ const ColorPicker = ({ accentKey, onPickColor, ...otherProps }) => {
 
     return (
         <Container {...otherProps}>
-            <ToggleButton isInverted={!isPickingColor} onClick={showPicker}>
+            <IconButton
+                aria-label={COPY.LABEL_FOR_LIST_COLOR}
+                isInverted={isPickingColor}
+                title={COPY.LABEL_FOR_LIST_COLOR}
+                onClick={showPicker}
+            >
                 {ICONS.COLOR_PICKER}
-            </ToggleButton>
+            </IconButton>
             {isPickingColor && (
                 <>
                     <ColorPaletteContainer portalRoot={portalRoot}>

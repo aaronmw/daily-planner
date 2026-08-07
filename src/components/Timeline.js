@@ -180,7 +180,13 @@ const Timeline = ({
         }
 
         const startedAt = performance.now();
+        let animationFrameId = null;
+        let isCancelled = false;
         const animateZoom = now => {
+            if (isCancelled) {
+                return;
+            }
+
             const progress = Math.min(
                 1,
                 (now - startedAt) / INTERACTION_ANIMATION_DURATION
@@ -197,18 +203,24 @@ const Timeline = ({
             updateVisibleRange();
 
             if (progress < 1) {
-                zoomAnimationFrameRef.current =
-                    requestAnimationFrame(animateZoom);
+                animationFrameId = requestAnimationFrame(animateZoom);
+                zoomAnimationFrameRef.current = animationFrameId;
             } else {
                 zoomAnimationFrameRef.current = null;
             }
         };
 
-        zoomAnimationFrameRef.current = requestAnimationFrame(animateZoom);
+        animationFrameId = requestAnimationFrame(animateZoom);
+        zoomAnimationFrameRef.current = animationFrameId;
 
         return () => {
-            if (zoomAnimationFrameRef.current !== null) {
-                cancelAnimationFrame(zoomAnimationFrameRef.current);
+            isCancelled = true;
+
+            if (animationFrameId !== null) {
+                cancelAnimationFrame(animationFrameId);
+            }
+
+            if (zoomAnimationFrameRef.current === animationFrameId) {
                 zoomAnimationFrameRef.current = null;
             }
         };
