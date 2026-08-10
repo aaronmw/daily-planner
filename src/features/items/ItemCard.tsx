@@ -3,6 +3,7 @@ import {
     type DragEvent,
     useLayoutEffect,
     useRef,
+    useState,
 } from 'react';
 import type { ItemId } from '../../core/domain/ids';
 import { usePlannerCommands } from '../../core/application/plannerContext';
@@ -14,6 +15,9 @@ import { useListCapability } from '../collaboration/useListCapability';
 
 type ItemCardStyle = CSSProperties &
     Record<`--planner-${string}`, string | number>;
+
+const MINIMUM_LABEL_FONT_SIZE = 6.25;
+const MAXIMUM_LABEL_FONT_SIZE = 16;
 
 interface ItemCardProps {
     context?: 'collection' | 'timeline';
@@ -39,11 +43,54 @@ export function ItemCard({
         state => state.preferences.relativeCardSizingEnabled
     );
     const cardRef = useRef<HTMLButtonElement>(null);
+    const labelRef = useRef<HTMLSpanElement>(null);
+    const [labelFontSize, setLabelFontSize] = useState(MAXIMUM_LABEL_FONT_SIZE);
     const canWrite = useListCapability(list?.id ?? null, 'write');
 
     useLayoutEffect(() => {
         if (selected) cardRef.current?.focus({ preventScroll: true });
     }, [selected]);
+
+    useLayoutEffect(() => {
+        const element = labelRef.current;
+        if (!element) return;
+        const shouldFit = context === 'timeline' || relativeSizing;
+        const fit = () => {
+            if (!shouldFit) {
+                element.style.fontSize = `${MAXIMUM_LABEL_FONT_SIZE}px`;
+                setLabelFontSize(MAXIMUM_LABEL_FONT_SIZE);
+                return;
+            }
+
+            let low = MINIMUM_LABEL_FONT_SIZE;
+            let high = MAXIMUM_LABEL_FONT_SIZE;
+            for (let step = 0; step < 7; step += 1) {
+                const candidate = (low + high) / 2;
+                element.style.fontSize = `${candidate}px`;
+                if (
+                    element.scrollHeight <= element.clientHeight &&
+                    element.scrollWidth <= element.clientWidth
+                ) {
+                    low = candidate;
+                } else {
+                    high = candidate;
+                }
+            }
+
+            const nextFontSize = Math.max(
+                MINIMUM_LABEL_FONT_SIZE,
+                Math.floor(low * 10) / 10
+            );
+            element.style.fontSize = `${nextFontSize}px`;
+            setLabelFontSize(current =>
+                current === nextFontSize ? current : nextFontSize
+            );
+        };
+        const observer = new ResizeObserver(fit);
+        observer.observe(element);
+        fit();
+        return () => observer.disconnect();
+    }, [context, item?.label, relativeSizing]);
 
     if (!item || !list) return null;
 
@@ -94,7 +141,11 @@ export function ItemCard({
                 labelPrefix="Created by"
                 listId={item.listId}
             />
-            <span className="planner-item-card-label min-w-0 flex-1 whitespace-pre-wrap font-medium leading-[1.45]">
+            <span
+                className="planner-item-card-label min-w-0 flex-1 whitespace-pre-wrap font-medium leading-[1.45]"
+                ref={labelRef}
+                style={{ fontSize: labelFontSize }}
+            >
                 <span className="planner-item-card-label-text">
                     {item.label || 'Empty'}
                 </span>

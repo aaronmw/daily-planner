@@ -202,15 +202,15 @@ export function TimelineColumn({
             >
                 {ticks.map(minute => (
                     <div
-                        className="absolute left-0 right-0 flex items-center text-planner-text-faded"
+                        className="absolute left-0 right-0 h-0 text-planner-text-faded"
                         data-timeline-minute={minute}
                         key={minute}
                         style={{ top: minute * pixelsPerMinute }}
                     >
-                        <time className="w-[72px] shrink-0 px-2 text-right text-[0.85rem]">
+                        <time className="absolute left-0 top-0 w-[72px] -translate-y-1/2 px-2 text-right text-[0.85rem]">
                             {minute % 60 === 0 ? formatMinute(minute) : ''}
                         </time>
-                        <span className="h-[var(--planner-stroke-width)] flex-1 bg-planner-border opacity-30" />
+                        <span className="absolute left-[72px] right-0 top-0 h-[var(--planner-stroke-width)] bg-planner-border opacity-30" />
                     </div>
                 ))}
                 {visibleItems.map(item => (

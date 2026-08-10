@@ -21,7 +21,7 @@ import '../../styles/index.css';
 const noop = () => undefined;
 
 describe('planner collection scale in a real browser', () => {
-    it('contains long labels inside duration-sized item cards', () => {
+    it('fits long labels inside duration-sized item cards', async () => {
         const list = createPlannerList({ label: 'Overflow list' });
         const item = createPlannerItem({
             label: 'Press [UP] or [DOWN] to select the previous and next unscheduled items in the active list',
@@ -51,8 +51,8 @@ describe('planner collection scale in a real browser', () => {
             updateItemWith: vi.fn(),
         } satisfies PlannerCommands;
         const cardContainerStyle = {
-            '--planner-minute-height': '1.725px',
-            'width': 370,
+            '--planner-minute-height': '1.15px',
+            'width': 260,
         } as CSSProperties;
 
         const { container } = render(
@@ -77,6 +77,62 @@ describe('planner collection scale in a real browser', () => {
         const labelBounds = label.getBoundingClientRect();
         expect(labelBounds.top).toBeGreaterThanOrEqual(cardBounds.top);
         expect(labelBounds.bottom).toBeLessThanOrEqual(cardBounds.bottom);
+        await waitFor(() => {
+            expect(label.scrollHeight).toBeLessThanOrEqual(
+                label.clientHeight + 1
+            );
+        });
+    });
+
+    it('keeps timeline lines evenly spaced at compact scales', () => {
+        const list = createPlannerList({ label: 'Timeline grid list' });
+        const store = createPlannerStore();
+        store.getState().applySnapshot({ lists: [list], items: [] });
+        const commands = {
+            archiveList: vi.fn(),
+            archiveItem: vi.fn(),
+            cancelLabelEdit: noop,
+            completeLabelEdit: noop,
+            createList: vi.fn(),
+            createItem: vi.fn(),
+            deleteList: vi.fn(),
+            deleteItem: vi.fn(),
+            fulfillLabelEdit: noop,
+            hydrate: vi.fn(),
+            moveItem: vi.fn(),
+            restoreList: vi.fn(),
+            restoreItem: vi.fn(),
+            selectList: vi.fn(),
+            selectItem: vi.fn(),
+            updateList: vi.fn(),
+            updatePreferences: vi.fn(),
+            updateItem: vi.fn(),
+            updateItemWith: vi.fn(),
+        } satisfies PlannerCommands;
+        const { container } = render(
+            <PlannerStoreProvider store={store}>
+                <CollaborationProvider>
+                    <PlannerCommandsProvider commands={commands}>
+                        <div style={{ height: 640, width: 320 }}>
+                            <TimelineColumn minuteHeight={1.15} />
+                        </div>
+                    </PlannerCommandsProvider>
+                </CollaborationProvider>
+            </PlannerStoreProvider>
+        );
+        const lineCenter = (minute: number) => {
+            const tick = container.querySelector<HTMLElement>(
+                `[data-timeline-minute="${minute}"]`
+            );
+            const line = tick?.querySelector<HTMLElement>('span');
+            if (!line) throw new Error(`Timeline line ${minute} is missing.`);
+            const bounds = line.getBoundingClientRect();
+            return (bounds.top + bounds.bottom) / 2;
+        };
+
+        const firstGap = lineCenter(210) - lineCenter(180);
+        const secondGap = lineCenter(240) - lineCenter(210);
+        expect(firstGap).toBeCloseTo(secondGap, 1);
     });
 
     it('keeps 3,000 lists and 10,000 items out of the DOM', async () => {
