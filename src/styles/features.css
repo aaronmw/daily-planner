@@ -124,6 +124,10 @@
         transform var(--planner-motion-fast) var(--planner-motion-ease);
 }
 
+.planner-item-card[draggable='true'] {
+    -webkit-user-drag: element;
+}
+
 .planner-item-card::before {
     background-color: var(--planner-contrast);
     border-radius: calc(var(--radius-planner) - 1px);
