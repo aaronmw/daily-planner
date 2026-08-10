@@ -7,11 +7,8 @@ const mapSelectedLines = ({ text, selectionStart, selectionEnd, modifier }) => {
         selectionEnd,
     });
 
-    const {
-        linesAfterSelection,
-        linesBeforeSelection,
-        linesWithinSelection,
-    } = selectionData;
+    const { linesAfterSelection, linesBeforeSelection, linesWithinSelection } =
+        selectionData;
 
     const modifiedSelectedLines = linesWithinSelection.map((line, index) => {
         return modifier({

@@ -13,7 +13,8 @@ const useElementRect = elementRef => {
         }
 
         const updateRect = entry => {
-            const nextRect = entry?.contentRect || element.getBoundingClientRect();
+            const nextRect =
+                entry?.contentRect || element.getBoundingClientRect();
             setRect({ height: nextRect.height, width: nextRect.width });
         };
         const observer = new ResizeObserver(entries => updateRect(entries[0]));

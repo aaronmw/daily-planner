@@ -1,0 +1,24 @@
+{
+    "productName": "Daily Planner Dev",
+    "identifier": "com.aaronwright.dailyplanner.dev",
+    "app": {
+        "windows": [
+            {
+                "title": "Daily Planner Dev",
+                "width": 1440,
+                "height": 960,
+                "minWidth": 960,
+                "minHeight": 640,
+                "resizable": true,
+                "fullscreen": false
+            }
+        ]
+    },
+    "plugins": {
+        "deep-link": {
+            "desktop": {
+                "schemes": ["daily-planner-dev"]
+            }
+        }
+    }
+}

@@ -1,16 +1,18 @@
 import React from 'react';
+import CollaborationAccountDialog from './CollaborationAccountDialog';
+import CollaborationConflictResolver from './CollaborationConflictResolver';
 import { PrimaryAppColumn } from './AppColumn';
-import { ToggleButton } from './atoms/Button';
+import CollapsibleColumn from './CollapsibleColumn';
 import FlexBox from './atoms/FlexBox';
-import { COPY, ICONS, TIMELINE_FROM, TIMELINE_TO } from './atoms/tokens';
+import { COPY, TIMELINE_FROM, TIMELINE_TO } from './atoms/tokens';
 import Transition from './atoms/Transition';
 import ListManager from './ListManager';
 import OptionsMenu from './OptionsMenu';
+import ShareAccessDialog from './ShareAccessDialog';
 import Sidebar from './Sidebar';
 import TaskDetails from './TaskDetails';
 import TaskList from './TaskList';
 import Timeline from './Timeline';
-import ToolBar from './ToolBar';
 import Trash from './Trash';
 import TrashedLists from './TrashedLists';
 import TrashedTasks from './TrashedTasks';
@@ -22,14 +24,12 @@ const PlannerLayout = ({ planner }) => {
         appThemeStyle,
         columnWidths,
         isTransitioning,
-        onChangeIsShowingListManager,
         unarchivedLists,
     } = planner;
 
     const {
         effectiveRelativeCardSizingEnabled,
         isCardSizingTransitioning,
-        isShowingListManager,
         isShowingTrashContents,
         selectedTaskId,
         theme,
@@ -43,8 +43,101 @@ const PlannerLayout = ({ planner }) => {
             className="planner-root min-h-dvh bg-planner-background text-planner-text font-planner"
             style={appThemeStyle}
         >
+            <CollaborationAccountDialog
+                appActions={appActions}
+                appData={appData}
+            />
+            <CollaborationConflictResolver
+                conflicts={appData.collaboration?.conflicts || []}
+                onDiscardConflict={appActions.onDiscardConflict}
+                onResolveFieldConflict={appActions.onResolveFieldConflict}
+                onSaveConflictAsPrivateCopy={
+                    appActions.onSaveConflictAsPrivateCopy
+                }
+            />
             <Trash appActions={appActions} appData={appData} />
-            <FlexBox align="stretch" style={{ height: '100dvh' }}>
+            <FlexBox
+                align="stretch"
+                className="planner-column-layout"
+                style={{ height: '100dvh' }}
+            >
+                <CollapsibleColumn
+                    canCollapse={appData.canCollapseColumns}
+                    className="planner-timeline-column"
+                    collapseLabel={COPY.LABEL_FOR_COLLAPSE_TIMELINE}
+                    expandLabel={COPY.LABEL_FOR_EXPAND_TIMELINE}
+                    expandedMinWidth="22vw"
+                    isOpen={appData.isTimelineOpen}
+                    onChangeIsOpen={appActions.onChangeIsTimelineOpen}
+                    style={{
+                        width: columnWidths.timeline,
+                    }}
+                >
+                    {toggleButton => (
+                        <Timeline
+                            appActions={appActions}
+                            appData={appData}
+                            headerActions={toggleButton}
+                            selectedTaskId={selectedTaskId}
+                            from={TIMELINE_FROM}
+                            to={TIMELINE_TO}
+                        />
+                    )}
+                </CollapsibleColumn>
+
+                <CollapsibleColumn
+                    canCollapse={appData.canCollapseColumns}
+                    className="planner-list-column"
+                    collapseLabel={COPY.LABEL_FOR_COLLAPSE_LIST_COLUMN}
+                    expandLabel={COPY.LABEL_FOR_EXPAND_LIST_COLUMN}
+                    expandedMinWidth="28vw"
+                    isOpen={appData.isListColumnOpen}
+                    onChangeIsOpen={appActions.onChangeIsListColumnOpen}
+                    style={{
+                        width: columnWidths.listManager,
+                    }}
+                >
+                    {toggleButton => (
+                        <PrimaryAppColumn
+                            headerActions={toggleButton}
+                            label={COPY.LABEL_FOR_LIST_MANAGER}
+                        >
+                            {isShowingTrashContents ? (
+                                <TrashedLists
+                                    appActions={appActions}
+                                    appData={appData}
+                                />
+                            ) : (
+                                <ListManager
+                                    collaboration={appData.collaboration || {}}
+                                    labelEditSession={appData.labelEditSession}
+                                    lists={unarchivedLists}
+                                    onCancelLabelEdit={
+                                        appActions.onCancelLabelEdit
+                                    }
+                                    onCompleteLabelEdit={
+                                        appActions.onCompleteLabelEdit
+                                    }
+                                    onCreateList={appActions.onCreateList}
+                                    onFulfillLabelEdit={
+                                        appActions.onFulfillLabelEdit
+                                    }
+                                    onSelectList={appActions.onSelectList}
+                                    onUpdateList={appActions.onUpdateList}
+                                    onUpdateTask={appActions.onUpdateTask}
+                                    selectedListId={appData.selectedListId}
+                                    tasksByListId={
+                                        appData.plannerIndexes.tasksByListId
+                                    }
+                                    themeByListId={
+                                        appData.plannerIndexes.themeByListId
+                                    }
+                                />
+                            )}
+                        </PrimaryAppColumn>
+                    )}
+                </CollapsibleColumn>
+
                 <Sidebar
                     appActions={appActions}
                     appData={appData}
@@ -62,89 +155,45 @@ const PlannerLayout = ({ planner }) => {
                     )}
                 </Sidebar>
 
-                <PrimaryAppColumn
-                    style={{
-                        width: isShowingListManager
-                            ? columnWidths.listManager
-                            : columnWidths.taskDetails,
-                    }}
+                <CollapsibleColumn
+                    canCollapse={appData.canCollapseColumns}
+                    className="planner-task-details-column"
+                    collapseLabel={COPY.LABEL_FOR_COLLAPSE_TASK_DETAILS}
+                    expandLabel={COPY.LABEL_FOR_EXPAND_TASK_DETAILS}
+                    expandedMinWidth="28vw"
+                    isOpen={appData.isTaskDetailsOpen}
+                    onChangeIsOpen={appActions.onChangeIsTaskDetailsOpen}
+                    style={{ width: columnWidths.taskDetails }}
                 >
-                    <ToolBar>
-                        <ToggleButton
-                            isActive={isShowingListManager}
-                            title={COPY.TIPS.TOGGLE_LIST_MANAGER}
-                            onClick={() =>
-                                onChangeIsShowingListManager(
-                                    !isShowingListManager
-                                )
+                    {toggleButton => (
+                        <PrimaryAppColumn
+                            headerActions={
+                                <>
+                                    <ShareAccessDialog
+                                        appActions={appActions}
+                                        appData={appData}
+                                    />
+                                    <OptionsMenu
+                                        appActions={appActions}
+                                        appData={appData}
+                                    />
+                                    {toggleButton}
+                                </>
                             }
+                            label={COPY.LABEL_FOR_TASK_DETAILS}
                         >
-                            {isShowingListManager ? (
-                                <FlexBox spacing={0.25}>
-                                    {ICONS.TASK_DETAILS}
-                                    <span>{COPY.LABEL_FOR_TASK_DETAILS}</span>
-                                </FlexBox>
-                            ) : (
-                                <FlexBox spacing={0.25}>
-                                    {ICONS.LIST_MANAGER}
-                                    <span>{COPY.LABEL_FOR_LIST_MANAGER}</span>
-                                </FlexBox>
-                            )}
-                        </ToggleButton>
-                    </ToolBar>
-                    <Transition
-                        isTransitioning={isTransitioning}
-                        style={{ height: '100%' }}
-                    >
-                        {isShowingTrashContents ? (
-                            <TrashedLists
-                                appActions={appActions}
-                                appData={appData}
-                            />
-                        ) : isShowingListManager ? (
-                            <ListManager
-                                isCreatingList={appData.isCreatingList}
-                                lists={unarchivedLists}
-                                onChangeIsShowingListManager={
-                                    onChangeIsShowingListManager
-                                }
-                                onCreateList={appActions.onCreateList}
-                                onSelectList={appActions.onSelectList}
-                                onUpdateList={appActions.onUpdateList}
-                                onUpdateTask={appActions.onUpdateTask}
-                                selectedListId={appData.selectedListId}
-                                tasksByListId={
-                                    appData.plannerIndexes.tasksByListId
-                                }
-                                themeByListId={
-                                    appData.plannerIndexes.themeByListId
-                                }
-                            />
-                        ) : (
-                            <TaskDetails
-                                appActions={appActions}
-                                appData={appData}
-                            />
-                        )}
-                    </Transition>
-                </PrimaryAppColumn>
-
-                <Timeline
-                    appActions={appActions}
-                    appData={appData}
-                    headerActions={
-                        <OptionsMenu
-                            appActions={appActions}
-                            appData={appData}
-                        />
-                    }
-                    selectedTaskId={selectedTaskId}
-                    from={TIMELINE_FROM}
-                    style={{
-                        width: columnWidths.timeline,
-                    }}
-                    to={TIMELINE_TO}
-                />
+                            <Transition
+                                isTransitioning={isTransitioning}
+                                style={{ height: '100%' }}
+                            >
+                                <TaskDetails
+                                    appActions={appActions}
+                                    appData={appData}
+                                />
+                            </Transition>
+                        </PrimaryAppColumn>
+                    )}
+                </CollapsibleColumn>
             </FlexBox>
         </main>
     );

@@ -1,7 +1,6 @@
 import React, {
     memo,
     useCallback,
-    useEffect,
     useLayoutEffect,
     useMemo,
     useRef,
@@ -114,6 +113,7 @@ const EditableText = ({
     canvasStyles = DEFAULT_CANVAS_STYLES,
     doubleClickToEdit = false,
     draftValue,
+    editRequest = null,
     focusAssistEnabled = false,
     highlightIncompleteSentencesEnabled = false,
     isEditable = true,
@@ -121,22 +121,24 @@ const EditableText = ({
     mode = 'compact',
     placeholder = 'Empty',
     render = defaultRender,
-    startsEditing = false,
     tracerColor = null,
     value = '',
+    onCancel = noop,
     onDraftValueChange = noop,
+    onEditRequestFulfilled = noop,
     onPasteFiles = null,
     onSave = noop,
     ...otherProps
 }) => {
-    const [isEditing, setIsEditing] = useState(startsEditing);
-    const [bufferedValue, setBufferedValue] = useState(
-        startsEditing ? value : ''
-    );
+    const [isEditing, setIsEditing] = useState(false);
+    const [bufferedValue, setBufferedValue] = useState('');
     const [selection, setSelection] = useState(DEFAULT_SELECTION);
     const inputRef = useRef(null);
     const overlayRef = useRef(null);
     const composingRef = useRef(false);
+    const activeEditRequestIdRef = useRef(null);
+    const fulfilledEditRequestIdRef = useRef(null);
+    const pendingFocusRef = useRef(null);
     const pendingSelectionRef = useRef(null);
     const shouldSaveOnBlurRef = useRef(true);
     const hasControlledDraft = draftValue !== undefined;
@@ -218,10 +220,33 @@ const EditableText = ({
         [applyTextAndSelection, editingValue]
     );
 
-    useEffect(() => {
-        const textarea = inputRef.current;
+    useLayoutEffect(() => {
+        const requestId = editRequest?.id;
 
-        if (!isEditing || !textarea) {
+        if (
+            !isEditable ||
+            requestId === undefined ||
+            requestId === null ||
+            fulfilledEditRequestIdRef.current === requestId
+        ) {
+            return;
+        }
+
+        shouldSaveOnBlurRef.current = true;
+        activeEditRequestIdRef.current = requestId;
+        pendingFocusRef.current = {
+            requestId,
+            selectAll: editRequest.selectAll !== false,
+        };
+        setEditingValue(value);
+        setIsEditing(true);
+    }, [editRequest, isEditable, setEditingValue, value]);
+
+    useLayoutEffect(() => {
+        const textarea = inputRef.current;
+        const pendingFocus = pendingFocusRef.current;
+
+        if (!isEditing || !textarea || !pendingFocus) {
             return;
         }
 
@@ -229,10 +254,23 @@ const EditableText = ({
             resizeTextarea(textarea);
         }
 
-        textarea.select();
-        textarea.focus();
+        textarea.focus({ preventScroll: true });
+
+        if (pendingFocus.selectAll) {
+            textarea.select();
+        }
+
         setSelection(textareaSelection(textarea));
-    }, [isEditing, isProse]);
+        pendingFocusRef.current = null;
+
+        if (
+            pendingFocus.requestId !== null &&
+            fulfilledEditRequestIdRef.current !== pendingFocus.requestId
+        ) {
+            fulfilledEditRequestIdRef.current = pendingFocus.requestId;
+            onEditRequestFulfilled(pendingFocus.requestId);
+        }
+    }, [isEditing, isProse, onEditRequestFulfilled]);
 
     useLayoutEffect(() => {
         const textarea = inputRef.current;
@@ -253,24 +291,36 @@ const EditableText = ({
     const handleClick = useCallback(() => {
         if (isEditable && !isEditing) {
             shouldSaveOnBlurRef.current = true;
+            activeEditRequestIdRef.current = null;
+            pendingFocusRef.current = {
+                requestId: null,
+                selectAll: true,
+            };
             setEditingValue(value);
             setIsEditing(true);
         }
     }, [isEditable, isEditing, setEditingValue, value]);
 
     const handleBlur = useCallback(() => {
+        const editRequestId = activeEditRequestIdRef.current;
+
         if (shouldSaveOnBlurRef.current) {
-            onSave(editingValue);
+            onSave(editingValue, { editRequestId });
         }
 
+        activeEditRequestIdRef.current = null;
         setIsEditing(false);
     }, [editingValue, onSave]);
 
     const cancelEditing = useCallback(() => {
+        const editRequestId = activeEditRequestIdRef.current;
+
         shouldSaveOnBlurRef.current = false;
         setEditingValue(value);
+        activeEditRequestIdRef.current = null;
         setIsEditing(false);
-    }, [setEditingValue, value]);
+        onCancel({ editRequestId });
+    }, [onCancel, setEditingValue, value]);
 
     const saveEditing = useCallback(() => {
         inputRef.current?.blur();

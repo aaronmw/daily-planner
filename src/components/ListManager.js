@@ -1,4 +1,5 @@
 import React, { memo, useCallback, useMemo } from 'react';
+import { canWrite, ROLES } from '../collaboration/roles';
 import { COPY } from './atoms/tokens';
 import ListCard, { GhostListCard } from './ListCard';
 import VirtualListGrid from './VirtualListGrid';
@@ -14,10 +15,13 @@ const isNestedListCardControl = target =>
     );
 
 const ListManager = ({
-    isCreatingList,
+    labelEditSession,
+    collaboration,
     lists,
-    onChangeIsShowingListManager,
+    onCancelLabelEdit,
+    onCompleteLabelEdit,
     onCreateList,
+    onFulfillLabelEdit,
     onSelectList,
     onUpdateList,
     onUpdateTask,
@@ -46,21 +50,48 @@ const ListManager = ({
             }
 
             const isActive = item.id === selectedListId;
+            const isEditable =
+                item.is_private_copy ||
+                !collaboration.isEnabled ||
+                canWrite(
+                    collaboration.roleByListId?.get(item.id) || ROLES.READ
+                );
+            const labelEditRequest =
+                labelEditSession?.entityType === 'list' &&
+                labelEditSession.entityId === item.id
+                    ? {
+                          id: labelEditSession.requestId,
+                          selectAll: true,
+                      }
+                    : null;
             const openList = () => {
                 onSelectList(item.id);
-                onChangeIsShowingListManager(false);
             };
 
             return (
                 <ListCard
                     isActive={isActive}
-                    isCreatingList={isCreatingList}
+                    isEditable={isEditable}
+                    labelEditRequest={labelEditRequest}
                     list={item}
                     listId={item.id}
                     listThemeStyle={themeByListId.get(item.id)}
+                    isOwnerPresent={collaboration.presenceByIdentityId?.has(
+                        item.owner_identity_id
+                    )}
+                    ownerProfile={collaboration.getProfileForList?.(
+                        item.id,
+                        item.owner_identity_id
+                    )}
+                    showOwnerAvatar={
+                        (collaboration.membersByListId?.get(item.id)?.length ||
+                            0) > 1
+                    }
+                    onCancelLabelEdit={onCancelLabelEdit}
+                    onCompleteLabelEdit={onCompleteLabelEdit}
+                    onFulfillLabelEdit={onFulfillLabelEdit}
                     onUpdateList={onUpdateList}
                     onUpdateTask={onUpdateTask}
-                    selectedListId={selectedListId}
                     tasks={tasksByListId.get(item.id) || []}
                     onClick={evt => {
                         if (isNestedListCardControl(evt.target)) {
@@ -73,9 +104,12 @@ const ListManager = ({
             );
         },
         [
-            isCreatingList,
-            onChangeIsShowingListManager,
+            labelEditSession,
+            collaboration,
+            onCancelLabelEdit,
+            onCompleteLabelEdit,
             onCreateList,
+            onFulfillLabelEdit,
             onSelectList,
             onUpdateList,
             onUpdateTask,
@@ -87,10 +121,16 @@ const ListManager = ({
 
     return (
         <VirtualListGrid
-            focusSelected
+            focusSelected={
+                !(
+                    labelEditSession?.entityType === 'list' &&
+                    labelEditSession.entityId === selectedListId
+                )
+            }
             getItemKey={getListItemKey}
             items={items}
             onNavigateItem={navigateToItem}
+            revealSelected
             renderItem={renderItem}
             selectedIndex={selectedIndex < 0 ? -1 : selectedIndex + 1}
         />

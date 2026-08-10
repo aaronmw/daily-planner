@@ -1,4 +1,5 @@
 import React, { memo, useCallback } from 'react';
+import { canWrite, ROLES } from '../collaboration/roles';
 import usePlannerViewportHeight from '../hooks/usePlannerViewportHeight';
 import { getTaskEstimatedSize } from '../utils/virtualization';
 import FlexBox from './atoms/FlexBox';
@@ -10,11 +11,9 @@ import VirtualCollection from './VirtualCollection';
 const getTaskKey = task => task.id;
 
 const TrashedTasks = ({ appActions, appData, ...otherProps }) => {
-    const { onImmediatelySelectTask, onTransitionToTask, onUpdateTask } =
-        appActions;
+    const { onTransitionToTask, onUpdateTask } = appActions;
     const {
         effectiveRelativeCardSizingEnabled,
-        isShowingListManager,
         plannerIndexes,
         timelineHoursPerScreen,
     } = appData;
@@ -36,27 +35,52 @@ const TrashedTasks = ({ appActions, appData, ...otherProps }) => {
         ]
     );
     const renderTask = useCallback(
-        task => (
-            <TrashedCard
-                restoreButtonTitle={COPY.LABEL_FOR_RESTORING_TASK}
-                style={{ width: '100%' }}
-                onRestore={() => onUpdateTask(task.id, { isComplete: false })}
-            >
-                <TaskCard
-                    cardThemeStyle={plannerIndexes.themeByListId.get(
-                        task.list_id
-                    )}
-                    isActive
-                    isShowingListManager={isShowingListManager}
-                    onImmediatelySelectTask={onImmediatelySelectTask}
-                    onTransitionToTask={onTransitionToTask}
-                    task={task}
-                />
-            </TrashedCard>
-        ),
+        task => {
+            const canRestore =
+                !appData.collaboration?.isEnabled ||
+                canWrite(
+                    appData.collaboration?.roleByListId?.get(task.list_id) ||
+                        ROLES.READ
+                );
+            return (
+                <TrashedCard
+                    restoreDisabled={!canRestore}
+                    restoreButtonTitle={
+                        canRestore
+                            ? COPY.LABEL_FOR_RESTORING_TASK
+                            : 'Write access is required to restore this task.'
+                    }
+                    style={{ width: '100%' }}
+                    onRestore={() =>
+                        onUpdateTask(task.id, { isComplete: false })
+                    }
+                >
+                    <TaskCard
+                        cardThemeStyle={plannerIndexes.themeByListId.get(
+                            task.list_id
+                        )}
+                        isActive
+                        isMutable={false}
+                        creatorProfile={appData.collaboration?.getProfileForList?.(
+                            task.list_id,
+                            task.creator_identity_id
+                        )}
+                        isCreatorPresent={appData.collaboration?.presenceByIdentityId?.has(
+                            task.creator_identity_id
+                        )}
+                        onTransitionToTask={onTransitionToTask}
+                        task={task}
+                        showCreatorAvatar={
+                            (appData.collaboration?.membersByListId?.get(
+                                task.list_id
+                            )?.length || 0) > 1
+                        }
+                    />
+                </TrashedCard>
+            );
+        },
         [
-            isShowingListManager,
-            onImmediatelySelectTask,
+            appData.collaboration,
             onTransitionToTask,
             onUpdateTask,
             plannerIndexes.themeByListId,

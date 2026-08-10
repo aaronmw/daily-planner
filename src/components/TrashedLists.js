@@ -1,4 +1,5 @@
 import React, { memo, useCallback } from 'react';
+import { ROLES } from '../collaboration/roles';
 import FlexBox from './atoms/FlexBox';
 import { COPY } from './atoms/tokens';
 import ListCard from './ListCard';
@@ -11,30 +12,55 @@ const TrashedLists = ({ appActions, appData, ...otherProps }) => {
     const { onUpdateList, onUpdateTask } = appActions;
     const deletedLists = appData.plannerIndexes.trashedLists;
     const renderList = useCallback(
-        list => (
-            <TrashedCard
-                className="h-full"
-                restoreButtonTitle={COPY.LABEL_FOR_RESTORING_LIST}
-                onRestore={() => onUpdateList(list.id, { isArchived: false })}
-            >
-                <ListCard
-                    isActive={list.id === appData.selectedListId}
-                    isCreatingList={appData.isCreatingList}
-                    isEditable={false}
-                    list={list}
-                    listId={list.id}
-                    listThemeStyle={appData.plannerIndexes.themeByListId.get(
-                        list.id
-                    )}
-                    onUpdateList={onUpdateList}
-                    onUpdateTask={onUpdateTask}
-                    tasks={
-                        appData.plannerIndexes.tasksByListId.get(list.id) || []
+        list => {
+            const canRestore =
+                !appData.collaboration?.isEnabled ||
+                appData.collaboration?.roleByListId?.get(list.id) ===
+                    ROLES.OWNER;
+            return (
+                <TrashedCard
+                    className="h-full"
+                    restoreDisabled={!canRestore}
+                    restoreButtonTitle={
+                        canRestore
+                            ? COPY.LABEL_FOR_RESTORING_LIST
+                            : 'Owner access is required to restore this list.'
                     }
-                    style={{ marginLeft: 0 }}
-                />
-            </TrashedCard>
-        ),
+                    onRestore={() =>
+                        onUpdateList(list.id, { isArchived: false })
+                    }
+                >
+                    <ListCard
+                        isActive={list.id === appData.selectedListId}
+                        isEditable={false}
+                        list={list}
+                        listId={list.id}
+                        listThemeStyle={appData.plannerIndexes.themeByListId.get(
+                            list.id
+                        )}
+                        isOwnerPresent={appData.collaboration?.presenceByIdentityId?.has(
+                            list.owner_identity_id
+                        )}
+                        ownerProfile={appData.collaboration?.getProfileForList?.(
+                            list.id,
+                            list.owner_identity_id
+                        )}
+                        onUpdateList={onUpdateList}
+                        onUpdateTask={onUpdateTask}
+                        tasks={
+                            appData.plannerIndexes.tasksByListId.get(list.id) ||
+                            []
+                        }
+                        showOwnerAvatar={
+                            (appData.collaboration?.membersByListId?.get(
+                                list.id
+                            )?.length || 0) > 1
+                        }
+                        style={{ marginLeft: 0 }}
+                    />
+                </TrashedCard>
+            );
+        },
         [appData, onUpdateList, onUpdateTask]
     );
 

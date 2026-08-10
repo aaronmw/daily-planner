@@ -32,18 +32,16 @@ const TimelineDropTarget = memo(
     }
 );
 
-const TimelineDropZone = memo(
-    ({ appActions, totalMinutes, ...otherProps }) => (
-        <div className="absolute inset-0 h-full w-full" {...otherProps}>
-            {range(totalMinutes / 15).map(quarterInMinutes => (
-                <TimelineDropTarget
-                    key={quarterInMinutes}
-                    appActions={appActions}
-                    quarterInMinutes={quarterInMinutes}
-                />
-            ))}
-        </div>
-    )
-);
+const TimelineDropZone = memo(({ appActions, totalMinutes, ...otherProps }) => (
+    <div className="absolute inset-0 h-full w-full" {...otherProps}>
+        {range(totalMinutes / 15).map(quarterInMinutes => (
+            <TimelineDropTarget
+                key={quarterInMinutes}
+                appActions={appActions}
+                quarterInMinutes={quarterInMinutes}
+            />
+        ))}
+    </div>
+));
 
 export default TimelineDropZone;

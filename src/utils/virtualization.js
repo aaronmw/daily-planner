@@ -1,7 +1,4 @@
-import {
-    getDurationHeight,
-    getPixelsPerMinute,
-} from './plannerGeometry';
+import { getDurationHeight, getPixelsPerMinute } from './plannerGeometry';
 
 const getTaskEstimatedSize = ({
     durationMinutes,

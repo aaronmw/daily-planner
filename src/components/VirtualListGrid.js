@@ -1,9 +1,4 @@
-import {
-    useCallback,
-    useEffect,
-    useRef,
-    useState,
-} from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import {
     getGridNavigationTargetIndex,
@@ -12,6 +7,7 @@ import {
 } from '../utils/gridNavigation';
 import { getListGridMetrics } from '../utils/virtualization';
 import cx from '../utils/cx';
+import { snapToDevicePixel } from '../utils/plannerGeometry';
 
 const GRID_COLUMNS_DEFAULT = 3;
 const GRID_GAP = 12.5;
@@ -23,6 +19,7 @@ const VirtualListGrid = ({
     getItemKey,
     items,
     onNavigateItem,
+    revealSelected = false,
     renderItem,
     selectedIndex = -1,
 }) => {
@@ -30,6 +27,9 @@ const VirtualListGrid = ({
     const layoutElementRef = useRef(null);
     const navigationFocusFrameRef = useRef(null);
     const pendingNavigationIndexRef = useRef(null);
+    const previousSelectedIndexRef = useRef(-1);
+    const devicePixelRatio =
+        typeof window === 'undefined' ? 1 : window.devicePixelRatio || 1;
     const [{ columns, width }, setLayout] = useState({
         columns: GRID_COLUMNS_DEFAULT,
         width: 0,
@@ -108,8 +108,8 @@ const VirtualListGrid = ({
 
             const focusItem = attemptsRemaining => {
                 navigationFocusFrameRef.current = requestAnimationFrame(() => {
-                    const navigationTarget = scrollElementRef.current
-                        ?.querySelector(
+                    const navigationTarget =
+                        scrollElementRef.current?.querySelector(
                             `[data-index="${itemIndex}"] [data-grid-navigation-target]`
                         );
 
@@ -145,12 +145,31 @@ const VirtualListGrid = ({
     );
 
     useEffect(() => {
-        if (!focusSelected || selectedIndex < 0) {
+        const selectionChanged =
+            previousSelectedIndexRef.current !== selectedIndex;
+        previousSelectedIndexRef.current = selectedIndex;
+
+        if (
+            (!focusSelected && !revealSelected) ||
+            selectedIndex < 0 ||
+            !selectionChanged
+        ) {
             return;
         }
 
-        scheduleItemFocus(selectedIndex);
-    }, [focusSelected, scheduleItemFocus, selectedIndex]);
+        if (focusSelected) {
+            scheduleItemFocus(selectedIndex);
+            return;
+        }
+
+        virtualizer.scrollToIndex(selectedIndex, { align: 'auto' });
+    }, [
+        focusSelected,
+        revealSelected,
+        scheduleItemFocus,
+        selectedIndex,
+        virtualizer,
+    ]);
 
     const handleKeyDown = useCallback(
         evt => {
@@ -227,7 +246,10 @@ const VirtualListGrid = ({
                             left:
                                 GRID_PADDING_INLINE +
                                 virtualItem.lane * (cardWidth + GRID_GAP),
-                            transform: `translateY(${virtualItem.start}px)`,
+                            transform: `translateY(${snapToDevicePixel(
+                                virtualItem.start,
+                                devicePixelRatio
+                            )}px)`,
                             width:
                                 cardWidth ||
                                 `calc((100% - ${

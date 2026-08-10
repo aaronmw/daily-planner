@@ -1,7 +1,7 @@
 import React, { memo, useCallback, useMemo } from 'react';
+import { canWrite, ROLES } from '../collaboration/roles';
 import useDrop from '../hooks/useDrop';
 import usePlannerViewportHeight from '../hooks/usePlannerViewportHeight';
-import toInt from '../utils/toInt';
 import { getTaskEstimatedSize } from '../utils/virtualization';
 import { GhostButton } from './atoms/Button';
 import { COPY } from './atoms/tokens';
@@ -12,22 +12,23 @@ const CREATE_TASK_ITEM = { id: 'create-task', kind: 'create-task' };
 const getTaskListItemKey = item => item.id;
 
 const TaskList = ({ appActions, appData, ...otherProps }) => {
-    const {
-        onChangeTaskPosition,
-        onCreateTask,
-        onImmediatelySelectTask,
-        onTransitionToTask,
-    } = appActions;
+    const { onChangeTaskPosition, onCreateTask, onTransitionToTask } =
+        appActions;
     const {
         effectiveRelativeCardSizingEnabled,
-        isShowingListManager,
+        labelEditSession,
         plannerIndexes,
         selectedListId,
         selectedTaskId,
         timelineHoursPerScreen,
         tasks,
     } = appData;
+    const collaboration = appData.collaboration || {};
     const selectedList = plannerIndexes.listById.get(selectedListId);
+    const canCreateTask =
+        selectedList?.is_private_copy ||
+        !collaboration.isEnabled ||
+        canWrite(collaboration.roleByListId?.get(selectedListId) || ROLES.READ);
     const unscheduledTasks = useMemo(
         () =>
             selectedList?.isArchived
@@ -70,19 +71,24 @@ const TaskList = ({ appActions, appData, ...otherProps }) => {
     );
     const [taskCardDropProps] = useDrop({
         'task-id': (taskId, evt) => {
-            const droppedOnTaskId = toInt(evt.currentTarget.dataset.taskId);
+            const droppedOnTaskId = evt.currentTarget.dataset.taskId;
             const droppedOnTaskIndex = tasks.findIndex(
-                task => task.id === droppedOnTaskId
+                task => String(task.id) === droppedOnTaskId
             );
             onChangeTaskPosition(taskId, droppedOnTaskIndex);
         },
     });
     const renderItem = useCallback(
-        item =>
+        (item, itemIndex) =>
             item.kind === 'create-task' ? (
                 <GhostButton
                     className="planner-create-task-button"
-                    title={COPY.TIPS.CREATE_NEW_TASK}
+                    disabled={!canCreateTask}
+                    title={
+                        canCreateTask
+                            ? COPY.TIPS.CREATE_NEW_TASK
+                            : 'Write access is required to create tasks.'
+                    }
                     onClick={() => onCreateTask()}
                 >
                     {COPY.CREATE_TASK_LABEL}
@@ -93,18 +99,42 @@ const TaskList = ({ appActions, appData, ...otherProps }) => {
                         item.list_id
                     )}
                     isActive={item.id === selectedTaskId}
-                    isShowingListManager={isShowingListManager}
-                    onImmediatelySelectTask={onImmediatelySelectTask}
+                    isMutable={
+                        plannerIndexes.listById.get(item.list_id)
+                            ?.is_private_copy ||
+                        !collaboration.isEnabled ||
+                        canWrite(
+                            collaboration.roleByListId?.get(item.list_id) ||
+                                ROLES.READ
+                        )
+                    }
+                    creatorProfile={collaboration.getProfileForList?.(
+                        item.list_id,
+                        item.creator_identity_id
+                    )}
+                    isCreatorPresent={collaboration.presenceByIdentityId?.has(
+                        item.creator_identity_id
+                    )}
                     onTransitionToTask={onTransitionToTask}
+                    shortcutNumber={itemIndex <= 9 ? itemIndex : null}
                     task={item}
+                    showCreatorAvatar={
+                        (collaboration.membersByListId?.get(item.list_id)
+                            ?.length || 0) > 1
+                    }
                     {...taskCardDropProps}
                 />
             ),
         [
-            isShowingListManager,
+            canCreateTask,
+            collaboration.membersByListId,
+            collaboration.presenceByIdentityId,
+            collaboration.getProfileForList,
+            collaboration.isEnabled,
+            collaboration.roleByListId,
             onCreateTask,
-            onImmediatelySelectTask,
             onTransitionToTask,
+            plannerIndexes.listById,
             plannerIndexes.themeByListId,
             selectedTaskId,
             taskCardDropProps,
@@ -116,9 +146,15 @@ const TaskList = ({ appActions, appData, ...otherProps }) => {
             {...otherProps}
             className="planner-task-card-list"
             estimateSize={estimateSize}
-            focusSelected
+            focusSelected={
+                !(
+                    labelEditSession?.entityType === 'task' &&
+                    labelEditSession.entityId === selectedTaskId
+                )
+            }
             getItemKey={getTaskListItemKey}
             items={items}
+            revealSelected
             renderItem={renderItem}
             selectedIndex={taskIndexById.get(selectedTaskId) ?? -1}
         />

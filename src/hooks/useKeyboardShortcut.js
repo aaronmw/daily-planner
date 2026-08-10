@@ -41,6 +41,18 @@ const registerKeyboardShortcut = (namespace, sequence, handler) => {
     }
 
     keyboardShortcutHandlers[tidiedSequence][namespace] = handler;
+
+    return () => {
+        if (keyboardShortcutHandlers[tidiedSequence]?.[namespace] !== handler) {
+            return;
+        }
+
+        delete keyboardShortcutHandlers[tidiedSequence][namespace];
+
+        if (!Object.keys(keyboardShortcutHandlers[tidiedSequence]).length) {
+            delete keyboardShortcutHandlers[tidiedSequence];
+        }
+    };
 };
 
 const handleAllKeyPresses = evt => {
@@ -77,21 +89,19 @@ const useKeyboardShortcut = (
                   }
               };
 
-        if (Array.isArray(oneOrMoreSequences)) {
-            oneOrMoreSequences.forEach(sequence => {
-                registerKeyboardShortcut(namespace, sequence, scopedHandler);
-            });
-        } else {
-            registerKeyboardShortcut(
-                namespace,
-                oneOrMoreSequences,
-                scopedHandler
-            );
-        }
+        const sequences = Array.isArray(oneOrMoreSequences)
+            ? oneOrMoreSequences
+            : [oneOrMoreSequences];
+        const unregisterShortcuts = sequences.map(sequence =>
+            registerKeyboardShortcut(namespace, sequence, scopedHandler)
+        );
 
         document.addEventListener('keydown', handleAllKeyPresses);
 
         return () => {
+            unregisterShortcuts.forEach(unregisterShortcut =>
+                unregisterShortcut()
+            );
             document.removeEventListener('keydown', handleAllKeyPresses);
         };
     }, [handler, namespace, oneOrMoreSequences, scopingElementRef]);

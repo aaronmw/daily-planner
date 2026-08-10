@@ -36,23 +36,44 @@ COPY.EMPTY_LABEL = '...label?';
 COPY.EMPTY_NOTES = '...notes?';
 COPY.EMPTY_TRASHED_LISTS = 'No Trashed Lists';
 COPY.EMPTY_TRASHED_TASKS = 'No Trashed Tasks';
-COPY.LABEL_FOR_LIST_MANAGER = 'Switch Lists';
+COPY.LABEL_FOR_LIST_MANAGER = 'Lists';
+COPY.LABEL_FOR_TASK_LIST = 'Tasks';
 COPY.LABEL_FOR_COLLAPSE_TASK_LIST = 'Collapse task list';
 COPY.LABEL_FOR_EXPAND_TASK_LIST = 'Expand task list';
+COPY.LABEL_FOR_COLLAPSE_LIST_COLUMN = 'Collapse lists column';
+COPY.LABEL_FOR_EXPAND_LIST_COLUMN = 'Expand lists column';
+COPY.LABEL_FOR_COLLAPSE_TIMELINE = 'Collapse timeline';
+COPY.LABEL_FOR_EXPAND_TIMELINE = 'Expand timeline';
+COPY.LABEL_FOR_COLLAPSE_TASK_DETAILS = 'Collapse task details';
+COPY.LABEL_FOR_EXPAND_TASK_DETAILS = 'Expand task details';
+COPY.AT_LEAST_ONE_COLUMN_OPEN = 'At least one column must remain open';
 COPY.LABEL_FOR_RESTORING_LIST = 'Restore this List';
 COPY.LABEL_FOR_RESTORING_TASK = 'Restore this Task';
 COPY.LABEL_FOR_LIGHTING_MODE = 'Lighting Mode';
 COPY.LABEL_FOR_OPTIONS = 'Options';
+COPY.LABEL_FOR_SHARE_AND_ACCESS = 'Share and access';
+COPY.LABEL_FOR_SYNC_AND_SHARING = 'Sync & Sharing';
+COPY.LABEL_FOR_ENABLE_SYNC = 'Enable encrypted sync';
+COPY.LABEL_FOR_SYNC_STATUS = 'Sync status';
+COPY.LABEL_FOR_RECOVERY = 'Recovery key';
+COPY.LABEL_FOR_NOTIFICATIONS = 'Notifications';
 COPY.LABEL_FOR_EDITING_SETTINGS = 'Editing';
 COPY.LABEL_FOR_FOCUS_ASSIST = 'Focus Assist';
 COPY.LABEL_FOR_HIGHLIGHT_INCOMPLETE = 'Highlight incomplete';
 COPY.LABEL_FOR_LIST_COLOR = 'Choose list color';
 COPY.LABEL_FOR_RELATIVE_CARD_SIZING = 'Relative card sizing';
-COPY.LABEL_FOR_TASK_DETAILS = 'Back to Task';
+COPY.LABEL_FOR_TASK_DETAILS = 'Task Details';
 COPY.LABEL_FOR_TIMELINE = "Today's Schedule";
 COPY.LABEL_FOR_TIMELINE_SETTINGS = 'Timeline';
 COPY.LABEL_FOR_TIMELINE_ZOOM = 'Zoom';
 COPY.LABEL_FOR_DELETED_ITEMS = 'Deleted items';
+COPY.LABEL_FOR_DESKTOP_SETTINGS = 'Desktop';
+COPY.LABEL_FOR_GLOBAL_SHORTCUT = 'Global shortcut';
+COPY.LABEL_FOR_SHOW_PLANNER_SHORTCUT = 'Show Daily Planner';
+COPY.LABEL_FOR_NEW_LIST_SHORTCUT = 'New list';
+COPY.LABEL_FOR_NEW_TASK_SHORTCUT = 'New task';
+COPY.LABEL_FOR_GLOBAL_SHORTCUT_CAPTURE = 'Press shortcut';
+COPY.LABEL_FOR_GLOBAL_SHORTCUT_ERROR = 'That shortcut is unavailable';
 COPY.LABEL_FOR_TRASHED_LISTS = 'Trashed Lists';
 COPY.LABEL_FOR_TRASHED_TASKS = 'Trashed Tasks';
 COPY.LIGHTING_MODE_LABELS = {
@@ -75,10 +96,11 @@ COPY.TIPS = {
         'Press [⌘]+[SHIFT]+[LEFT or RIGHT] to move between your lists',
     SELECT_NEXT_PREV_TASK:
         'Press [UP] or [DOWN] to select the previous and next unscheduled tasks in the active list',
+    SELECT_TASK_BY_NUMBER:
+        'Press keys [1] to [9] to focus the corresponding task in the active list',
     MOVE_TASK_BETWEEN_TASK_LIST_AND_TIMELINE:
         'Press [⌘]+[LEFT or RIGHT] to move the selected task to the TaskList or Timeline, respectively',
-    SETTING_DURATION:
-        'Press keys [1] to [6] to quickly adjust your time estimate for the selected task',
+    SETTING_DURATION: 'Choose a time estimate for the selected task',
     TOGGLE_TASK_LIST:
         'Press [B] to show / hide the side[B]ar of unscheduled tasks',
     TOGGLE_DARK_MODE: 'Press [D] to cycle the lighting mode',
@@ -284,21 +306,35 @@ const ICON_PACKS = {
         TIP: '☝️',
     },
     FONT_AWESOME: {
+        COLLAPSE_LEFT_COLUMN: 'arrow-left-to-line',
+        COLLAPSE_RIGHT_COLUMN: 'arrow-right-to-line',
         COLLAPSE_TASK_LIST: 'arrow-left-to-line',
         COLOR_PICKER: 'palette',
         CHECK: 'check',
+        BELL: 'bell',
         DARK_MODE: 'moon',
         END_ZONE: 'trash-alt',
+        COMMENTS: 'comments',
+        COPY: 'copy',
+        EXPAND_LEFT_COLUMN: 'arrow-right-from-line',
+        EXPAND_RIGHT_COLUMN: 'arrow-left-from-line',
         EXPAND_TASK_LIST: 'arrow-right-from-line',
+        GLOBAL_SHORTCUT: 'keyboard',
+        KEY: 'key',
+        LINK: 'link',
         LEFT: 'long-arrow-left',
         LIGHT_MODE: 'sun',
         LIST_MANAGER: 'book',
         OPTIONS: 'cog',
         PAPERCLIP: 'paperclip',
+        REMOVE_USER: 'user-minus',
         RIGHT: 'long-arrow-right',
         SPINNER: 'spinner-third',
+        SHARE: 'user-plus',
+        SYNC: 'arrows-rotate',
         SYSTEM_MODE: 'desktop',
         TASK_DETAILS: 'thumbtack',
+        USER: 'user',
         TIP: 'gem',
         WARNING: 'triangle-exclamation',
     },

@@ -2,16 +2,15 @@ import React, { useEffect, useRef } from 'react';
 import useDrop from '../hooks/useDrop';
 import cx from '../utils/cx';
 import { SecondaryAppColumn } from './AppColumn';
-import FlexBox from './atoms/FlexBox';
-import { SIDEBAR_DEFAULT_WIDTH } from './atoms/tokens';
-import SidebarToggleButton from './TaskListToggleButton';
-import ToolBar from './ToolBar';
+import CollapsibleColumn from './CollapsibleColumn';
+import { COPY } from './atoms/tokens';
 
 const Sidebar = ({
     appActions,
     appData,
     children,
     className,
+    label = COPY.LABEL_FOR_TASK_LIST,
     ...otherProps
 }) => {
     const { onChangeIsSidebarOpen, onUpdateTask } = appActions;
@@ -50,50 +49,28 @@ const Sidebar = ({
     ]);
 
     return (
-        <SecondaryAppColumn
+        <CollapsibleColumn
+            canCollapse={appData.canCollapseColumns}
             className={cx('planner-sidebar-column', className)}
-            {...sidebarDropProps}
+            collapseLabel={COPY.LABEL_FOR_COLLAPSE_TASK_LIST}
+            expandLabel={COPY.LABEL_FOR_EXPAND_TASK_LIST}
+            expandedMinWidth="22vw"
+            isOpen={isSidebarOpen}
+            onChangeIsOpen={onChangeIsSidebarOpen}
+            titleSuffix={COPY.TIPS.TOGGLE_TASK_LIST}
             {...otherProps}
         >
-            <div
-                className="planner-sidebar-stage"
-                style={{
-                    '--planner-sidebar-expanded-width': SIDEBAR_DEFAULT_WIDTH,
-                }}
-            >
-                <FlexBox
-                    align="stretch"
-                    direction="column"
-                    aria-hidden={!isSidebarOpen}
-                    className="planner-sidebar-expanded-content"
-                    data-visible={isSidebarOpen}
-                    inert={!isSidebarOpen}
+            {toggleButton => (
+                <SecondaryAppColumn
+                    className="planner-task-list-column"
+                    headerActions={toggleButton}
+                    label={label}
+                    {...sidebarDropProps}
                 >
-                    <ToolBar justify="flex-end">
-                        <SidebarToggleButton
-                            isSidebarOpen={isSidebarOpen}
-                            onChangeIsSidebarOpen={onChangeIsSidebarOpen}
-                        />
-                    </ToolBar>
-
                     {children}
-                </FlexBox>
-
-                <div
-                    aria-hidden={isSidebarOpen}
-                    className="planner-sidebar-collapsed-content"
-                    data-visible={!isSidebarOpen}
-                    inert={isSidebarOpen}
-                >
-                    <ToolBar isCollapsed>
-                        <SidebarToggleButton
-                            isSidebarOpen={isSidebarOpen}
-                            onChangeIsSidebarOpen={onChangeIsSidebarOpen}
-                        />
-                    </ToolBar>
-                </div>
-            </div>
-        </SecondaryAppColumn>
+                </SecondaryAppColumn>
+            )}
+        </CollapsibleColumn>
     );
 };
 

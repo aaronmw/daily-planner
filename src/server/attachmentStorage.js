@@ -1,11 +1,8 @@
-import Busboy from 'busboy';
 import { create as contentDisposition } from 'content-disposition';
-import { createReadStream, createWriteStream } from 'node:fs';
-import { mkdir, readFile, rename, rm, stat, writeFile } from 'node:fs/promises';
-import { randomUUID } from 'node:crypto';
+import { createReadStream } from 'node:fs';
+import { readFile, rm, stat } from 'node:fs/promises';
 import path from 'node:path';
 import { Readable } from 'node:stream';
-import { pipeline } from 'node:stream/promises';
 import {
     ATTACHMENT_REQUEST_HEADER,
     ATTACHMENT_REQUEST_HEADER_VALUE,
@@ -109,132 +106,7 @@ export const getAttachmentPaths = id => {
         content: path.join(directory, 'content'),
         directory,
         metadata: path.join(directory, 'metadata.json'),
-        metadataTemporary: path.join(directory, 'metadata.json.part'),
-        temporary: path.join(directory, 'content.part'),
     };
-};
-
-const normalizeStoredFilename = filename =>
-    String(filename || 'attachment')
-        .replace(/[\r\n\0]+/g, ' ')
-        .trim() || 'attachment';
-
-export const storeAttachmentRequest = async request => {
-    const contentType = request.headers.get('content-type') || '';
-
-    if (!contentType.toLowerCase().startsWith('multipart/form-data;')) {
-        throw new AttachmentRequestError(
-            'A multipart file upload is required.',
-            415
-        );
-    }
-
-    if (!request.body) {
-        throw new AttachmentRequestError('The upload body is empty.');
-    }
-
-    const id = randomUUID();
-    const paths = getAttachmentPaths(id);
-    let byteSize = 0;
-    let fileCount = 0;
-    let fileInfo = null;
-    let streamError = null;
-    let writePromise = Promise.resolve();
-
-    await mkdir(paths.directory, { recursive: true });
-
-    try {
-        const busboy = Busboy({
-            headers: {
-                'content-type': contentType,
-            },
-        });
-        const requestStream = Readable.fromWeb(request.body);
-
-        const parsePromise = new Promise((resolve, reject) => {
-            const abort = () => {
-                requestStream.destroy(
-                    new AttachmentRequestError('Upload was aborted.', 499)
-                );
-            };
-
-            if (request.signal.aborted) {
-                abort();
-            } else {
-                request.signal.addEventListener('abort', abort, { once: true });
-            }
-
-            requestStream.on('error', reject);
-            busboy.on('error', reject);
-            busboy.on('close', () => {
-                request.signal.removeEventListener('abort', abort);
-                resolve();
-            });
-            busboy.on('file', (_fieldName, file, info) => {
-                fileCount += 1;
-
-                if (fileCount > 1) {
-                    streamError = new AttachmentRequestError(
-                        'Upload exactly one file per request.'
-                    );
-                    file.resume();
-                    return;
-                }
-
-                fileInfo = {
-                    filename: normalizeStoredFilename(info.filename),
-                    mime_type: info.mimeType || 'application/octet-stream',
-                };
-
-                file.on('data', chunk => {
-                    byteSize += chunk.length;
-                });
-
-                writePromise = pipeline(
-                    file,
-                    createWriteStream(paths.temporary, { flags: 'wx' })
-                ).catch(error => {
-                    streamError = error;
-                });
-            });
-
-            requestStream.pipe(busboy);
-        });
-
-        await parsePromise;
-        await writePromise;
-
-        if (streamError) {
-            throw streamError;
-        }
-
-        if (fileCount !== 1 || !fileInfo) {
-            throw new AttachmentRequestError(
-                'Upload exactly one file per request.'
-            );
-        }
-
-        const metadata = {
-            byte_size: byteSize,
-            created_at: new Date().toISOString(),
-            filename: fileInfo.filename,
-            id,
-            mime_type: fileInfo.mime_type,
-            url: `/api/attachments/${id}`,
-        };
-
-        await rename(paths.temporary, paths.content);
-        await writeFile(paths.metadataTemporary, JSON.stringify(metadata), {
-            encoding: 'utf8',
-            flag: 'wx',
-        });
-        await rename(paths.metadataTemporary, paths.metadata);
-
-        return metadata;
-    } catch (error) {
-        await rm(paths.directory, { force: true, recursive: true });
-        throw error;
-    }
 };
 
 export const readAttachment = async id => {

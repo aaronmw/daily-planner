@@ -2,3 +2,11 @@ node_modules
 .next
 .idea
 .daily-planner
+.env*
+!.env.example
+dist-desktop
+src-tauri/target
+src-tauri/gen/
+.playwright-mcp/
+/options-small.png
+supabase/.temp/

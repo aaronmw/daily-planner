@@ -56,8 +56,7 @@ const tests = [
     },
     {
         given: initialValue,
-        it:
-            'Indents only selected lines if selection starts at beginning of a line',
+        it: 'Indents only selected lines if selection starts at beginning of a line',
         selection: { from: `${tabCharacter}- Red`, to: 'Pink' },
         expect: [
             `- Apples`,
@@ -127,17 +126,14 @@ tests.forEach(test => {
         const selectionStart = test.given.indexOf(from);
         const selectionEnd = test.given.indexOf(to) + to.length;
 
-        const {
-            newText,
-            newSelectionStart,
-            newSelectionEnd,
-        } = indentSelectedLines({
-            text: test.given,
-            selectionStart,
-            selectionEnd,
-            tabCharacter,
-            outdent: test.outdent,
-        });
+        const { newText, newSelectionStart, newSelectionEnd } =
+            indentSelectedLines({
+                text: test.given,
+                selectionStart,
+                selectionEnd,
+                tabCharacter,
+                outdent: test.outdent,
+            });
 
         const newFromKeyword = test.expectSelection
             ? test.expectSelection.from

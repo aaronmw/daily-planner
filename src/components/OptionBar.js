@@ -12,6 +12,7 @@ const OptionButton = ({ className, isSelected, ...otherProps }) => (
 );
 
 const OptionBar = ({
+    disabled = false,
     options,
     renderOption = option => option,
     renderSelectedOption = option => option,
@@ -25,6 +26,7 @@ const OptionBar = ({
 
             return (
                 <OptionButton
+                    disabled={disabled}
                     key={option}
                     isSelected={isSelected}
                     onClick={() => onChange(option)}

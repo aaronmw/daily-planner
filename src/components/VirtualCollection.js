@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import cx from '../utils/cx';
+import { snapToDevicePixel } from '../utils/plannerGeometry';
 
 const VirtualCollection = ({
     className,
@@ -13,12 +14,16 @@ const VirtualCollection = ({
     paddingEnd = 37.5,
     paddingStart = 25,
     renderItem,
+    revealSelected = false,
     scrollElementRef: providedScrollElementRef,
     selectedIndex = -1,
 }) => {
     const internalScrollElementRef = useRef(null);
+    const previousSelectedIndexRef = useRef(-1);
     const scrollElementRef =
         providedScrollElementRef || internalScrollElementRef;
+    const devicePixelRatio =
+        typeof window === 'undefined' ? 1 : window.devicePixelRatio || 1;
     const virtualizer = useVirtualizer({
         count: items.length,
         estimateSize,
@@ -36,11 +41,24 @@ const VirtualCollection = ({
     }, [estimateSize, virtualizer]);
 
     useEffect(() => {
-        if (!focusSelected || selectedIndex < 0) {
+        const selectionChanged =
+            previousSelectedIndexRef.current !== selectedIndex;
+        previousSelectedIndexRef.current = selectedIndex;
+
+        if (
+            (!focusSelected && !revealSelected) ||
+            selectedIndex < 0 ||
+            !selectionChanged
+        ) {
             return;
         }
 
         virtualizer.scrollToIndex(selectedIndex, { align: 'auto' });
+
+        if (!focusSelected) {
+            return;
+        }
+
         const frame = requestAnimationFrame(() => {
             scrollElementRef.current
                 ?.querySelector(
@@ -50,7 +68,13 @@ const VirtualCollection = ({
         });
 
         return () => cancelAnimationFrame(frame);
-    }, [focusSelected, scrollElementRef, selectedIndex, virtualizer]);
+    }, [
+        focusSelected,
+        revealSelected,
+        scrollElementRef,
+        selectedIndex,
+        virtualizer,
+    ]);
 
     return (
         <div
@@ -68,7 +92,10 @@ const VirtualCollection = ({
                         data-index={virtualItem.index}
                         ref={virtualizer.measureElement}
                         style={{
-                            transform: `translateY(${virtualItem.start}px)`,
+                            transform: `translateY(${snapToDevicePixel(
+                                virtualItem.start,
+                                devicePixelRatio
+                            )}px)`,
                         }}
                     >
                         {renderItem(

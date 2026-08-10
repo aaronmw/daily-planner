@@ -4,26 +4,12 @@ import FlexBox from './atoms/FlexBox';
 import { COPY, ICONS } from './atoms/tokens';
 
 const Trash = ({ appActions, appData, ...otherProps }) => {
-    const { deleteTask, onSelectList, onUpdateList } = appActions;
+    const { deleteTask, onArchiveList } = appActions;
 
-    const { isDraggingTask, lists, selectedListId } = appData;
+    const { isDraggingTask } = appData;
 
     const [dropProps] = useDrop({
-        'list-id': listId => {
-            if (selectedListId === listId) {
-                const firstUnarchivedList = lists.find(
-                    list => list.id !== listId && !list.isArchived
-                );
-
-                if (firstUnarchivedList) {
-                    onSelectList(firstUnarchivedList.id);
-                }
-            }
-
-            onUpdateList(listId, {
-                isArchived: true,
-            });
-        },
+        'list-id': onArchiveList,
         'task-id': deleteTask,
     });
 

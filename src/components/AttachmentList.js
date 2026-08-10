@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import cx from '../utils/cx';
 import ArmedIconButton from './atoms/ArmedIconButton';
 import { ICONS } from './atoms/tokens';
@@ -38,8 +38,11 @@ const AttachmentRow = ({
     removalState,
     onCancel,
     onDismissFailure,
+    onOpen,
     onRemove,
+    showAction = true,
 }) => {
+    const [isOpening, setIsOpening] = useState(false);
     const isFailed = attachment.status === 'failed';
     const isUploading = attachment.status === 'uploading';
     const isRemoving = ['pending', 'removing'].includes(removalState?.status);
@@ -79,12 +82,24 @@ const AttachmentRow = ({
             ) : null}
             {attachment.status === 'ready' ? (
                 <a
+                    aria-busy={isOpening || undefined}
                     className="planner-attachment-link"
                     href={attachment.url}
                     rel="noopener noreferrer"
                     target="_blank"
+                    onClick={event => {
+                        if (!attachment.encrypted || !onOpen) return;
+                        event.preventDefault();
+                        if (isOpening) return;
+                        setIsOpening(true);
+                        Promise.resolve(onOpen(attachment)).finally(() =>
+                            setIsOpening(false)
+                        );
+                    }}
                 >
-                    <AttachmentStatusSlot status={attachment.status} />
+                    <AttachmentStatusSlot
+                        status={isOpening ? 'uploading' : attachment.status}
+                    />
                     <AttachmentLabel attachment={attachment} />
                 </a>
             ) : (
@@ -97,21 +112,23 @@ const AttachmentRow = ({
                 </span>
             )}
 
-            <ArmedIconButton
-                confirmLabel={
-                    isFailed
-                        ? 'Click again to dismiss'
-                        : isUploading
-                          ? 'Click again to cancel upload'
-                          : 'Click again to remove attachment'
-                }
-                error={rowError}
-                label={actionLabel}
-                pending={isRemoving}
-                onConfirm={handleConfirm}
-            >
-                {ICONS.END_ZONE}
-            </ArmedIconButton>
+            {showAction ? (
+                <ArmedIconButton
+                    confirmLabel={
+                        isFailed
+                            ? 'Click again to dismiss'
+                            : isUploading
+                              ? 'Click again to cancel upload'
+                              : 'Click again to remove attachment'
+                    }
+                    error={rowError}
+                    label={actionLabel}
+                    pending={isRemoving}
+                    onConfirm={handleConfirm}
+                >
+                    {ICONS.END_ZONE}
+                </ArmedIconButton>
+            ) : null}
         </div>
     );
 };
@@ -124,7 +141,9 @@ const AttachmentList = ({
     taskId,
     onCancel,
     onDismissFailure,
+    onOpen,
     onRemove,
+    showActions = true,
 }) => {
     const removingAttachments = Object.values(removalStateById)
         .filter(
@@ -153,12 +172,9 @@ const AttachmentList = ({
     }
 
     return (
-        <div className="planner-attachment-list" role="list">
+        <ul className="planner-attachment-list">
             {rows.map((attachment, attachmentIndex) => (
-                <div
-                    key={attachment.id || attachment.client_id}
-                    role="listitem"
-                >
+                <li key={attachment.id || attachment.client_id}>
                     <AttachmentRow
                         attachment={attachment}
                         attachmentIndex={attachmentIndex}
@@ -166,11 +182,13 @@ const AttachmentList = ({
                         removalState={removalStateById[attachment.id]}
                         onCancel={onCancel}
                         onDismissFailure={onDismissFailure}
+                        onOpen={onOpen}
                         onRemove={onRemove}
+                        showAction={showActions}
                     />
-                </div>
+                </li>
             ))}
-        </div>
+        </ul>
     );
 };
 

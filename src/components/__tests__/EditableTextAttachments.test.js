@@ -12,9 +12,9 @@ const renderEditor = async props => {
     await act(async () => {
         root.render(
             <EditableText
+                editRequest={{ id: 'attachment-test', selectAll: true }}
                 isMultiLine
                 mode="prose"
-                startsEditing
                 value=""
                 {...props}
             />

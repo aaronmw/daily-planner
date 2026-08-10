@@ -123,18 +123,21 @@ describe('grid keyboard navigation', () => {
         };
 
         expect(isPlainGridNavigationKeyEvent(event)).toBe(true);
-        expect(
-            isPlainGridNavigationKeyEvent({ ...event, ctrlKey: true })
-        ).toBe(false);
-        expect(
-            isPlainGridNavigationKeyEvent({ ...event, key: 'Enter' })
-        ).toBe(false);
+        expect(isPlainGridNavigationKeyEvent({ ...event, ctrlKey: true })).toBe(
+            false
+        );
+        expect(isPlainGridNavigationKeyEvent({ ...event, key: 'Enter' })).toBe(
+            false
+        );
         expect(isGridNavigationEvent(event, navigationTarget)).toBe(true);
         expect(
             isGridNavigationEvent({ ...event, metaKey: true }, navigationTarget)
         ).toBe(false);
         expect(
-            isGridNavigationEvent({ ...event, shiftKey: true }, navigationTarget)
+            isGridNavigationEvent(
+                { ...event, shiftKey: true },
+                navigationTarget
+            )
         ).toBe(false);
         expect(
             isGridNavigationEvent({ ...event, target: input }, navigationTarget)
@@ -146,10 +149,7 @@ describe('grid keyboard navigation', () => {
             )
         ).toBe(false);
         expect(
-            isGridNavigationEvent(
-                { ...event, key: 'Enter' },
-                navigationTarget
-            )
+            isGridNavigationEvent({ ...event, key: 'Enter' }, navigationTarget)
         ).toBe(false);
     });
 });

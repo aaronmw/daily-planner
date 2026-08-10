@@ -17,6 +17,24 @@ const getPixelsPerMinute = (viewportHeight, hoursPerScreen) => {
 const getDurationHeight = (durationMinutes, pixelsPerMinute) =>
     Math.max(0, Number(durationMinutes) || 0) * pixelsPerMinute;
 
+const snapToDevicePixel = (value, devicePixelRatio = 1) => {
+    const numericValue = Number(value);
+    const numericDevicePixelRatio = Number(devicePixelRatio);
+
+    if (
+        !Number.isFinite(numericValue) ||
+        !Number.isFinite(numericDevicePixelRatio) ||
+        numericDevicePixelRatio <= 0
+    ) {
+        return numericValue;
+    }
+
+    return (
+        Math.round(numericValue * numericDevicePixelRatio) /
+        numericDevicePixelRatio
+    );
+};
+
 const getMinuteHeightCss = hoursPerScreen =>
     `calc((100dvh - var(--spacing-grid)) / ${Number(hoursPerScreen) * 60})`;
 
@@ -43,4 +61,5 @@ export {
     getDurationHeight,
     getMinuteHeightCss,
     getPixelsPerMinute,
+    snapToDevicePixel,
 };

@@ -7,6 +7,7 @@ import cx from '../utils/cx';
 const TrashedCard = ({
     children,
     className,
+    restoreDisabled = false,
     restoreButtonTitle,
     style,
     onRestore,
@@ -22,16 +23,16 @@ const TrashedCard = ({
         }}
         {...otherProps}
     >
-        <FlexBox
-            align="center"
-            justify="center"
-            padding={0.25}
+        <button
+            aria-label={restoreButtonTitle}
             className="planner-restore-button absolute right-0 top-0 z-[1000] size-[var(--spacing-grid)] translate-x-1/2 -translate-y-1/2 cursor-pointer rounded-full border-2 border-planner-neutral-foreground bg-planner-neutral-background text-planner-neutral-foreground"
+            disabled={restoreDisabled}
             title={restoreButtonTitle}
+            type="button"
             onClick={onRestore}
         >
             <Icon iconName="reply" />
-        </FlexBox>
+        </button>
         {children}
     </div>
 );

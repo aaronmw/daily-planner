@@ -9,6 +9,7 @@ import React, {
     useState,
 } from 'react';
 import range from 'lodash/range';
+import { canWrite, ROLES } from '../collaboration/roles';
 import useDrop from '../hooks/useDrop';
 import AppColumn from './AppColumn';
 import TaskCard from './TaskCard';
@@ -264,16 +265,34 @@ const Timeline = ({
                                 task.list_id
                             )}
                             cardContext="timeline"
+                            creatorProfile={appData.collaboration?.getProfileForList?.(
+                                task.list_id,
+                                task.creator_identity_id
+                            )}
                             isActive={selectedTaskId === task.id}
                             isInteractionDisabled={isDraggingTask}
-                            isShowingListManager={appData.isShowingListManager}
-                            className="planner-timeline-task-card absolute left-[calc(var(--spacing-grid)*3)] right-[var(--spacing-grid)]"
-                            onImmediatelySelectTask={
-                                appActions.onImmediatelySelectTask
+                            isMutable={
+                                plannerIndexes.listById.get(task.list_id)
+                                    ?.is_private_copy ||
+                                !appData.collaboration?.isEnabled ||
+                                canWrite(
+                                    appData.collaboration?.roleByListId?.get(
+                                        task.list_id
+                                    ) || ROLES.READ
+                                )
                             }
+                            isCreatorPresent={appData.collaboration?.presenceByIdentityId?.has(
+                                task.creator_identity_id
+                            )}
+                            className="planner-timeline-task-card absolute left-[calc(var(--spacing-grid)*3)] right-[var(--spacing-grid)]"
                             onTransitionToTask={appActions.onTransitionToTask}
                             startOffsetMinutes={offsetMinutes}
                             task={task}
+                            showCreatorAvatar={
+                                (appData.collaboration?.membersByListId?.get(
+                                    task.list_id
+                                )?.length || 0) > 1
+                            }
                         />
                     );
                 })}

@@ -1,0 +1,48 @@
+project_id = "daily-planner"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+shadow_port = 54320
+major_version = 17
+
+[realtime]
+enabled = true
+
+[auth]
+enabled = true
+site_url = "http://127.0.0.1:3010"
+additional_redirect_urls = [
+  "http://127.0.0.1:3010/**",
+  "http://localhost:3010/**",
+  "daily-planner://auth/callback**",
+]
+jwt_expiry = 3600
+enable_signup = true
+enable_anonymous_sign_ins = true
+enable_manual_linking = true
+
+[auth.email]
+enable_signup = true
+double_confirm_changes = true
+enable_confirmations = false
+
+[auth.external.google]
+enabled = true
+client_id = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID)"
+secret = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET)"
+skip_nonce_check = false
+
+[auth.captcha]
+enabled = true
+provider = "turnstile"
+secret = "env(SUPABASE_AUTH_CAPTCHA_SECRET)"
+
+[auth.rate_limit]
+anonymous_users = 30

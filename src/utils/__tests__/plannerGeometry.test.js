@@ -4,16 +4,14 @@ import {
     getDurationHeight,
     getMinuteHeightCss,
     getPixelsPerMinute,
+    snapToDevicePixel,
 } from '../plannerGeometry';
 
 describe('planner geometry', () => {
     it.each([4, 10, 24])(
         'keeps duration heights proportional at %s hours per screen',
         hoursPerScreen => {
-            const pixelsPerMinute = getPixelsPerMinute(
-                720,
-                hoursPerScreen
-            );
+            const pixelsPerMinute = getPixelsPerMinute(720, hoursPerScreen);
 
             expect(getDurationHeight(30, pixelsPerMinute)).toBeCloseTo(
                 720 / (hoursPerScreen * 2)
@@ -48,5 +46,11 @@ describe('planner geometry', () => {
         expect(getMinuteHeightCss(6)).toBe(
             'calc((100dvh - var(--spacing-grid)) / 360)'
         );
+    });
+
+    it('aligns virtual row positions to physical display pixels', () => {
+        expect(snapToDevicePixel(144.5, 1)).toBe(145);
+        expect(snapToDevicePixel(144.5, 2)).toBe(144.5);
+        expect(snapToDevicePixel(144.375, 2)).toBe(144.5);
     });
 });

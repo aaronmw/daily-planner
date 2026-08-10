@@ -46,10 +46,11 @@ export const extractClipboardFiles = clipboardData => {
         return [];
     }
 
-    const itemFiles = Array.from(clipboardData.items || [])
-        .filter(item => item.kind === 'file')
-        .map(item => item.getAsFile())
-        .filter(Boolean);
+    const itemFiles = Array.from(clipboardData.items || []).flatMap(item => {
+        if (item.kind !== 'file') return [];
+        const file = item.getAsFile();
+        return file ? [file] : [];
+    });
 
     return itemFiles.length
         ? itemFiles

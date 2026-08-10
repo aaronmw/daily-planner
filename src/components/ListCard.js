@@ -3,9 +3,9 @@ import useDrag from '../hooks/useDrag';
 import useDrop from '../hooks/useDrop';
 import useElementRect from '../hooks/useElementRect';
 import isSurfaceActivationKey from '../utils/isSurfaceActivationKey';
-import toInt from '../utils/toInt';
 import cx from '../utils/cx';
 import { GhostButton } from './atoms/Button';
+import CollaborationAvatar from './CollaborationAvatar';
 import FlexBox from './atoms/FlexBox';
 import { COPY, getListAccentKey } from './atoms/tokens';
 import ColorPicker from './ColorPicker';
@@ -60,6 +60,7 @@ const PREVIEW_LINE_HEIGHT = 1.4;
 const PREVIEW_MIN_FONT_SIZE = 6.25;
 const PREVIEW_MAX_FONT_SIZE = 12.5;
 const EMPTY_TASKS = [];
+const noop = () => {};
 
 const handleListCardKeyDown = evt => {
     if (isSurfaceActivationKey(evt)) {
@@ -70,14 +71,19 @@ const handleListCardKeyDown = evt => {
 
 const ListCard = ({
     isActive,
-    isCreatingList,
+    labelEditRequest = null,
     listId,
     list,
     listThemeStyle,
+    onCancelLabelEdit = noop,
+    onCompleteLabelEdit = noop,
+    onFulfillLabelEdit = noop,
     onUpdateList,
     onUpdateTask,
-    selectedListId,
     isEditable = true,
+    isOwnerPresent = false,
+    ownerProfile,
+    showOwnerAvatar = false,
     style,
     tasks = EMPTY_TASKS,
     ...otherProps
@@ -112,14 +118,12 @@ const ListCard = ({
     const [dragProps] = useDrag({ 'list-id': listId });
 
     const [dropProps] = useDrop({
-        'task-id': (taskId, evt) => {
-            const targetListId = toInt(evt.currentTarget.dataset.listId);
-            if (targetListId) {
-                onUpdateTask(taskId, {
-                    isComplete: false,
-                    list_id: targetListId,
-                });
-            }
+        'task-id': taskId => {
+            if (!isEditable) return;
+            onUpdateTask(taskId, {
+                isComplete: false,
+                list_id: listId,
+            });
         },
     });
 
@@ -165,23 +169,41 @@ const ListCard = ({
             {...otherProps}
             onKeyDown={handleListCardKeyDown}
         >
-            <EditableText
-                key={listId}
-                isEditable={isEditable}
-                marginX={0.75}
-                marginTop={0.5}
-                startsEditing={isCreatingList && selectedListId === listId}
-                style={{
-                    alignSelf: 'stretch',
-                    flexGrow: 0,
-                    flexShrink: 0,
-                }}
-                tracerColor="var(--planner-contrast-text)"
-                value={list.label}
-                onSave={newLabel => {
-                    onUpdateList(listId, { label: newLabel });
-                }}
-            />
+            <div
+                className={cx(
+                    'planner-list-card-heading',
+                    showOwnerAvatar && 'planner-list-card-heading-with-avatar'
+                )}
+            >
+                {showOwnerAvatar ? (
+                    <CollaborationAvatar
+                        isPresent={isOwnerPresent}
+                        labelPrefix="Owned by"
+                        profile={ownerProfile}
+                    />
+                ) : null}
+                <EditableText
+                    key={listId}
+                    editRequest={labelEditRequest}
+                    isEditable={isEditable}
+                    tracerColor="var(--planner-contrast-text)"
+                    value={list.label}
+                    onCancel={({ editRequestId }) =>
+                        onCancelLabelEdit(editRequestId)
+                    }
+                    onEditRequestFulfilled={onFulfillLabelEdit}
+                    onSave={(newLabel, { editRequestId } = {}) => {
+                        onUpdateList(listId, { label: newLabel });
+
+                        if (
+                            editRequestId !== null &&
+                            editRequestId !== undefined
+                        ) {
+                            onCompleteLabelEdit(editRequestId);
+                        }
+                    }}
+                />
+            </div>
             <VirtualCollection
                 className="planner-list-card-preview"
                 estimateSize={estimatePreviewTaskSize}
@@ -194,11 +216,13 @@ const ListCard = ({
                 renderItem={renderPreviewTask}
                 scrollElementRef={previewElementRef}
             />
-            <ColorPicker
-                accentKey={listAccentKey}
-                className="planner-list-card-theme-control"
-                onPickColor={setListColor}
-            />
+            {isEditable ? (
+                <ColorPicker
+                    accentKey={listAccentKey}
+                    className="planner-list-card-theme-control"
+                    onPickColor={setListColor}
+                />
+            ) : null}
         </Container>
     );
 };

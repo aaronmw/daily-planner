@@ -60,8 +60,7 @@ const tests = [
     {
         given: `${initialValue}\n- `,
         selection: { after: 'Pears\n- ' },
-        it:
-            'If cursor on empty item (bullet, but no text typed), it is removed and a newline added',
+        it: 'If cursor on empty item (bullet, but no text typed), it is removed and a newline added',
         expect: {
             newCursorPosition: 54,
             newText: [
@@ -78,8 +77,7 @@ const tests = [
     {
         given: `${initialValue}\n`,
         selection: { after: 'Pears\n' },
-        it:
-            'If cursor on a completely empty line, it should just enter a single line break',
+        it: 'If cursor on a completely empty line, it should just enter a single line break',
         expect: {
             newCursorPosition: 54,
             newText: [
