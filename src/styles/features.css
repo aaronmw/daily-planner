@@ -161,6 +161,8 @@
 
 .planner-item-card-label {
     color: var(--planner-text-faded);
+    max-height: 100%;
+    overflow: hidden;
     padding-block: 6.25px;
     padding-left: 12.5px;
     padding-right: 6.25px;

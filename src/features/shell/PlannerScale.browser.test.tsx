@@ -1,3 +1,4 @@
+import { type CSSProperties } from 'react';
 import { render, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { PlannerCommands } from '../../core/application/plannerCommands';
@@ -13,12 +14,71 @@ import { PlannerStoreProvider } from '../../core/store/plannerContext';
 import { createPlannerStore } from '../../core/store/plannerStore';
 import { ListColumn } from '../lists/ListColumn';
 import { ItemColumn } from '../items/ItemColumn';
+import { ItemCard } from '../items/ItemCard';
 import { TimelineColumn } from '../timeline/TimelineColumn';
 import '../../styles/index.css';
 
 const noop = () => undefined;
 
 describe('planner collection scale in a real browser', () => {
+    it('contains long labels inside duration-sized item cards', () => {
+        const list = createPlannerList({ label: 'Overflow list' });
+        const item = createPlannerItem({
+            label: 'Press [UP] or [DOWN] to select the previous and next unscheduled items in the active list',
+            listId: list.id,
+        });
+        const store = createPlannerStore();
+        store.getState().applySnapshot({ lists: [list], items: [item] });
+        const commands = {
+            archiveList: vi.fn(),
+            archiveItem: vi.fn(),
+            cancelLabelEdit: noop,
+            completeLabelEdit: noop,
+            createList: vi.fn(),
+            createItem: vi.fn(),
+            deleteList: vi.fn(),
+            deleteItem: vi.fn(),
+            fulfillLabelEdit: noop,
+            hydrate: vi.fn(),
+            moveItem: vi.fn(),
+            restoreList: vi.fn(),
+            restoreItem: vi.fn(),
+            selectList: vi.fn(),
+            selectItem: vi.fn(),
+            updateList: vi.fn(),
+            updatePreferences: vi.fn(),
+            updateItem: vi.fn(),
+            updateItemWith: vi.fn(),
+        } satisfies PlannerCommands;
+        const cardContainerStyle = {
+            '--planner-minute-height': '1.725px',
+            'width': 370,
+        } as CSSProperties;
+
+        const { container } = render(
+            <PlannerStoreProvider store={store}>
+                <CollaborationProvider>
+                    <PlannerCommandsProvider commands={commands}>
+                        <div style={cardContainerStyle}>
+                            <ItemCard id={item.id} shortcut={1} />
+                        </div>
+                    </PlannerCommandsProvider>
+                </CollaborationProvider>
+            </PlannerStoreProvider>
+        );
+
+        const card = container.querySelector<HTMLElement>('.planner-item-card');
+        const label = container.querySelector<HTMLElement>(
+            '.planner-item-card-label'
+        );
+        if (!card || !label) throw new Error('The item card did not render.');
+
+        const cardBounds = card.getBoundingClientRect();
+        const labelBounds = label.getBoundingClientRect();
+        expect(labelBounds.top).toBeGreaterThanOrEqual(cardBounds.top);
+        expect(labelBounds.bottom).toBeLessThanOrEqual(cardBounds.bottom);
+    });
+
     it('keeps 3,000 lists and 10,000 items out of the DOM', async () => {
         const lists = Array.from({ length: 3_000 }, (_, index) =>
             createPlannerList({ label: `List ${index + 1}` })
