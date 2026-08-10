@@ -50,9 +50,12 @@
     border-radius: var(--radius-planner);
 }
 
-.planner-list-card,
-.planner-item-card {
+.planner-list-card {
     overflow: hidden;
+}
+
+.planner-item-card {
+    overflow: visible;
 }
 
 .planner-ghost-button {
@@ -173,6 +176,14 @@
 .planner-item-card[data-active='true'] .planner-item-card-label,
 .planner-item-card:hover .planner-item-card-label {
     color: var(--planner-text);
+}
+
+.planner-item-card-shortcut {
+    left: 0;
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1;
 }
 
 .planner-item-card-shortcut,
