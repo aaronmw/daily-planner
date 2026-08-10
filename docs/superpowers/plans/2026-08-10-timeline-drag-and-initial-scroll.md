@@ -4,7 +4,7 @@
 
 **Goal:** Restore native item-card dragging in WKWebView and initialize the timeline one hour before the current local time without overriding later manual scrolling.
 
-**Architecture:** Keep the existing native drag payload and timeline drop logic, but replace transform-based virtual row placement with a small WebKit-safe `top` positioning helper. Add a pure initial-minute helper to the existing timeline scale module, initialize the timeline from it once, and preserve the existing scroll ref as the source of truth afterward.
+**Architecture:** Keep the existing native drag payload and timeline drop logic, but replace transform-based virtual row placement with an inline WebKit-safe `top` position. Add a pure initial-minute helper to the existing timeline scale module, initialize the timeline from it once, and preserve the existing scroll ref as the source of truth afterward.
 
 **Tech Stack:** React 19, TypeScript 6, TanStack Virtual, Vitest, Tailwind CSS 4, Tauri/WKWebView
 
@@ -22,52 +22,20 @@
 
 **Files:**
 
-- Create: `src/features/items/itemVirtualization.ts`
-- Create: `src/features/items/__tests__/itemVirtualization.test.ts`
 - Modify: `src/features/items/ItemColumn.tsx:238-246`
 
 **Interfaces:**
 
 - Consumes: TanStack Virtual's numeric `VirtualItem.start` offset.
-- Produces: `virtualItemRowPosition(start: number): { top: number }` for transform-free absolute row placement.
+- Produces: Transform-free absolute row placement using the virtual item's existing numeric `start` offset.
 
-- [ ] **Step 1: Write the failing regression test**
+- [ ] **Step 1: Record the failing WKWebView reproduction**
 
-```ts
-import { describe, expect, it } from 'vitest';
-import { virtualItemRowPosition } from '../itemVirtualization';
+The installed WKWebView app has already reproduced the regression: dragging an unscheduled item under the transformed virtual row produces a copy cursor, no drag ghost, and no timeline drop response. The current automated browser project uses Chromium, so it cannot honestly reproduce the WebKit engine bug. Do not add a source-text or style-object change-detector test.
 
-describe('virtualItemRowPosition', () => {
-    it('positions a virtual row without a transform ancestor', () => {
-        const style = virtualItemRowPosition(128);
+- [ ] **Step 2: Implement transform-free row positioning**
 
-        expect(style).toEqual({ top: 128 });
-        expect(style).not.toHaveProperty('transform');
-    });
-});
-```
-
-- [ ] **Step 2: Run the focused test and verify it fails**
-
-Run:
-
-```bash
-pnpm exec vitest run --project unit src/features/items/__tests__/itemVirtualization.test.ts
-```
-
-Expected: FAIL because `../itemVirtualization` does not exist.
-
-- [ ] **Step 3: Implement transform-free row positioning**
-
-Create `src/features/items/itemVirtualization.ts`:
-
-```ts
-export const virtualItemRowPosition = (
-    start: number
-): { top: number } => ({ top: start });
-```
-
-Import it in `ItemColumn.tsx` and replace:
+In `ItemColumn.tsx`, replace:
 
 ```tsx
 style={{ transform: `translateY(${item.start}px)` }}
@@ -76,20 +44,20 @@ style={{ transform: `translateY(${item.start}px)` }}
 with:
 
 ```tsx
-style={virtualItemRowPosition(item.start)}
+style={{ top: item.start }}
 ```
 
 The existing absolutely positioned row keeps the same virtual offset without placing the draggable card beneath a transformed ancestor.
 
-- [ ] **Step 4: Run the focused test and verify it passes**
+- [ ] **Step 3: Run the existing unit/node suite**
 
 Run:
 
 ```bash
-pnpm exec vitest run --project unit src/features/items/__tests__/itemVirtualization.test.ts
+pnpm test
 ```
 
-Expected: PASS with one test.
+Expected: all existing tests pass. Final behavior verification remains a real WKWebView drag after Aaron explicitly requests a rebuild/relaunch.
 
 ---
 
@@ -188,8 +156,6 @@ Expected: PASS for the existing scale tests and the two new initial-minute tests
 **Files:**
 
 - Verify: `src/features/items/ItemColumn.tsx`
-- Verify: `src/features/items/itemVirtualization.ts`
-- Verify: `src/features/items/__tests__/itemVirtualization.test.ts`
 - Verify: `src/features/timeline/TimelineColumn.tsx`
 - Verify: `src/features/timeline/timelineScale.ts`
 - Verify: `src/features/timeline/__tests__/timelineScale.test.ts`
@@ -204,10 +170,10 @@ Expected: PASS for the existing scale tests and the two new initial-minute tests
 Run:
 
 ```bash
-pnpm exec vitest run --project unit src/features/items/__tests__/itemVirtualization.test.ts src/features/timeline/__tests__/timelineScale.test.ts
+pnpm exec vitest run --project unit src/features/timeline/__tests__/timelineScale.test.ts
 ```
 
-Expected: PASS for both files.
+Expected: PASS for the timeline scale test file.
 
 - [ ] **Step 2: Run repository checks**
 
@@ -232,7 +198,7 @@ git status --short
 git diff -- src/features/items src/features/timeline
 ```
 
-Expected: only the six implementation/test files listed above are changed or created.
+Expected: only the four implementation/test files listed above are changed.
 
 - [ ] **Step 4: Stop for the post-implementation decision audit**
 
