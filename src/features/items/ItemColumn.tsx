@@ -229,7 +229,7 @@ export function ItemColumn({
                             data-index={item.index}
                             key={item.key}
                             ref={virtualizer.measureElement}
-                            style={{ transform: `translateY(${item.start}px)` }}
+                            style={{ top: item.start }}
                         >
                             {item.index === 0 ? (
                                 <GhostButton

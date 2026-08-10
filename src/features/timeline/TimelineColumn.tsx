@@ -10,6 +10,7 @@ import { usePlannerCommands } from '../../core/application/plannerContext';
 import { usePlannerSelector } from '../../core/store/plannerContext';
 import { ItemCard } from '../items/ItemCard';
 import { scheduledItemsInWindow } from './scheduledWindow';
+import { initialTimelineMinute } from './timelineScale';
 
 const DAY_MINUTES = 24 * 60;
 
@@ -40,10 +41,13 @@ export function TimelineColumn({
     const containerRef = useRef<HTMLDivElement>(null);
     const focusFrameRef = useRef<number | null>(null);
     const fulfilledFocusRequestRef = useRef(0);
-    const topMinuteRef = useRef(6 * 60);
+    const [initialTopMinute] = useState(() =>
+        initialTimelineMinute(new Date())
+    );
+    const topMinuteRef = useRef(initialTopMinute);
     const [visibleRange, setVisibleRange] = useState({
-        end: 16 * 60,
-        start: 6 * 60,
+        end: initialTopMinute + hoursPerScreen * 60,
+        start: initialTopMinute,
     });
     const pixelsPerMinute = minuteHeight;
     const scheduledItems = useMemo(
@@ -68,9 +72,11 @@ export function TimelineColumn({
         const element = containerRef.current;
         if (!element) return;
         element.scrollTop = topMinuteRef.current * pixelsPerMinute;
+        const appliedTopMinute = element.scrollTop / pixelsPerMinute;
+        topMinuteRef.current = appliedTopMinute;
         setVisibleRange({
-            end: topMinuteRef.current + hoursPerScreen * 60,
-            start: topMinuteRef.current,
+            end: appliedTopMinute + hoursPerScreen * 60,
+            start: appliedTopMinute,
         });
     }, [hoursPerScreen, pixelsPerMinute]);
 
