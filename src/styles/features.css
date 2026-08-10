@@ -1,0 +1,193 @@
+[data-item-id][data-active='true'] {
+    box-shadow: inset 0 0 0 var(--planner-stroke-width)
+        var(--planner-item-border-active);
+    z-index: 10;
+}
+
+[data-grid-index][data-active='true'] {
+    box-shadow:
+        0 0 0 var(--planner-stroke-width) var(--planner-shaded),
+        0 0 0 calc(var(--planner-stroke-width) * 2)
+            var(--planner-item-border-active);
+}
+
+.planner-keyboard-key {
+    align-items: center;
+    background: color-mix(in srgb, var(--planner-text) 40%, transparent);
+    border-radius: 2px;
+    display: inline-grid;
+    font-family: inherit;
+    height: 21px;
+    justify-items: center;
+    min-width: 21px;
+    padding: 2px 3px 3px;
+}
+
+.planner-keyboard-key-face {
+    align-items: center;
+    background: var(--planner-text);
+    border-radius: 1px;
+    color: var(--planner-background);
+    display: inline-grid;
+    font-size: 11px;
+    font-weight: 800;
+    height: 15px;
+    justify-items: center;
+    line-height: 1;
+    min-width: 15px;
+    padding-inline: 3px;
+    transform: translateY(-1px);
+}
+
+.planner-keyboard-key-face[data-icon='true'] {
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.planner-ghost-button,
+.planner-list-card,
+.planner-item-card {
+    border-radius: var(--radius-planner);
+}
+
+.planner-list-card,
+.planner-item-card {
+    overflow: hidden;
+}
+
+.planner-ghost-button {
+    background: transparent;
+    border: var(--planner-stroke-width) solid transparent;
+    color: var(--planner-text-faded);
+    cursor: pointer;
+    position: relative;
+    transition:
+        background-color var(--planner-motion-fast) var(--planner-motion-ease),
+        color var(--planner-motion-fast) var(--planner-motion-ease),
+        opacity var(--planner-motion-fast) var(--planner-motion-ease),
+        transform var(--planner-motion-fast) var(--planner-motion-ease);
+}
+
+.planner-ghost-button:hover,
+.planner-ghost-button:focus {
+    color: var(--planner-text);
+}
+
+.planner-ghost-button:active {
+    transform: translateY(2px);
+}
+
+.planner-ghost-button:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+.planner-ghost-tracer-frame {
+    display: block;
+    height: 100%;
+    inset: 0;
+    overflow: visible;
+    pointer-events: none;
+    position: absolute;
+    width: 100%;
+}
+
+.planner-ghost-tracer {
+    animation: planner-tracer 0.5s linear infinite paused;
+    fill: none;
+    stroke: var(--planner-dotted-line);
+    stroke-dasharray: 6px 6px;
+    stroke-width: var(--planner-stroke-width);
+    transition:
+        opacity var(--planner-motion-fast) var(--planner-motion-ease),
+        stroke var(--planner-motion-fast) var(--planner-motion-ease);
+}
+
+.planner-ghost-button:hover .planner-ghost-tracer,
+.planner-ghost-button:focus .planner-ghost-tracer {
+    animation-play-state: running;
+    stroke: var(--planner-border);
+}
+
+.planner-item-card {
+    box-shadow: inset 0 0 0 var(--planner-stroke-width)
+        var(--planner-item-border, var(--planner-border));
+    opacity: 1;
+    transition:
+        background-color var(--planner-motion-fast) var(--planner-motion-ease),
+        box-shadow var(--planner-motion-fast) var(--planner-motion-ease),
+        height var(--planner-motion-fast) var(--planner-motion-ease),
+        opacity var(--planner-motion-fast) var(--planner-motion-ease),
+        transform var(--planner-motion-fast) var(--planner-motion-ease);
+}
+
+.planner-item-card::before {
+    background-color: var(--planner-contrast);
+    border-radius: calc(var(--radius-planner) - 1px);
+    bottom: var(--radius-planner);
+    content: '';
+    left: 1px;
+    opacity: 0.5;
+    position: absolute;
+    top: var(--radius-planner);
+    transition:
+        background-color var(--planner-motion-fast) var(--planner-motion-ease),
+        opacity var(--planner-motion-fast) var(--planner-motion-ease),
+        transform var(--planner-motion-fast) var(--planner-motion-ease);
+    width: 5px;
+}
+
+.planner-item-card[data-active='true'],
+.planner-item-card:focus {
+    box-shadow: inset 0 0 0 var(--planner-stroke-width)
+        var(--planner-item-border-active);
+}
+
+.planner-item-card[data-active='true']::before {
+    opacity: 1;
+}
+
+.planner-item-card:hover {
+    box-shadow: inset 0 0 0 var(--planner-stroke-width)
+        var(--planner-item-border-hover);
+}
+
+.planner-item-card-label {
+    color: var(--planner-text-faded);
+    padding-block: 6.25px;
+    padding-left: 12.5px;
+    padding-right: 6.25px;
+    position: relative;
+    transition:
+        color var(--planner-motion-fast) var(--planner-motion-ease),
+        opacity var(--planner-motion-fast) var(--planner-motion-ease),
+        transform var(--planner-motion-fast) var(--planner-motion-ease);
+}
+
+.planner-item-card-label-text {
+    display: block;
+    min-width: 0;
+    width: 100%;
+}
+
+.planner-item-card[data-active='true'] .planner-item-card-label,
+.planner-item-card:hover .planner-item-card-label {
+    color: var(--planner-text);
+}
+
+.planner-item-card-shortcut,
+.planner-item-card-icon {
+    transition:
+        color var(--planner-motion-fast) var(--planner-motion-ease),
+        opacity var(--planner-motion-fast) var(--planner-motion-ease),
+        transform var(--planner-motion-fast) var(--planner-motion-ease);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .planner-ghost-tracer {
+        animation: none;
+    }
+}
+.planner-column-expand:focus {
+    outline-color: var(--planner-background) !important;
+}

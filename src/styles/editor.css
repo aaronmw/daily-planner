@@ -1,0 +1,124 @@
+.planner-editable-text {
+    cursor: pointer;
+    height: auto;
+    position: relative;
+    user-select: none;
+    width: auto;
+}
+
+.planner-editable-text[data-editing='true'] {
+    cursor: text;
+    user-select: text;
+}
+
+.planner-editable-text::before {
+    border: var(--planner-stroke-width) dashed var(--planner-dotted-line);
+    border-radius: var(--radius-planner);
+    bottom: calc(var(--spacing-grid) * -0.25);
+    box-shadow: 0 0 0 0 var(--planner-primary);
+    content: '';
+    left: calc(var(--spacing-grid) * -0.5);
+    opacity: 0;
+    pointer-events: none;
+    position: absolute;
+    right: calc(var(--spacing-grid) * -0.5);
+    top: calc(var(--spacing-grid) * -0.25);
+    transition:
+        border-color var(--planner-motion-fast) var(--planner-motion-ease),
+        box-shadow var(--planner-motion-fast) var(--planner-motion-ease),
+        opacity var(--planner-motion-fast) var(--planner-motion-ease);
+}
+
+.planner-editable-text[data-editing='true']::before {
+    border: none;
+    box-shadow: 0 0 0 var(--planner-stroke-width) var(--planner-primary);
+    opacity: 1;
+}
+
+.planner-editable-text[data-editable='true']:focus::before,
+.planner-editable-text[data-editable='true']:hover::before {
+    opacity: 1;
+}
+
+.planner-editable-text-input {
+    height: 100%;
+    overflow: hidden;
+    width: 100%;
+}
+
+.planner-editable-text-prose-canvas {
+    isolation: isolate;
+    position: relative;
+}
+
+.planner-editable-text-highlight-layer,
+.planner-editable-text-prose-input {
+    font: inherit;
+    inset: 0;
+    letter-spacing: 0;
+    line-height: inherit;
+    margin: 0;
+    overflow: auto;
+    overflow-wrap: break-word;
+    padding: 0;
+    tab-size: 2;
+    white-space: pre-wrap;
+    width: 100%;
+    word-break: break-word;
+}
+
+.planner-editable-text-highlight-layer {
+    color: var(--planner-text);
+    pointer-events: none;
+    position: absolute;
+    scrollbar-width: none;
+    z-index: 0;
+}
+
+.planner-editable-text-highlight-layer::-webkit-scrollbar {
+    display: none;
+}
+
+.planner-editable-text-highlight-layer span {
+    transition:
+        color var(--planner-motion-fast) var(--planner-motion-ease),
+        opacity var(--planner-motion-fast) var(--planner-motion-ease),
+        text-decoration-color var(--planner-motion-fast)
+            var(--planner-motion-ease);
+}
+
+.planner-editable-text-prose-input {
+    background: transparent;
+    caret-color: var(--planner-primary);
+    color: transparent;
+    display: block;
+    position: relative;
+    resize: none;
+    z-index: 1;
+}
+
+.planner-editable-text-segment-dimmed {
+    opacity: 0.5;
+}
+
+.planner-editable-text-segment-incomplete {
+    color: var(--color-rose-600);
+    text-decoration-color: color-mix(
+        in oklab,
+        var(--color-rose-600) 45%,
+        transparent
+    );
+    text-decoration-line: underline;
+    text-decoration-style: wavy;
+    text-decoration-thickness: var(--planner-stroke-width);
+    text-underline-offset: 4px;
+}
+
+[data-theme='dark'] .planner-editable-text-segment-incomplete {
+    color: var(--color-rose-400);
+    text-decoration-color: color-mix(
+        in oklab,
+        var(--color-rose-400) 45%,
+        transparent
+    );
+}

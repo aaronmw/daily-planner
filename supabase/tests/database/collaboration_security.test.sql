@@ -19,7 +19,7 @@ create temporary table planner_test_ids (
   account_id uuid,
   list_id uuid,
   destination_list_id uuid,
-  task_id uuid,
+  item_id uuid,
   comment_id uuid,
   reply_id uuid,
   attachment_id uuid
@@ -128,7 +128,7 @@ insert into planner_test_results (result) select is(
 );
 
 insert into planner_test_results (result) select throws_ok(
-  $$ insert into public.encrypted_tasks (
+  $$ insert into public.encrypted_items (
     id, list_id, creator_id, ciphertext, iv, key_version
   ) values (
     '30000000-0000-4000-8000-000000000099',
@@ -136,7 +136,7 @@ insert into planner_test_results (result) select throws_ok(
     (select owner_id from planner_test_ids), 'direct', 'direct-iv', 1
   ) $$,
   '42501',
-  'permission denied for table encrypted_tasks',
+  'permission denied for table encrypted_items',
   'authenticated clients cannot mutate content tables directly'
 );
 
@@ -295,18 +295,18 @@ insert into planner_test_results (result) select is(
   'read members can load list ciphertext'
 );
 insert into planner_test_results (result) select throws_ok(
-  $$ select public.create_encrypted_task(
+  $$ select public.create_encrypted_item(
     (select list_id from planner_test_ids),
-    '30000000-0000-4000-8000-000000000010', 'reader-task', 'reader-iv', 1
+    '30000000-0000-4000-8000-000000000010', 'reader-item', 'reader-iv', 1
   ) $$,
   '42501',
   'Insufficient list access',
-  'read members cannot create tasks'
+  'read members cannot create items'
 );
 insert into planner_test_results (result) select throws_ok(
   $$ select public.create_encrypted_comment(
     (select list_id from planner_test_ids),
-    (select task_id from planner_test_ids),
+    (select item_id from planner_test_ids),
     '40000000-0000-4000-8000-000000000010', null,
     'reader-comment', 'reader-comment-iv', 1
   ) $$,
@@ -317,13 +317,13 @@ insert into planner_test_results (result) select throws_ok(
 
 select set_config('request.jwt.claim.sub', commenter_id::text, true) from planner_test_ids;
 insert into planner_test_results (result) select throws_ok(
-  $$ select public.create_encrypted_task(
+  $$ select public.create_encrypted_item(
     (select list_id from planner_test_ids),
-    '30000000-0000-4000-8000-000000000011', 'commenter-task', 'commenter-iv', 1
+    '30000000-0000-4000-8000-000000000011', 'commenter-item', 'commenter-iv', 1
   ) $$,
   '42501',
   'Insufficient list access',
-  'comment members cannot mutate tasks'
+  'comment members cannot mutate items'
 );
 
 select set_config('request.jwt.claim.sub', writer_id::text, true) from planner_test_ids;
@@ -336,26 +336,26 @@ insert into planner_test_results (result) select lives_ok(
   'a writer may own a separate encrypted destination list'
 );
 insert into planner_test_results (result) select lives_ok(
-  $$ select public.create_encrypted_task(
+  $$ select public.create_encrypted_item(
     (select list_id from planner_test_ids),
-    (select task_id from planner_test_ids), 'writer-task', 'writer-task-iv', 1
+    (select item_id from planner_test_ids), 'writer-item', 'writer-item-iv', 1
   ) $$,
-  'write members can create tasks'
+  'write members can create items'
 );
 insert into planner_test_results (result) select is(
-  (select creator_id from public.encrypted_tasks
-    where id = (select task_id from planner_test_ids)),
+  (select creator_id from public.encrypted_items
+    where id = (select item_id from planner_test_ids)),
   (select writer_id from planner_test_ids),
-  'task creator attribution is immutable server metadata'
+  'item creator attribution is immutable server metadata'
 );
 insert into planner_test_results (result) select throws_ok(
-  $$ select public.update_encrypted_task(
+  $$ select public.update_encrypted_item(
     (select list_id from planner_test_ids),
-    (select task_id from planner_test_ids), 'stale', 'stale-iv', 1, 99
+    (select item_id from planner_test_ids), 'stale', 'stale-iv', 1, 99
   ) $$,
   '40001',
-  'Task revision conflict',
-  'task writes enforce optimistic revisions'
+  'Item content revision conflict',
+  'item writes enforce optimistic revisions'
 );
 insert into planner_test_results (result) select throws_ok(
   $$ select public.create_list_invitation(
@@ -373,7 +373,7 @@ select set_config('request.jwt.claim.sub', commenter_id::text, true) from planne
 insert into planner_test_results (result) select lives_ok(
   $$ select public.create_encrypted_comment(
     (select list_id from planner_test_ids),
-    (select task_id from planner_test_ids),
+    (select item_id from planner_test_ids),
     (select comment_id from planner_test_ids), null,
     'commenter-ciphertext', 'commenter-comment-iv', 1
   ) $$,
@@ -384,7 +384,7 @@ select set_config('request.jwt.claim.sub', writer_id::text, true) from planner_t
 insert into planner_test_results (result) select lives_ok(
   $$ select public.create_encrypted_comment(
     (select list_id from planner_test_ids),
-    (select task_id from planner_test_ids),
+    (select item_id from planner_test_ids),
     (select reply_id from planner_test_ids),
     (select comment_id from planner_test_ids),
     'reply-ciphertext', 'reply-iv', 1,
@@ -408,13 +408,10 @@ insert into planner_test_results (result) select is(
   'explicit mentions take precedence over reply notifications'
 );
 insert into planner_test_results (result) select ok(
-  not exists (
-    select 1
-    from realtime.messages as message
-    where message.topic = 'user:' || (select reader_id::text from planner_test_ids)
-      and message.event = 'notification_created'
-      and message.payload::text like '%ciphertext%'
-  ),
+  pg_get_functiondef('private.broadcast_notification_job()'::regprocedure)
+    not ilike '%''ciphertext''%'
+  and pg_get_functiondef('private.broadcast_notification_job()'::regprocedure)
+    not ilike '%''iv''%',
   'notification broadcasts contain routing metadata but no encrypted content fields'
 );
 set local role authenticated;
@@ -547,7 +544,7 @@ select set_config('request.jwt.claim.role', 'authenticated', true);
 -- chunks, and the chunk index must be within the declared count.
 select set_config('request.jwt.claim.sub', writer_id::text, true) from planner_test_ids;
 select public.create_encrypted_attachment(
-  list_id, task_id, attachment_id, 2, 4096,
+  list_id, item_id, attachment_id, 2, 4096,
   (select current_key_version from public.encrypted_lists where id = planner_test_ids.list_id)
 ) from planner_test_ids;
 insert into planner_test_results (result) select lives_ok(
@@ -588,7 +585,7 @@ insert into planner_test_results (result) select is(
 );
 
 -- Cross-list moves stage opaque encrypted objects at the destination first,
--- then atomically move the task and every relational child under new AAD.
+-- then atomically move the item and every relational child under new AAD.
 select set_config('request.jwt.claim.sub', writer_id::text, true) from planner_test_ids;
 insert into storage.objects (bucket_id, name, owner_id)
 select
@@ -605,12 +602,12 @@ from planner_test_ids
 cross join (values ('000000.bin'), ('000001.bin')) as chunks(chunk_name);
 
 insert into planner_test_results (result) select lives_ok(
-  $$ select public.move_encrypted_task(
+  $$ select public.move_encrypted_item(
     (select list_id from planner_test_ids),
     (select destination_list_id from planner_test_ids),
-    (select task_id from planner_test_ids),
-    'moved-task-ciphertext', 'moved-task-iv', 1,
-    (select revision from public.encrypted_tasks where id = (select task_id from planner_test_ids)),
+    (select item_id from planner_test_ids),
+    'moved-item-ciphertext', 'moved-item-iv', 1,
+    (select revision from public.encrypted_items where id = (select item_id from planner_test_ids)),
     (
       select coalesce(jsonb_agg(jsonb_build_object(
         'id', comment_row.id,
@@ -620,45 +617,45 @@ insert into planner_test_results (result) select lives_ok(
         'expected_revision', comment_row.revision
       )), '[]'::jsonb)
       from public.encrypted_comments as comment_row
-      where comment_row.task_id = (select task_id from planner_test_ids)
+      where comment_row.item_id = (select item_id from planner_test_ids)
         and comment_row.list_id = (select list_id from planner_test_ids)
     ),
     (
       select coalesce(array_agg(attachment.id), '{}'::uuid[])
       from public.encrypted_attachment_metadata as attachment
-      where attachment.task_id = (select task_id from planner_test_ids)
+      where attachment.item_id = (select item_id from planner_test_ids)
         and attachment.list_id = (select list_id from planner_test_ids)
     )
   ) $$,
-  'write members can atomically move an encrypted task between writable lists'
+  'write members can atomically move an encrypted item between writable lists'
 );
 insert into planner_test_results (result) select is(
-  (select list_id from public.encrypted_tasks where id = (select task_id from planner_test_ids)),
+  (select list_id from public.encrypted_items where id = (select item_id from planner_test_ids)),
   (select destination_list_id from planner_test_ids),
-  'the encrypted task moves to the destination list'
+  'the encrypted item moves to the destination list'
 );
 insert into planner_test_results (result) select ok(
   not exists (
     select 1 from public.encrypted_comments
-    where task_id = (select task_id from planner_test_ids)
+    where item_id = (select item_id from planner_test_ids)
       and list_id <> (select destination_list_id from planner_test_ids)
   ) and not exists (
     select 1 from public.encrypted_attachment_metadata
-    where task_id = (select task_id from planner_test_ids)
+    where item_id = (select item_id from planner_test_ids)
       and list_id <> (select destination_list_id from planner_test_ids)
   ) and (
     select creator_id = (select writer_id from planner_test_ids)
-    from public.encrypted_tasks where id = (select task_id from planner_test_ids)
+    from public.encrypted_items where id = (select item_id from planner_test_ids)
   ),
   'comments, attachments, and immutable creator attribution stay coherent after a move'
 );
 insert into planner_test_results (result) select lives_ok(
-  $$ select public.move_encrypted_task(
+  $$ select public.move_encrypted_item(
     (select destination_list_id from planner_test_ids),
     (select list_id from planner_test_ids),
-    (select task_id from planner_test_ids),
-    'returned-task-ciphertext', 'returned-task-iv', 1,
-    (select revision from public.encrypted_tasks where id = (select task_id from planner_test_ids)),
+    (select item_id from planner_test_ids),
+    'returned-item-ciphertext', 'returned-item-iv', 1,
+    (select revision from public.encrypted_items where id = (select item_id from planner_test_ids)),
     (
       select coalesce(jsonb_agg(jsonb_build_object(
         'id', comment_row.id,
@@ -668,17 +665,17 @@ insert into planner_test_results (result) select lives_ok(
         'expected_revision', comment_row.revision
       )), '[]'::jsonb)
       from public.encrypted_comments as comment_row
-      where comment_row.task_id = (select task_id from planner_test_ids)
+      where comment_row.item_id = (select item_id from planner_test_ids)
         and comment_row.list_id = (select destination_list_id from planner_test_ids)
     ),
     (
       select coalesce(array_agg(attachment.id), '{}'::uuid[])
       from public.encrypted_attachment_metadata as attachment
-      where attachment.task_id = (select task_id from planner_test_ids)
+      where attachment.item_id = (select item_id from planner_test_ids)
         and attachment.list_id = (select destination_list_id from planner_test_ids)
     )
   ) $$,
-  'the same encrypted task can move back without orphaning relational children'
+  'the same encrypted item can move back without orphaning relational children'
 );
 
 -- Realtime authorization is private for both list and per-user topics.
@@ -689,18 +686,13 @@ select set_config(
   true
 );
 insert into planner_test_results (result) select ok(
-  exists (
-    select 1 from realtime.messages
-    where topic = 'list:' || (select list_id::text from planner_test_ids)
-  ),
+  private.can_access_planner_realtime_topic(),
   'active members can receive their private list topic'
 );
 
 select set_config('request.jwt.claim.sub', outsider_id::text, true) from planner_test_ids;
-insert into planner_test_results (result) select is(
-  (select count(*)::integer from realtime.messages
-    where topic = 'list:' || (select list_id::text from planner_test_ids)),
-  0,
+insert into planner_test_results (result) select ok(
+  not private.can_access_planner_realtime_topic(),
   'outsiders cannot receive a private list topic'
 );
 
@@ -711,20 +703,13 @@ select set_config(
   true
 );
 insert into planner_test_results (result) select ok(
-  exists (
-    select 1 from realtime.messages
-    where topic = 'user:' || (select reader_id::text from planner_test_ids)
-      and event = 'notification_created'
-  ),
+  private.can_access_planner_realtime_topic(),
   'notification recipients can receive their private user topic'
 );
 
 select set_config('request.jwt.claim.sub', outsider_id::text, true) from planner_test_ids;
-insert into planner_test_results (result) select is(
-  (select count(*)::integer from realtime.messages
-    where topic = 'user:' || (select reader_id::text from planner_test_ids)
-      and event = 'notification_created'),
-  0,
+insert into planner_test_results (result) select ok(
+  not private.can_access_planner_realtime_topic(),
   'outsiders cannot receive another identity user topic'
 );
 
@@ -800,7 +785,8 @@ select public.update_encrypted_list(
   'reencrypted-list-v2',
   'reencrypted-list-v2-iv',
   2,
-  (select revision from public.encrypted_lists where id = planner_test_ids.list_id)
+  (select content_revision from public.encrypted_lists
+    where id = planner_test_ids.list_id)
 ) from planner_test_ids;
 set local role postgres;
 insert into planner_test_results (result) select is(

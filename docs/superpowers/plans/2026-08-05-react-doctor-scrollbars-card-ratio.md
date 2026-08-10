@@ -1,6 +1,6 @@
 # React Doctor Cleanup Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan item-by-item. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Clear the actionable React Doctor findings from the planner migration while applying the requested scrollbar and portrait card styling.
 
@@ -20,7 +20,7 @@
 
 ---
 
-### Task 1: Capture Diagnostics And Scope
+### Item 1: Capture Diagnostics And Scope
 
 **Files:**
 - Read: `src/App.js`
@@ -53,7 +53,7 @@ Expected: JSON schema version 3 with actionable diagnostics for files changed by
 Run: `npx -y react-doctor@0.9.5 --verbose --scope full --project src --yes`
 Expected: Confirms the same findings plus the older `withDebugLabel` React 19 defaultProps issue.
 
-### Task 2: Split The Giant App Component
+### Item 2: Split The Giant App Component
 
 **Files:**
 - Create: `src/hooks/usePlannerApp.js`
@@ -70,13 +70,13 @@ Move persistent state, derived values, callbacks, drag state effect, transition 
 
 - [x] **Step 2: Move viewport JSX into `PlannerLayout`**
 
-Render the same `Trash`, `Sidebar`, `PrimaryAppColumn`, `Transition`, `ListManager`, `TaskDetails`, and `Timeline` structure using data returned by `usePlannerApp`.
+Render the same `Trash`, `Sidebar`, `PrimaryAppColumn`, `Transition`, `ListManager`, `ItemDetails`, and `Timeline` structure using data returned by `usePlannerApp`.
 
 - [x] **Step 3: Keep `App` as a thin client shell**
 
 `App` should call `usePlannerApp()` and render `<PlannerLayout planner={planner} />`, leaving the component body far below React Doctor's 300-line threshold.
 
-### Task 3: Fix Concrete React Diagnostics
+### Item 3: Fix Concrete React Diagnostics
 
 **Files:**
 - Modify: `src/components/ColorPicker.js`
@@ -118,7 +118,7 @@ Move `onDragOver` to module scope in `useDrop.js`.
 
 Change `withDebugLabel` to return a wrapper component that injects `data-debug-label` through props.
 
-### Task 4: Apply Requested Visual Styling
+### Item 4: Apply Requested Visual Styling
 
 **Files:**
 - Modify: `app/globals.css`
@@ -141,7 +141,7 @@ Set `.planner-list-card-grid > *` to `aspect-ratio: 2 / 3` and remove the fixed 
 
 Delete `LIST_CARD_HEIGHT` if no component imports it after the CSS change.
 
-### Task 5: Verify And Report
+### Item 5: Verify And Report
 
 **Files:**
 - Read changed files and scan outputs only.

@@ -1,0 +1,291 @@
+import { render, waitFor } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
+import type { PlannerCommands } from '../../core/application/plannerCommands';
+import { PlannerCommandsProvider } from '../../core/application/plannerContext';
+import { CollaborationProvider } from '../../core/collaboration/CollaborationContext';
+import {
+    createPlannerList,
+    createPlannerItem,
+} from '../../core/domain/factories';
+import type { ListId, ItemId } from '../../core/domain/ids';
+import type { PlannerItem } from '../../core/domain/types';
+import { PlannerStoreProvider } from '../../core/store/plannerContext';
+import { createPlannerStore } from '../../core/store/plannerStore';
+import { ListColumn } from '../lists/ListColumn';
+import { ItemColumn } from '../items/ItemColumn';
+import { TimelineColumn } from '../timeline/TimelineColumn';
+import '../../styles/index.css';
+
+const noop = () => undefined;
+
+describe('planner collection scale in a real browser', () => {
+    it('keeps 3,000 lists and 10,000 items out of the DOM', async () => {
+        const lists = Array.from({ length: 3_000 }, (_, index) =>
+            createPlannerList({ label: `List ${index + 1}` })
+        );
+        const firstList = lists[0];
+        if (!firstList) throw new Error('The scale fixture needs a list.');
+        let afterOrderKey: string | null = null;
+        const items: PlannerItem[] = [];
+        for (let index = 0; index < 10_000; index += 1) {
+            const item = createPlannerItem({
+                afterOrderKey,
+                label: `Item ${index + 1}`,
+                listId: firstList.id,
+            });
+            afterOrderKey = item.orderKey;
+            items.push(item);
+        }
+        const store = createPlannerStore();
+        store.getState().applySnapshot({ lists, items });
+        const commands = {
+            archiveList: vi.fn(),
+            archiveItem: vi.fn(),
+            cancelLabelEdit: noop,
+            completeLabelEdit: noop,
+            createList: vi.fn(),
+            createItem: vi.fn(),
+            deleteList: vi.fn(),
+            deleteItem: vi.fn(),
+            fulfillLabelEdit: noop,
+            hydrate: vi.fn(),
+            moveItem: vi.fn(),
+            restoreList: vi.fn(),
+            restoreItem: vi.fn(),
+            selectList: vi.fn((id: ListId) =>
+                store.getState().setSelection(id, null)
+            ),
+            selectItem: vi.fn((id: ItemId) => {
+                const item = store.getState().itemsById.get(id);
+                if (item) store.getState().setSelection(item.listId, id);
+            }),
+            updateList: vi.fn(),
+            updatePreferences: vi.fn(),
+            updateItem: vi.fn(),
+            updateItemWith: vi.fn(),
+        } satisfies PlannerCommands;
+
+        const { container } = render(
+            <PlannerStoreProvider store={store}>
+                <CollaborationProvider>
+                    <PlannerCommandsProvider commands={commands}>
+                        <div
+                            style={{
+                                display: 'grid',
+                                gridTemplateColumns: '1fr 1fr',
+                                height: 640,
+                                width: 1400,
+                            }}
+                        >
+                            <ListColumn />
+                            <ItemColumn minuteHeight={1} />
+                        </div>
+                    </PlannerCommandsProvider>
+                </CollaborationProvider>
+            </PlannerStoreProvider>
+        );
+
+        await waitFor(() => {
+            expect(
+                container.querySelectorAll('[data-grid-index]').length
+            ).toBeGreaterThan(0);
+            expect(
+                container.querySelectorAll('[data-item-id]').length
+            ).toBeGreaterThan(0);
+        });
+        expect(
+            container.querySelectorAll('[data-grid-index]').length
+        ).toBeLessThan(50);
+        expect(
+            container.querySelectorAll('[data-item-id]').length
+        ).toBeLessThan(50);
+    });
+
+    it('focuses the selected list when the list column receives a reveal request', async () => {
+        const lists = [
+            createPlannerList({ label: 'First list' }),
+            createPlannerList({ label: 'Second list' }),
+        ];
+        const selectedList = lists[1];
+        if (!selectedList) throw new Error('The focus fixture needs a list.');
+
+        const store = createPlannerStore();
+        store.getState().applySnapshot({ lists, items: [] });
+        store.getState().setSelection(selectedList.id, null);
+        const commands = {
+            archiveList: vi.fn(),
+            archiveItem: vi.fn(),
+            cancelLabelEdit: noop,
+            completeLabelEdit: noop,
+            createList: vi.fn(),
+            createItem: vi.fn(),
+            deleteList: vi.fn(),
+            deleteItem: vi.fn(),
+            fulfillLabelEdit: noop,
+            hydrate: vi.fn(),
+            moveItem: vi.fn(),
+            restoreList: vi.fn(),
+            restoreItem: vi.fn(),
+            selectList: vi.fn((id: ListId) =>
+                store.getState().setSelection(id, null)
+            ),
+            selectItem: vi.fn(),
+            updateList: vi.fn(),
+            updatePreferences: vi.fn(),
+            updateItem: vi.fn(),
+            updateItemWith: vi.fn(),
+        } satisfies PlannerCommands;
+
+        const renderColumn = (focusRequestId: number) => (
+            <PlannerStoreProvider store={store}>
+                <CollaborationProvider>
+                    <PlannerCommandsProvider commands={commands}>
+                        <button data-testid="outside-focus">Outside</button>
+                        <div style={{ height: 640, width: 900 }}>
+                            <ListColumn focusRequestId={focusRequestId} />
+                        </div>
+                    </PlannerCommandsProvider>
+                </CollaborationProvider>
+            </PlannerStoreProvider>
+        );
+        const view = render(renderColumn(0));
+
+        const outside = view.getByTestId('outside-focus');
+        outside.focus();
+        expect(document.activeElement).toBe(outside);
+
+        view.rerender(renderColumn(1));
+
+        await waitFor(() => {
+            expect(document.activeElement).toHaveAttribute(
+                'aria-label',
+                'Open Second list'
+            );
+        });
+    });
+
+    it('focuses the selected item when the items column receives a reveal request', async () => {
+        const list = createPlannerList({ label: 'Focus list' });
+        const item = createPlannerItem({
+            label: 'Selected item',
+            listId: list.id,
+        });
+        const store = createPlannerStore();
+        store.getState().applySnapshot({ lists: [list], items: [item] });
+        store.getState().setSelection(list.id, item.id);
+        const commands = {
+            archiveList: vi.fn(),
+            archiveItem: vi.fn(),
+            cancelLabelEdit: noop,
+            completeLabelEdit: noop,
+            createList: vi.fn(),
+            createItem: vi.fn(),
+            deleteList: vi.fn(),
+            deleteItem: vi.fn(),
+            fulfillLabelEdit: noop,
+            hydrate: vi.fn(),
+            moveItem: vi.fn(),
+            restoreList: vi.fn(),
+            restoreItem: vi.fn(),
+            selectList: vi.fn(),
+            selectItem: vi.fn((id: ItemId) => {
+                const selected = store.getState().itemsById.get(id);
+                if (selected) {
+                    store.getState().setSelection(selected.listId, id);
+                }
+            }),
+            updateList: vi.fn(),
+            updatePreferences: vi.fn(),
+            updateItem: vi.fn(),
+            updateItemWith: vi.fn(),
+        } satisfies PlannerCommands;
+
+        const renderColumn = (focusRequestId: number) => (
+            <PlannerStoreProvider store={store}>
+                <CollaborationProvider>
+                    <PlannerCommandsProvider commands={commands}>
+                        <button data-testid="outside-item-focus">
+                            Outside
+                        </button>
+                        <div style={{ height: 640, width: 500 }}>
+                            <ItemColumn
+                                focusRequestId={focusRequestId}
+                                minuteHeight={1}
+                            />
+                        </div>
+                    </PlannerCommandsProvider>
+                </CollaborationProvider>
+            </PlannerStoreProvider>
+        );
+        const view = render(renderColumn(0));
+        const outside = view.getByTestId('outside-item-focus');
+        outside.focus();
+
+        view.rerender(renderColumn(1));
+
+        await waitFor(() => {
+            expect(document.activeElement).toHaveAttribute(
+                'aria-label',
+                'Selected item'
+            );
+        });
+    });
+
+    it('focuses the timeline surface when the timeline column receives a reveal request', async () => {
+        const list = createPlannerList({ label: 'Timeline list' });
+        const store = createPlannerStore();
+        store.getState().applySnapshot({ lists: [list], items: [] });
+        store.getState().setSelection(list.id, null);
+        const commands = {
+            archiveList: vi.fn(),
+            archiveItem: vi.fn(),
+            cancelLabelEdit: noop,
+            completeLabelEdit: noop,
+            createList: vi.fn(),
+            createItem: vi.fn(),
+            deleteList: vi.fn(),
+            deleteItem: vi.fn(),
+            fulfillLabelEdit: noop,
+            hydrate: vi.fn(),
+            moveItem: vi.fn(),
+            restoreList: vi.fn(),
+            restoreItem: vi.fn(),
+            selectList: vi.fn(),
+            selectItem: vi.fn(),
+            updateList: vi.fn(),
+            updatePreferences: vi.fn(),
+            updateItem: vi.fn(),
+            updateItemWith: vi.fn(),
+        } satisfies PlannerCommands;
+
+        const renderColumn = (focusRequestId: number) => (
+            <PlannerStoreProvider store={store}>
+                <CollaborationProvider>
+                    <PlannerCommandsProvider commands={commands}>
+                        <button data-testid="outside-timeline-focus">
+                            Outside
+                        </button>
+                        <div style={{ height: 640, width: 500 }}>
+                            <TimelineColumn
+                                focusRequestId={focusRequestId}
+                                minuteHeight={1}
+                            />
+                        </div>
+                    </PlannerCommandsProvider>
+                </CollaborationProvider>
+            </PlannerStoreProvider>
+        );
+        const view = render(renderColumn(0));
+        const outside = view.getByTestId('outside-timeline-focus');
+        outside.focus();
+
+        view.rerender(renderColumn(1));
+
+        await waitFor(() => {
+            expect(document.activeElement).toHaveAttribute(
+                'aria-label',
+                'Timeline schedule'
+            );
+        });
+    });
+});

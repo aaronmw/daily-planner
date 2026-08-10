@@ -53,7 +53,7 @@ remain readable to newly authorized members.
 Deploy `functions/dispatch-notifications` with JWT verification disabled, then
 invoke it from a trusted Supabase cron using the service-role bearer token. Set
 `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, and `VAPID_SUBJECT` as function
-secrets. The dispatcher sends only a generic notification; list labels, task
+secrets. The dispatcher sends only a generic notification; list labels, item
 content, comments, and participant profiles never enter notification payloads.
 
 Deploy `functions/cleanup-anonymous-identities` on a daily trusted cron as

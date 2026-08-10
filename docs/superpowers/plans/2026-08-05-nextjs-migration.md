@@ -1,6 +1,6 @@
 # Next.js Migration Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan item-by-item. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Replace Create React App with Next.js App Router while preserving the existing daily planner behavior.
 
@@ -17,7 +17,7 @@
 
 ---
 
-### Task 1: Replace CRA Dependencies And Scripts
+### Item 1: Replace CRA Dependencies And Scripts
 
 **Files:**
 - Modify: `package.json`
@@ -51,7 +51,7 @@ Set:
 }
 ```
 
-### Task 2: Add Next App Router Shell
+### Item 2: Add Next App Router Shell
 
 **Files:**
 - Create: `app/layout.js`
@@ -99,7 +99,7 @@ export default function RootLayout({ children }) {
 }
 ```
 
-### Task 3: Configure Build And Tests
+### Item 3: Configure Build And Tests
 
 **Files:**
 - Create: `next.config.js`
@@ -154,7 +154,7 @@ module.exports = {
 
 Keep the existing eslint rules that match current code style and remove CRA assumptions.
 
-### Task 4: Remove CRA Build Artifacts
+### Item 4: Remove CRA Build Artifacts
 
 **Files:**
 - Delete: `build/`
@@ -166,13 +166,13 @@ Keep the existing eslint rules that match current code style and remove CRA assu
 
 Remove the tracked `build/` directory because Next outputs to `.next/` and generated output should not be committed for this migration.
 
-### Task 5: Verify
+### Item 5: Verify
 
 **Files:**
 - No source edits unless verification reveals a specific compatibility issue.
 
 **Interfaces:**
-- Consumes: commands from Task 1.
+- Consumes: commands from Item 1.
 
 - [x] **Step 1: Run tests**
 

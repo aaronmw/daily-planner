@@ -1,0 +1,49 @@
+@theme {
+    --font-planner: 'Operator Mono', monospace;
+    --spacing-icon-slot: 45px;
+    --spacing-grid: 25px;
+    --radius-planner: 3px;
+}
+
+@theme inline {
+    --color-planner-background: var(--planner-background);
+    --color-planner-shaded: var(--planner-shaded);
+    --color-planner-text: var(--planner-text);
+    --color-planner-text-faded: var(--planner-text-faded);
+    --color-planner-border: var(--planner-border);
+    --color-planner-dotted-line: var(--planner-dotted-line);
+    --color-planner-primary: var(--planner-primary);
+    --color-planner-contrast: var(--planner-contrast);
+    --color-planner-contrast-text: var(--planner-contrast-text);
+    --color-planner-item-border: var(--planner-item-border);
+    --color-planner-item-border-hover: var(--planner-item-border-hover);
+    --color-planner-item-border-active: var(--planner-item-border-active);
+    --color-planner-neutral-background: var(--planner-neutral-background);
+    --color-planner-neutral-foreground: var(--planner-neutral-foreground);
+    --color-planner-danger: var(--planner-danger);
+}
+
+@property --planner-minute-height {
+    inherits: true;
+    initial-value: 1px;
+    syntax: '<length>';
+}
+
+@property --planner-item-duration-minutes {
+    inherits: false;
+    initial-value: 30;
+    syntax: '<number>';
+}
+
+:root {
+    --planner-stroke-width: 2px;
+    --planner-icon-glyph-size: calc(var(--spacing-grid) * 0.75);
+    --planner-inline-icon-size: calc(var(--spacing-grid) * 0.6);
+    --planner-motion-fast: 150ms;
+    --planner-motion-route: 250ms;
+    --planner-motion-emphasis: 300ms;
+    --planner-motion-ease: ease-in-out;
+    --planner-focus-ring-offset: 2px;
+    --planner-focus-ring-width: calc(var(--planner-stroke-width) * 2);
+    --planner-danger: var(--color-red-500);
+}

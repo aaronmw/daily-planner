@@ -4,10 +4,10 @@
     "version": "1.0.0",
     "identifier": "com.aaronwright.dailyplanner",
     "build": {
-        "beforeDevCommand": "npm run desktop:dev",
+        "beforeDevCommand": "pnpm dev:desktop",
         "devUrl": "http://127.0.0.1:1420",
-        "beforeBuildCommand": "npm run desktop:build",
-        "frontendDist": "../dist-desktop"
+        "beforeBuildCommand": "pnpm desktop:build",
+        "frontendDist": "../dist"
     },
     "app": {
         "windows": [

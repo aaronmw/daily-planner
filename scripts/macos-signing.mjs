@@ -89,10 +89,17 @@ const isStableDesignatedRequirement = (requirement, bundleIdentifier) => {
         /certificate\s+leaf\[subject\.OU\]\s*=\s*"?[A-Z0-9]+"?/.test(
             requirement
         );
+    const hasAppleCertificateIdentity =
+        requirement.includes('anchor apple generic') &&
+        /certificate\s+leaf\[subject\.CN\]\s*=\s*"(?:Apple Development|Mac Developer|Developer ID Application):[^"]+"/.test(
+            requirement
+        );
 
     return (
         hasExpectedIdentifier &&
-        (hasPersistentCertificate || hasAppleTeamIdentifier)
+        (hasPersistentCertificate ||
+            hasAppleTeamIdentifier ||
+            hasAppleCertificateIdentity)
     );
 };
 

@@ -100,6 +100,13 @@ test('accepts only bundle-bound certificate or Team-ID requirements', () => {
     );
     assert.equal(
         isStableDesignatedRequirement(
+            'identifier "com.aaronwright.dailyplanner" and anchor apple generic and certificate leaf[subject.CN] = "Apple Development: aaron@example.com (DEVICE1234)" and certificate 1[field.1.2.840.113635.100.6.2.1] /* exists */',
+            'com.aaronwright.dailyplanner'
+        ),
+        true
+    );
+    assert.equal(
+        isStableDesignatedRequirement(
             'identifier "com.aaronwright.dailyplanner" and cdhash H"1234"',
             'com.aaronwright.dailyplanner'
         ),

@@ -17,6 +17,8 @@ import {
 } from './macos-signing.mjs';
 import {
     accessIsSafeToNormalize,
+    canSafelyTransitionWebCryptoSigner,
+    classifyWebCryptoAccess,
     inspectWebCryptoAccess,
 } from './webcrypto-keychain.mjs';
 
@@ -266,80 +268,127 @@ function normalizeWebCryptoKeychainAccess() {
     }
 
     const installedInspection = verifyAppBundle(installedApp);
-    const preflight = inspectWebCryptoAccess(readKeychainAccessMetadata(), {
+    const allowKeychainReauthorization =
+        process.env.DAILY_PLANNER_ALLOW_KEYCHAIN_REAUTH === '1';
+    const inspectionOptions = {
         account: webCryptoAccount,
         appPath: installedApp,
         bundleIdentifier,
         requirement: installedInspection.requirement,
-    });
-
-    if (preflight.normalized) {
-        console.log(
-            'Daily Planner WebCrypto access already trusts exactly the installed app.'
-        );
-        return;
-    }
-
-    if (
-        !accessIsSafeToNormalize(preflight) ||
-        preflight.trustedRequirement !== installedInspection.requirement
-    ) {
-        throw new Error(
-            'Refusing to mutate an unexpected WebCrypto ACL:\n' +
-                preflight.problems.map(problem => `- ${problem}`).join('\n')
-        );
-    }
-
-    const temporaryDirectory = mkdtempSync(
-        join(tmpdir(), 'daily-planner-keychain-')
-    );
-    const helper = join(temporaryDirectory, 'configure-keychain-access');
-    const source = join(
-        projectRoot,
-        'scripts',
-        'configure-webcrypto-keychain-access.c'
+        cdHash: installedInspection.cdHash,
+        teamIdentifier: installedInspection.teamIdentifier,
+    };
+    let persistedInspection = inspectWebCryptoAccess(
+        readKeychainAccessMetadata(),
+        inspectionOptions
     );
 
-    try {
-        execFileSync(
-            'xcrun',
-            [
-                'clang',
-                '-Wno-deprecated-declarations',
-                '-framework',
-                'CoreFoundation',
-                '-framework',
-                'Security',
-                source,
-                '-o',
-                helper,
-            ],
-            { stdio: 'inherit' }
-        );
-        execFileSync(helper, [webCryptoAccount, installedApp, LOGIN_KEYCHAIN], {
-            stdio: 'inherit',
-        });
-
-        const persistedInspection = inspectWebCryptoAccess(
-            readKeychainAccessMetadata(),
+    if (!persistedInspection.decryptAccessNormalized) {
+        const signerTransitionAllowed = canSafelyTransitionWebCryptoSigner(
+            persistedInspection,
             {
-                account: webCryptoAccount,
                 appPath: installedApp,
-                bundleIdentifier,
-                requirement: installedInspection.requirement,
+                teamIdentifier: installedInspection.teamIdentifier,
+                explicitlyAllowed: allowKeychainReauthorization,
             }
         );
-        if (!persistedInspection.normalized) {
+        if (
+            !accessIsSafeToNormalize(persistedInspection) ||
+            (persistedInspection.trustedRequirement !==
+                installedInspection.requirement &&
+                !signerTransitionAllowed)
+        ) {
             throw new Error(
-                'WebCrypto ACL verification failed after the Keychain item was re-read:\n' +
+                'Refusing to mutate an unexpected WebCrypto ACL:\n' +
                     persistedInspection.problems
                         .map(problem => `- ${problem}`)
                         .join('\n')
             );
         }
-    } finally {
-        rmSync(temporaryDirectory, { force: true, recursive: true });
+
+        const temporaryDirectory = mkdtempSync(
+            join(tmpdir(), 'daily-planner-keychain-')
+        );
+        const helper = join(temporaryDirectory, 'configure-keychain-access');
+        const source = join(
+            projectRoot,
+            'scripts',
+            'configure-webcrypto-keychain-access.c'
+        );
+
+        try {
+            execFileSync(
+                'xcrun',
+                [
+                    'clang',
+                    '-Wno-deprecated-declarations',
+                    '-framework',
+                    'CoreFoundation',
+                    '-framework',
+                    'Security',
+                    source,
+                    '-o',
+                    helper,
+                ],
+                { stdio: 'inherit' }
+            );
+            execFileSync(
+                helper,
+                [webCryptoAccount, installedApp, LOGIN_KEYCHAIN],
+                { stdio: 'inherit' }
+            );
+
+            persistedInspection = inspectWebCryptoAccess(
+                readKeychainAccessMetadata(),
+                inspectionOptions
+            );
+            if (!persistedInspection.decryptAccessNormalized) {
+                throw new Error(
+                    'WebCrypto ACL verification failed after the Keychain item was re-read:\n' +
+                        persistedInspection.problems
+                            .map(problem => `- ${problem}`)
+                            .join('\n')
+                );
+            }
+        } finally {
+            rmSync(temporaryDirectory, { force: true, recursive: true });
+        }
     }
+
+    const accessClassification = classifyWebCryptoAccess(persistedInspection);
+    if (accessClassification === 'stable') {
+        console.log(
+            'Daily Planner WebCrypto access trusts the installed app through its stable Apple Team ID.'
+        );
+        return;
+    }
+
+    if (accessClassification === 'build-specific') {
+        console.warn(
+            'Daily Planner WebCrypto access trusts this exact build only. ' +
+                'The local self-signed identity has no Apple Team ID, so a changed build will require approval again.'
+        );
+        return;
+    }
+
+    if (
+        accessClassification === 'approval-required' &&
+        allowKeychainReauthorization
+    ) {
+        console.warn(
+            'The installed build needs one explicit Keychain approval. ' +
+                'Daily Planner will relaunch and macOS may show the password prompt.'
+        );
+        return;
+    }
+
+    throw new Error(
+        'The installed build is not present in the WebCrypto Keychain partition. ' +
+            'The previous app has been restored instead of causing another surprise password prompt.\n' +
+            'Use `pnpm tauri:dev` for routine development. For durable production updates, ' +
+            'install an Apple Development or Developer ID Application certificate, then perform the one-time transition with ' +
+            '`DAILY_PLANNER_ALLOW_KEYCHAIN_REAUTH=1 pnpm tauri:release`.'
+    );
 }
 
 function readKeychainAccessMetadata() {

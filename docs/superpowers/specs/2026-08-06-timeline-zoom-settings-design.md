@@ -16,7 +16,7 @@
 
 - `OptionsMenu` reads `timelineHoursPerScreen` from `appData` and calls `onChangeTimelineHoursPerScreen` from `appActions`.
 - The existing minimum, maximum, and step constants move with the control into `OptionsMenu`.
-- `Timeline` continues to read `timelineHoursPerScreen` for sizing tasks, grid rows, drop zones, and the current-time marker, but no longer renders or handles the control.
+- `Timeline` continues to read `timelineHoursPerScreen` for sizing items, grid rows, drop zones, and the current-time marker, but no longer renders or handles the control.
 - Persistence and normalization remain in `usePlannerApp`; no state keys or stored values change.
 
 ## Semantics And Accessibility

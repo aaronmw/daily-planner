@@ -1,6 +1,6 @@
 # Timeline Zoom Settings Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan item-by-item. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Move the existing timeline zoom slider into the bottom of the Options popover while preserving its persisted value and live timeline behavior.
 
@@ -18,7 +18,7 @@
 
 ---
 
-### Task 1: Move Timeline Zoom Into Options
+### Item 1: Move Timeline Zoom Into Options
 
 **Files:**
 

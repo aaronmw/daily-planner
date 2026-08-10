@@ -1,0 +1,183 @@
+* {
+    box-sizing: border-box;
+    scrollbar-color: var(--planner-background, #000) transparent;
+    scrollbar-width: thin;
+}
+
+html,
+body,
+#root {
+    height: 100%;
+}
+
+html,
+body {
+    background: var(--planner-background, #000);
+    color: var(--planner-text, #fff);
+    font-family: 'Operator Mono', monospace;
+    font-size: calc(var(--spacing-grid) * 0.5);
+    font-weight: 300;
+    line-height: 1.6;
+    margin: 0;
+    overflow: hidden;
+}
+
+html {
+    interpolate-size: allow-keywords;
+}
+
+.planner-root {
+    transition:
+        --planner-minute-height var(--planner-motion-fast)
+            var(--planner-motion-ease),
+        background-color var(--planner-motion-fast) var(--planner-motion-ease),
+        color var(--planner-motion-fast) var(--planner-motion-ease);
+}
+
+button,
+input,
+select,
+textarea {
+    background: transparent;
+    border: 0;
+    color: inherit;
+    font: inherit;
+    outline: 0;
+}
+
+button {
+    padding: 0;
+}
+
+textarea {
+    display: block;
+    resize: none;
+}
+
+strong {
+    font-weight: 900;
+}
+
+em {
+    font-style: italic;
+}
+
+::placeholder {
+    color: var(--planner-primary);
+    opacity: 1;
+}
+
+::selection {
+    background-color: color-mix(
+        in oklab,
+        var(--planner-contrast) 60%,
+        black 40%
+    );
+    color: white;
+}
+
+:is(a, button, input, select, textarea, [role='button'], [tabindex]):focus {
+    outline: var(--planner-focus-ring-width) solid var(--planner-contrast) !important;
+    outline-offset: var(--planner-focus-ring-offset) !important;
+    position: relative;
+    z-index: 20;
+}
+
+*::-webkit-scrollbar {
+    height: calc(var(--spacing-grid) * 0.5);
+    width: calc(var(--spacing-grid) * 0.5);
+}
+
+*::-webkit-scrollbar-track {
+    background-color: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+    background-clip: content-box;
+    background-color: var(--planner-background, #000);
+    border: var(--planner-stroke-width) solid transparent;
+    border-radius: 999px;
+}
+
+.markdown > * + *,
+.markdown ul > *,
+.markdown ol > * {
+    margin-top: calc(var(--spacing-grid) * 0.5);
+}
+
+.markdown h1 {
+    border-bottom: var(--planner-stroke-width) dotted var(--planner-text-faded);
+    color: var(--planner-text-faded);
+    font-size: 1.4rem;
+    font-weight: 500;
+    padding-bottom: calc(var(--spacing-grid) * 0.25);
+}
+
+.markdown * + h1 {
+    margin-top: var(--spacing-grid);
+}
+
+.markdown blockquote {
+    border-left: var(--planner-stroke-width) dotted var(--planner-text-faded);
+    font-style: italic;
+    padding: calc(var(--spacing-grid) * 0.5) var(--spacing-grid);
+}
+
+.markdown code {
+    background-color: var(--planner-shaded);
+    border-radius: 4px;
+    color: var(--planner-primary);
+    display: inline-block;
+    padding: 0 calc(var(--spacing-grid) * 0.25);
+}
+
+.markdown del {
+    color: var(--planner-text-faded);
+}
+
+.markdown li {
+    padding-left: var(--spacing-grid);
+    position: relative;
+}
+
+.markdown li::before {
+    border: var(--planner-stroke-width) dotted var(--planner-text-faded);
+    border-radius: 100px;
+    box-sizing: border-box;
+    content: '';
+    height: 10px;
+    left: 0;
+    position: absolute;
+    top: calc((1.4em / 2) - 5px);
+    width: 10px;
+}
+
+.markdown li li::after {
+    border-left: var(--planner-stroke-width) solid var(--planner-border);
+    bottom: 0;
+    content: '';
+    left: calc((var(--spacing-grid) * -1) + 4px);
+    opacity: 0.5;
+    position: absolute;
+    top: calc(var(--spacing-grid) * -0.5);
+}
+
+.markdown a {
+    color: var(--planner-primary);
+    text-decoration: underline;
+    text-decoration-thickness: var(--planner-stroke-width);
+    text-underline-offset: 0.2em;
+    transition:
+        color var(--planner-motion-fast) var(--planner-motion-ease),
+        opacity var(--planner-motion-fast) var(--planner-motion-ease);
+}
+
+.markdown a:hover {
+    opacity: 0.75;
+}
+
+.markdown img {
+    display: block;
+    height: auto;
+    max-width: 100%;
+}

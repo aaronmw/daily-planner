@@ -2,9 +2,13 @@ node_modules
 .next
 .idea
 .daily-planner
+.vitest-attachments/
 .env*
 !.env.example
 dist-desktop
+dist/
+*.tsbuildinfo
+**/__screenshots__/
 src-tauri/target
 src-tauri/gen/
 .playwright-mcp/
