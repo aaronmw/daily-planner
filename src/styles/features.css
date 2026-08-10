@@ -13,7 +13,7 @@
 
 .planner-keyboard-key {
     align-items: center;
-    background: color-mix(in srgb, var(--planner-text) 40%, transparent);
+    background: var(--planner-keyboard-key-tint);
     border-radius: 2px;
     display: inline-grid;
     font-family: inherit;

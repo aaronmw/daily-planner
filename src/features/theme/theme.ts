@@ -45,6 +45,7 @@ export const buildThemeStyle = (
         '--planner-item-border': accent,
         '--planner-item-border-active': accent,
         '--planner-item-border-hover': accent,
+        '--planner-keyboard-key-tint': dark ? '#0f172a' : '#f1f5f9',
         '--planner-text': dark ? '#f8fafc' : '#020617',
         '--planner-text-faded': dark ? '#94a3b8' : '#475569',
     };
