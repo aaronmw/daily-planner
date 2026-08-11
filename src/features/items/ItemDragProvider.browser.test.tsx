@@ -135,6 +135,8 @@ function PaddedItemListTarget({
     return (
         <div
             data-insertion-index={insertion?.index}
+            data-insertion-next-id={insertion?.nextId ?? undefined}
+            data-insertion-previous-id={insertion?.previousId ?? undefined}
             data-testid="padded-items-target"
             ref={containerRef}
             style={{ height: 160, overflow: 'auto', padding: 12, width: 240 }}
@@ -372,7 +374,7 @@ describe('item drag behavior in a real browser', () => {
         expect(commit).not.toHaveBeenCalled();
     });
 
-    it('uses padded-container coordinates for visual row midpoints', async () => {
+    it('commits the neighbour pair rendered from padded row geometry', async () => {
         const list = createPlannerList({ label: 'Padded destination' });
         const existing = createPlannerItem({ listId: list.id });
         const scheduled = {
@@ -383,7 +385,11 @@ describe('item drag behavior in a real browser', () => {
         store
             .getState()
             .applySnapshot({ items: [existing, scheduled], lists: [list] });
-        const commands = createTestCommands();
+        const returnItemToList = vi.fn();
+        const commands = {
+            ...createTestCommands(),
+            returnItemToList,
+        };
         const { getByTestId } = render(
             <PlannerStoreProvider store={store}>
                 <PlannerCommandsProvider commands={commands}>
@@ -431,5 +437,45 @@ describe('item drag behavior in a real browser', () => {
         await waitFor(() => {
             expect(target).toHaveAttribute('data-insertion-index', '0');
         });
+        expect(target).not.toHaveAttribute('data-insertion-previous-id');
+        expect(target).toHaveAttribute('data-insertion-next-id', existing.id);
+
+        act(() => {
+            dispatchPointer(
+                document,
+                'pointerup',
+                targetX,
+                justAboveVisualMidpoint
+            );
+        });
+        await waitFor(() => {
+            expect(returnItemToList).toHaveBeenCalledWith(
+                scheduled.id,
+                list.id,
+                null,
+                existing.id
+            );
+        });
+        expect(returnItemToList).toHaveBeenCalledTimes(1);
+        await waitFor(() => {
+            expect(target).not.toHaveAttribute('data-insertion-index');
+        });
+        expect(source).not.toHaveAttribute('data-pointer-dragging');
+        expect(document.documentElement).not.toHaveAttribute(
+            'data-item-dragging'
+        );
+        expect(
+            document.querySelector('[data-pointer-drag-ghost="true"]')
+        ).toBeNull();
+
+        act(() => {
+            dispatchPointer(
+                document,
+                'pointerup',
+                targetX,
+                justAboveVisualMidpoint
+            );
+        });
+        expect(returnItemToList).toHaveBeenCalledTimes(1);
     });
 });
