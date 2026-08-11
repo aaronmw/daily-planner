@@ -5,12 +5,13 @@ import {
     useCallback,
     useContext,
     useEffect,
+    useLayoutEffect,
     useMemo,
     useRef,
     useState,
 } from 'react';
 import type { ItemId } from '../../core/domain/ids';
-import { usePlannerSelector } from '../../core/store/plannerContext';
+import { usePlannerStoreApi } from '../../core/store/plannerContext';
 import { hasCrossedItemDragThreshold } from './itemDragSession';
 import {
     areActiveItemDropsEqual,
@@ -74,20 +75,50 @@ const createDragGhost = (
 };
 
 export function ItemDragProvider({ children }: PropsWithChildren): ReactNode {
-    const itemsById = usePlannerSelector(state => state.itemsById);
+    const store = usePlannerStoreApi();
     const targetsRef = useRef(new Map<string, ItemDropTarget>());
     const activeDropRef = useRef<ActiveItemDrop | null>(null);
+    const activeTargetRef = useRef<ItemDropTarget | null>(null);
+    const visibleActiveDropRef = useRef<ActiveItemDrop | null>(null);
+    const mountedRef = useRef(false);
     const [activeDrop, setActiveDrop] = useState<ActiveItemDrop | null>(null);
     const [activeItemId, setActiveItemId] = useState<ItemId | null>(null);
 
-    const registerDropTarget = useCallback((target: ItemDropTarget) => {
-        targetsRef.current.set(target.id, target);
+    useLayoutEffect(() => {
+        mountedRef.current = true;
         return () => {
-            if (targetsRef.current.get(target.id) === target) {
-                targetsRef.current.delete(target.id);
-            }
+            mountedRef.current = false;
         };
     }, []);
+
+    useLayoutEffect(() => {
+        visibleActiveDropRef.current = activeDrop;
+    }, [activeDrop]);
+
+    const invalidateActiveDropForTarget = useCallback((targetId: string) => {
+        if (activeDropRef.current?.targetId !== targetId) return;
+        activeDropRef.current = null;
+        activeTargetRef.current = null;
+        visibleActiveDropRef.current = null;
+        if (mountedRef.current) setActiveDrop(null);
+    }, []);
+
+    const registerDropTarget = useCallback(
+        (target: ItemDropTarget) => {
+            const previous = targetsRef.current.get(target.id);
+            if (previous && previous !== target) {
+                invalidateActiveDropForTarget(target.id);
+            }
+            targetsRef.current.set(target.id, target);
+            return () => {
+                if (targetsRef.current.get(target.id) === target) {
+                    targetsRef.current.delete(target.id);
+                    invalidateActiveDropForTarget(target.id);
+                }
+            };
+        },
+        [invalidateActiveDropForTarget]
+    );
 
     useEffect(() => {
         let drag: PointerDrag | null = null;
@@ -110,6 +141,8 @@ export function ItemDragProvider({ children }: PropsWithChildren): ReactNode {
             }
             delete document.documentElement.dataset.itemDragging;
             activeDropRef.current = null;
+            activeTargetRef.current = null;
+            visibleActiveDropRef.current = null;
             if (updateReactState) {
                 setActiveItemId(null);
                 setActiveDrop(null);
@@ -201,7 +234,7 @@ export function ItemDragProvider({ children }: PropsWithChildren): ReactNode {
             }
 
             event.preventDefault();
-            const item = itemsById.get(currentDrag.id);
+            const item = store.getState().itemsById.get(currentDrag.id);
             const nextDrop = item
                 ? resolveRegisteredItemDrop(
                       Array.from(targetsRef.current.values()),
@@ -214,6 +247,9 @@ export function ItemDragProvider({ children }: PropsWithChildren): ReactNode {
                   )
                 : null;
             activeDropRef.current = nextDrop;
+            activeTargetRef.current = nextDrop
+                ? (targetsRef.current.get(nextDrop.targetId) ?? null)
+                : null;
             setActiveDrop(current =>
                 areActiveItemDropsEqual(current, nextDrop) ? current : nextDrop
             );
@@ -225,15 +261,36 @@ export function ItemDragProvider({ children }: PropsWithChildren): ReactNode {
                 return;
             }
 
-            const activeDrop = currentDrag.active
-                ? activeDropRef.current
-                : null;
-            const target = activeDrop
-                ? targetsRef.current.get(activeDrop.targetId)
-                : undefined;
             const source = currentDrag.source;
             const id = currentDrag.id;
             const wasActive = currentDrag.active;
+            const item = wasActive
+                ? store.getState().itemsById.get(id)
+                : undefined;
+            const releaseDrop = item
+                ? resolveRegisteredItemDrop(
+                      Array.from(targetsRef.current.values()),
+                      {
+                          clientX: event.clientX,
+                          clientY: event.clientY,
+                          grabRatioY: currentDrag.grabRatioY,
+                      },
+                      item
+                  )
+                : null;
+            const target = releaseDrop
+                ? targetsRef.current.get(releaseDrop.targetId)
+                : undefined;
+            const activeDrop =
+                target &&
+                target === activeTargetRef.current &&
+                areActiveItemDropsEqual(activeDropRef.current, releaseDrop) &&
+                areActiveItemDropsEqual(
+                    visibleActiveDropRef.current,
+                    releaseDrop
+                )
+                    ? releaseDrop
+                    : null;
             resetDrag();
 
             if (!wasActive) return;
@@ -312,7 +369,7 @@ export function ItemDragProvider({ children }: PropsWithChildren): ReactNode {
             }
             resetDrag(false);
         };
-    }, [itemsById]);
+    }, [store]);
 
     const contextValue = useMemo(
         () => ({ activeDrop, activeItemId, registerDropTarget }),

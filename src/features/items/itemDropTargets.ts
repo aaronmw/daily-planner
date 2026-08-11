@@ -31,6 +31,28 @@ export interface ActiveItemDrop {
     targetId: string;
 }
 
+export function isElementHitAtPoint(
+    element: HTMLElement,
+    clientX: number,
+    clientY: number
+): boolean {
+    if (!element.isConnected) return false;
+    const bounds = element.getBoundingClientRect();
+    if (
+        bounds.width <= 0 ||
+        bounds.height <= 0 ||
+        clientX < bounds.left ||
+        clientX >= bounds.right ||
+        clientY < bounds.top ||
+        clientY >= bounds.bottom
+    ) {
+        return false;
+    }
+
+    const hit = element.ownerDocument.elementFromPoint(clientX, clientY);
+    return hit === element || (hit !== null && element.contains(hit));
+}
+
 export function resolveRegisteredItemDrop(
     targets: readonly ItemDropTarget[],
     pointer: ItemDropPointer,

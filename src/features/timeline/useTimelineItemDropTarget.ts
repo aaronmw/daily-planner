@@ -1,7 +1,10 @@
 import { type RefObject, useMemo } from 'react';
 import { usePlannerCommands } from '../../core/application/plannerContext';
 import { useItemDragState, useItemDropTarget } from '../items/ItemDragProvider';
-import type { ItemDropTarget } from '../items/itemDropTargets';
+import {
+    isElementHitAtPoint,
+    type ItemDropTarget,
+} from '../items/itemDropTargets';
 import { snapTimelineDragMinute } from './timelineScale';
 
 export const useTimelineItemDropTarget = (
@@ -22,12 +25,15 @@ export const useTimelineItemDropTarget = (
                 const element = containerRef.current;
                 if (!element) return null;
                 const bounds = element.getBoundingClientRect();
-                const isInsideTimeline =
-                    pointer.clientX >= bounds.left &&
-                    pointer.clientX <= bounds.right &&
-                    pointer.clientY >= bounds.top &&
-                    pointer.clientY <= bounds.bottom;
-                if (!isInsideTimeline) return null;
+                if (
+                    !isElementHitAtPoint(
+                        element,
+                        pointer.clientX,
+                        pointer.clientY
+                    )
+                ) {
+                    return null;
+                }
                 const rawMinute =
                     (element.scrollTop + pointer.clientY - bounds.top) /
                         pixelsPerMinute -

@@ -227,4 +227,38 @@ describe('planner commands', () => {
         expect(repository.mutations).toHaveLength(0);
         expect(store.getState().itemsById.get(scheduled.id)).toEqual(scheduled);
     });
+
+    it('requires write access to the source before returning an item', async () => {
+        const repository = new MemoryRepository();
+        const store = createPlannerStore();
+        const sourceList = createPlannerList({ label: 'Source' });
+        const destinationList = createPlannerList({ label: 'Destination' });
+        const scheduled = {
+            ...createPlannerItem({ listId: sourceList.id }),
+            scheduledStartMinutes: 9 * 60,
+        };
+        store.getState().applySnapshot({
+            lists: [sourceList, destinationList],
+            items: [scheduled],
+        });
+        const commands = createPlannerCommands({
+            authorization: {
+                canAccessList: id => id === destinationList.id,
+            },
+            preferences: preferenceRepository,
+            repository,
+            store,
+        });
+
+        await expect(
+            commands.returnItemToList(
+                scheduled.id,
+                destinationList.id,
+                null,
+                null
+            )
+        ).rejects.toThrow('read only');
+        expect(repository.mutations).toHaveLength(0);
+        expect(store.getState().itemsById.get(scheduled.id)).toEqual(scheduled);
+    });
 });

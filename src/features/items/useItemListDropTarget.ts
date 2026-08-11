@@ -2,7 +2,7 @@ import { type RefObject, useMemo } from 'react';
 import { usePlannerCommands } from '../../core/application/plannerContext';
 import type { ItemId, ListId } from '../../core/domain/ids';
 import { useItemDragState, useItemDropTarget } from './ItemDragProvider';
-import type { ItemDropTarget } from './itemDropTargets';
+import { isElementHitAtPoint, type ItemDropTarget } from './itemDropTargets';
 import {
     resolveItemListInsertion,
     type ItemListInsertion,
@@ -49,12 +49,15 @@ export function useItemListDropTarget({
                 const element = containerRef.current;
                 if (!element) return null;
                 const bounds = element.getBoundingClientRect();
-                const isInsideItems =
-                    pointer.clientX >= bounds.left &&
-                    pointer.clientX <= bounds.right &&
-                    pointer.clientY >= bounds.top &&
-                    pointer.clientY <= bounds.bottom;
-                if (!isInsideItems) return null;
+                if (
+                    !isElementHitAtPoint(
+                        element,
+                        pointer.clientX,
+                        pointer.clientY
+                    )
+                ) {
+                    return null;
+                }
 
                 const pointerOffsetY =
                     element.scrollTop + pointer.clientY - bounds.top;
@@ -62,11 +65,14 @@ export function useItemListDropTarget({
                     element.querySelectorAll<HTMLElement>(
                         '[data-item-list-row-id]'
                     )
-                ).map(row => ({
-                    id: row.dataset.itemListRowId as ItemId,
-                    size: row.offsetHeight,
-                    start: row.offsetTop,
-                }));
+                ).map(row => {
+                    const rowBounds = row.getBoundingClientRect();
+                    return {
+                        id: row.dataset.itemListRowId as ItemId,
+                        size: rowBounds.height,
+                        start: element.scrollTop + rowBounds.top - bounds.top,
+                    };
+                });
                 const insertion = resolveItemListInsertion(
                     pointerOffsetY,
                     itemIds,
