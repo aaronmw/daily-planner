@@ -27,9 +27,12 @@ policy.
 pnpm dev
 ```
 
-The browser app runs at `http://127.0.0.1:3010`. For the native development
-shell, use `pnpm tauri:dev`; Tauri starts the same Vite application on port
-`1420` with HMR. Development processes are user-managed.
+`pnpm dev` launches the isolated **Daily Planner Dev** Tauri shell. Tauri starts
+the React application through Vite on port `1420`, so React and CSS changes use
+HMR without rebuilding or reinstalling the production app.
+
+For browser-only development, run `pnpm dev:web`; it serves the same React
+application at `http://127.0.0.1:3010`. Development processes are user-managed.
 
 Copy `.env.example` to a local ignored environment file when collaboration is
 needed. Every `VITE_*` value is browser-visible; use only the Supabase

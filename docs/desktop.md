@@ -7,7 +7,7 @@ WebView; it does not load or proxy the hosted web app.
 ## Run For Development
 
 ```sh
-pnpm tauri:dev
+pnpm dev
 ```
 
 This is the routine desktop workflow. Tauri starts Vite and opens **Daily
@@ -22,7 +22,8 @@ identifiers keep WebView storage, IndexedDB, app data, and WebCrypto Keychain
 items from colliding. Quit the installed release before development if its
 global shortcuts conflict with the development shell.
 
-The browser app uses `pnpm dev`. Development processes are
+The browser-only application uses `pnpm dev:web`. `pnpm tauri:dev` remains an
+explicit alias for the native development workflow. Development processes are
 user-managed; build and install scripts do not start or stop them.
 
 ## Production Signing
