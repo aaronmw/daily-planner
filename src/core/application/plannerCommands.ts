@@ -55,6 +55,12 @@ export interface PlannerCommands {
         beforeId: ItemId | null,
         afterId: ItemId | null
     ) => Promise<void>;
+    returnItemToList: (
+        id: ItemId,
+        targetListId: ListId,
+        previousId: ItemId | null,
+        nextId: ItemId | null
+    ) => Promise<void>;
     restoreList: (id: ListId) => Promise<void>;
     restoreItem: (id: ItemId) => Promise<void>;
     selectList: (id: ListId) => void;
@@ -291,6 +297,27 @@ export const createPlannerCommands = ({
                     updated(item, {
                         listId: targetListId,
                         orderKey: createOrderKeyBetween(before, after),
+                    })
+                ),
+            ]);
+        },
+        returnItemToList: async (id, targetListId, previousId, nextId) => {
+            const state = store.getState();
+            const item = state.itemsById.get(id);
+            if (!item || !state.listsById.has(targetListId)) return;
+            requireListAccess(item.listId, 'write');
+            requireListAccess(targetListId, 'write');
+            const previous = previousId
+                ? (state.itemsById.get(previousId) ?? null)
+                : null;
+            const next = nextId ? (state.itemsById.get(nextId) ?? null) : null;
+            await persist([
+                putItem(
+                    item,
+                    updated(item, {
+                        listId: targetListId,
+                        orderKey: createOrderKeyBetween(previous, next),
+                        scheduledStartMinutes: null,
                     })
                 ),
             ]);
