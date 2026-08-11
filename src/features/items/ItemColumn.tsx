@@ -43,12 +43,14 @@ export function ItemColumn({
     );
     const canWrite = useListCapability(selectedListId, 'write');
     const parentRef = useRef<HTMLDivElement>(null);
+    const dropPreviewRef = useRef<HTMLDivElement>(null);
     const focusFrameRef = useRef<number | null>(null);
     const fulfilledFocusRequestRef = useRef(0);
     const { activeItemId, insertion } = useItemListDropTarget({
         canWrite,
         containerRef: parentRef,
         itemIds,
+        previewRef: dropPreviewRef,
         selectedListId,
     });
     const draggedItem = usePlannerSelector(state =>
@@ -300,6 +302,7 @@ export function ItemColumn({
                                 <div
                                     aria-hidden="true"
                                     className="planner-item-list-drag-preview w-full"
+                                    ref={dropPreviewRef}
                                     style={{
                                         height: relative
                                             ? `calc(var(--planner-minute-height) * ${previewItem.durationMinutes})`

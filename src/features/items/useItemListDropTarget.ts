@@ -12,6 +12,7 @@ interface UseItemListDropTargetOptions {
     canWrite: boolean;
     containerRef: RefObject<HTMLDivElement | null>;
     itemIds: readonly ItemId[];
+    previewRef: RefObject<HTMLDivElement | null>;
     selectedListId: ListId | null;
 }
 
@@ -19,6 +20,7 @@ export function useItemListDropTarget({
     canWrite,
     containerRef,
     itemIds,
+    previewRef,
     selectedListId,
 }: UseItemListDropTargetOptions): {
     activeItemId: ItemId | null;
@@ -36,6 +38,10 @@ export function useItemListDropTarget({
                     preview.nextId
                 );
             },
+            getPreviewBounds: preview =>
+                preview.kind === 'items'
+                    ? (previewRef.current?.getBoundingClientRect() ?? null)
+                    : null,
             id: 'items',
             resolve: (pointer, item) => {
                 if (
@@ -85,7 +91,14 @@ export function useItemListDropTarget({
                 };
             },
         }),
-        [canWrite, commands, containerRef, itemIds, selectedListId]
+        [
+            canWrite,
+            commands,
+            containerRef,
+            itemIds,
+            previewRef,
+            selectedListId,
+        ]
     );
     useItemDropTarget(target);
 

@@ -52,6 +52,7 @@ export function TimelineColumn({
         state => state.preferences.timelineHoursPerScreen
     );
     const containerRef = useRef<HTMLDivElement>(null);
+    const dropPreviewRef = useRef<HTMLDivElement>(null);
     const focusFrameRef = useRef<number | null>(null);
     const fulfilledFocusRequestRef = useRef(0);
     const [initialTopMinute] = useState(() =>
@@ -65,7 +66,8 @@ export function TimelineColumn({
     const pixelsPerMinute = minuteHeight;
     const { draggedItemId, dropPreviewMinute } = useTimelineItemDropTarget(
         containerRef,
-        pixelsPerMinute
+        pixelsPerMinute,
+        dropPreviewRef
     );
     const draggedItem = draggedItemId
         ? (itemsById.get(draggedItemId) ?? null)
@@ -200,6 +202,7 @@ export function TimelineColumn({
                         <div
                             className="planner-timeline-drag-preview pointer-events-none absolute left-[72px] right-3"
                             data-timeline-drop-preview="true"
+                            ref={dropPreviewRef}
                             style={{
                                 height:
                                     draggedItem.durationMinutes *

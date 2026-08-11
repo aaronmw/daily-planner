@@ -19,6 +19,7 @@ export type ItemDropPreview =
 
 export interface ItemDropTarget {
     commit: (itemId: ItemId, preview: ItemDropPreview) => Promise<void> | void;
+    getPreviewBounds: (preview: ItemDropPreview) => DOMRect | null;
     id: string;
     resolve: (
         pointer: ItemDropPointer,

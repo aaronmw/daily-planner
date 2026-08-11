@@ -9,7 +9,8 @@ import { snapTimelineDragMinute } from './timelineScale';
 
 export const useTimelineItemDropTarget = (
     containerRef: RefObject<HTMLDivElement | null>,
-    pixelsPerMinute: number
+    pixelsPerMinute: number,
+    previewRef: RefObject<HTMLDivElement | null>
 ) => {
     const commands = usePlannerCommands();
     const target = useMemo<ItemDropTarget>(
@@ -20,6 +21,10 @@ export const useTimelineItemDropTarget = (
                     scheduledStartMinutes: preview.minute,
                 });
             },
+            getPreviewBounds: preview =>
+                preview.kind === 'timeline'
+                    ? (previewRef.current?.getBoundingClientRect() ?? null)
+                    : null,
             id: 'timeline',
             resolve: (pointer, item) => {
                 const element = containerRef.current;
@@ -47,7 +52,7 @@ export const useTimelineItemDropTarget = (
                 };
             },
         }),
-        [commands, containerRef, pixelsPerMinute]
+        [commands, containerRef, pixelsPerMinute, previewRef]
     );
     useItemDropTarget(target);
 

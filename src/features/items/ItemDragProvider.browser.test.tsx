@@ -83,6 +83,10 @@ function TestDropTarget({
     const target = useMemo<ItemDropTarget>(
         () => ({
             commit: onCommit,
+            getPreviewBounds: preview =>
+                preview.kind === 'timeline'
+                    ? (targetRef.current?.getBoundingClientRect() ?? null)
+                    : null,
             id: 'test-target',
             resolve: pointer => {
                 const element = targetRef.current;
@@ -124,11 +128,13 @@ function PaddedItemListTarget({
     listId: ListId;
 }) {
     const containerRef = useRef<HTMLDivElement>(null);
+    const previewRef = useRef<HTMLDivElement>(null);
     const itemIds = useMemo(() => [itemId], [itemId]);
     const { insertion } = useItemListDropTarget({
         canWrite: true,
         containerRef,
         itemIds,
+        previewRef,
         selectedListId: listId,
     });
 
@@ -149,6 +155,13 @@ function PaddedItemListTarget({
                 >
                     Existing item
                 </div>
+                {insertion && (
+                    <div
+                        data-testid="padded-item-preview"
+                        ref={previewRef}
+                        style={{ height: 54 }}
+                    />
+                )}
             </div>
         </div>
     );

@@ -17,11 +17,13 @@ describe('resolveRegisteredItemDrop', () => {
         const targets: ItemDropTarget[] = [
             {
                 commit: () => undefined,
+                getPreviewBounds: () => null,
                 id: 'items',
                 resolve: () => null,
             },
             {
                 commit: () => undefined,
+                getPreviewBounds: () => null,
                 id: 'timeline',
                 resolve: () => acceptedPreview,
             },
