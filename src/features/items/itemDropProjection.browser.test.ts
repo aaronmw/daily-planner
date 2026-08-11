@@ -30,9 +30,7 @@ describe('item drop projection motion', () => {
         });
         await projection.finished;
 
-        expect(ghost.style.transform).toBe(
-            'translate3d(120px, 80px, 0px)'
-        );
+        expect(ghost.style.transform).toBe('translate3d(120px, 80px, 0px)');
         expect(ghost.style.width).toBe('90px');
         expect(ghost.style.height).toBe('60px');
     });

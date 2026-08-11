@@ -25,10 +25,21 @@ import '../../styles/index.css';
 
 afterEach(() => {
     cleanup();
+    vi.restoreAllMocks();
     document.querySelectorAll('[data-test-drop-occluder]').forEach(element => {
         element.remove();
     });
 });
+
+const deferred = <T,>() => {
+    let resolve!: (value: T | PromiseLike<T>) => void;
+    let reject!: (reason?: unknown) => void;
+    const promise = new Promise<T>((resolvePromise, rejectPromise) => {
+        resolve = resolvePromise;
+        reject = rejectPromise;
+    });
+    return { promise, reject, resolve };
+};
 
 const dispatchPointer = (
     target: EventTarget,
@@ -77,7 +88,10 @@ function TestDropTarget({
     onCommit,
 }: {
     minute: number;
-    onCommit: (itemId: ItemId, preview: ItemDropPreview) => void;
+    onCommit: (
+        itemId: ItemId,
+        preview: ItemDropPreview
+    ) => Promise<void> | void;
 }) {
     const targetRef = useRef<HTMLDivElement>(null);
     const target = useMemo<ItemDropTarget>(
@@ -119,6 +133,79 @@ function TestDropTarget({
         />
     );
 }
+
+const renderPendingDragHarness = (
+    onCommit: (itemId: ItemId, preview: ItemDropPreview) => Promise<void> | void
+) => {
+    const list = createPlannerList({ label: 'Pending drag source' });
+    const item = {
+        ...createPlannerItem({ listId: list.id }),
+        scheduledStartMinutes: 480,
+    };
+    const otherItem = {
+        ...createPlannerItem({ listId: list.id }),
+        scheduledStartMinutes: 600,
+    };
+    const store = createPlannerStore();
+    store.getState().applySnapshot({
+        items: [item, otherItem],
+        lists: [list],
+    });
+    const view = render(
+        <PlannerStoreProvider store={store}>
+            <ItemDragProvider>
+                <div style={{ display: 'flex', gap: 80 }}>
+                    <button
+                        data-draggable="true"
+                        data-item-id={item.id}
+                        data-testid="pending-drag-source"
+                        style={{ height: 60, width: 160 }}
+                        type="button"
+                    >
+                        Drag me
+                    </button>
+                    <button
+                        data-draggable="true"
+                        data-item-id={otherItem.id}
+                        data-testid="second-drag-source"
+                        style={{ height: 60, width: 160 }}
+                        type="button"
+                    >
+                        Other item
+                    </button>
+                    <TestDropTarget minute={540} onCommit={onCommit} />
+                </div>
+            </ItemDragProvider>
+        </PlannerStoreProvider>
+    );
+    const source = view.getByTestId('pending-drag-source');
+    const otherSource = view.getByTestId('second-drag-source');
+    const target = view.getByTestId('registered-drop-target');
+    const sourceBounds = source.getBoundingClientRect();
+    const targetBounds = target.getBoundingClientRect();
+    return {
+        item,
+        otherSource,
+        source,
+        sourceX: sourceBounds.left + sourceBounds.width / 2,
+        sourceY: sourceBounds.top + sourceBounds.height / 2,
+        target,
+        targetX: targetBounds.left + targetBounds.width / 2,
+        targetY: targetBounds.top + targetBounds.height / 2,
+    };
+};
+
+const mockReducedMotion = () =>
+    vi.spyOn(window, 'matchMedia').mockImplementation(query => ({
+        addEventListener: vi.fn(),
+        addListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+        matches: query === '(prefers-reduced-motion: reduce)',
+        media: query,
+        onchange: null,
+        removeEventListener: vi.fn(),
+        removeListener: vi.fn(),
+    }));
 
 function PaddedItemListTarget({
     itemId,
@@ -267,6 +354,190 @@ describe('item drag behavior in a real browser', () => {
                 minute: 540,
             });
         });
+    });
+
+    it('keeps the dropped projection visible until persistence settles', async () => {
+        const commitGate = deferred<undefined>();
+        const commit = vi.fn(() => commitGate.promise);
+        const harness = renderPendingDragHarness(commit);
+
+        act(() => {
+            dispatchPointer(
+                harness.source,
+                'pointerdown',
+                harness.sourceX,
+                harness.sourceY
+            );
+            dispatchPointer(
+                document,
+                'pointermove',
+                harness.targetX,
+                harness.targetY
+            );
+        });
+        await waitFor(() => {
+            expect(harness.target).toHaveAttribute(
+                'data-preview-minute',
+                '540'
+            );
+        });
+
+        act(() => {
+            dispatchPointer(
+                document,
+                'pointerup',
+                harness.targetX,
+                harness.targetY
+            );
+        });
+        await waitFor(() => expect(commit).toHaveBeenCalledTimes(1));
+
+        const ghost = document.querySelector(
+            '[data-pointer-drag-ghost="true"]'
+        );
+        expect(harness.source).toHaveAttribute('data-pointer-dragging', 'true');
+        expect(harness.target).toHaveAttribute('data-preview-minute', '540');
+        expect(ghost).toHaveAttribute('data-item-drop-pending', 'true');
+        expect(document.documentElement).not.toHaveAttribute(
+            'data-item-dragging'
+        );
+
+        const otherBounds = harness.otherSource.getBoundingClientRect();
+        act(() => {
+            dispatchPointer(
+                harness.otherSource,
+                'pointerdown',
+                otherBounds.left + otherBounds.width / 2,
+                otherBounds.top + otherBounds.height / 2
+            );
+            dispatchPointer(
+                document,
+                'pointermove',
+                harness.targetX,
+                harness.targetY
+            );
+        });
+        expect(
+            document.querySelectorAll('[data-pointer-drag-ghost="true"]')
+        ).toHaveLength(1);
+        expect(commit).toHaveBeenCalledTimes(1);
+
+        act(() => commitGate.resolve(undefined));
+        await waitFor(() => {
+            expect(harness.source).not.toHaveAttribute('data-pointer-dragging');
+            expect(harness.target).not.toHaveAttribute('data-preview-minute');
+            expect(
+                document.querySelector('[data-pointer-drag-ghost="true"]')
+            ).toBeNull();
+        });
+    });
+
+    it('returns the pending projection to its source when persistence fails', async () => {
+        const commitGate = deferred<undefined>();
+        const commit = vi.fn(() => commitGate.promise);
+        const consoleError = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => undefined);
+        const harness = renderPendingDragHarness(commit);
+
+        act(() => {
+            dispatchPointer(
+                harness.source,
+                'pointerdown',
+                harness.sourceX,
+                harness.sourceY
+            );
+            dispatchPointer(
+                document,
+                'pointermove',
+                harness.targetX,
+                harness.targetY
+            );
+        });
+        await waitFor(() => {
+            expect(harness.target).toHaveAttribute(
+                'data-preview-minute',
+                '540'
+            );
+        });
+        act(() => {
+            dispatchPointer(
+                document,
+                'pointerup',
+                harness.targetX,
+                harness.targetY
+            );
+        });
+        await waitFor(() => expect(commit).toHaveBeenCalledTimes(1));
+
+        const failure = new Error('Persistence failed');
+        act(() => commitGate.reject(failure));
+        await waitFor(() => {
+            expect(
+                document.querySelector('[data-item-drop-rollback="true"]')
+            ).not.toBeNull();
+        });
+        expect(harness.source).toHaveAttribute('data-pointer-dragging', 'true');
+
+        await waitFor(() => {
+            expect(harness.source).not.toHaveAttribute('data-pointer-dragging');
+            expect(harness.target).not.toHaveAttribute('data-preview-minute');
+            expect(
+                document.querySelector('[data-pointer-drag-ghost="true"]')
+            ).toBeNull();
+        });
+        expect(consoleError).toHaveBeenCalledWith(
+            'Unable to drop item',
+            failure
+        );
+    });
+
+    it('rolls back without spatial animation when reduced motion is enabled', async () => {
+        mockReducedMotion();
+        const animate = vi.spyOn(HTMLElement.prototype, 'animate');
+        const commitGate = deferred<undefined>();
+        const commit = vi.fn(() => commitGate.promise);
+        vi.spyOn(console, 'error').mockImplementation(() => undefined);
+        const harness = renderPendingDragHarness(commit);
+
+        act(() => {
+            dispatchPointer(
+                harness.source,
+                'pointerdown',
+                harness.sourceX,
+                harness.sourceY
+            );
+            dispatchPointer(
+                document,
+                'pointermove',
+                harness.targetX,
+                harness.targetY
+            );
+        });
+        await waitFor(() => {
+            expect(harness.target).toHaveAttribute(
+                'data-preview-minute',
+                '540'
+            );
+        });
+        act(() => {
+            dispatchPointer(
+                document,
+                'pointerup',
+                harness.targetX,
+                harness.targetY
+            );
+        });
+        await waitFor(() => expect(commit).toHaveBeenCalledTimes(1));
+        act(() => commitGate.reject(new Error('Persistence failed')));
+
+        await waitFor(() => {
+            expect(
+                document.querySelector('[data-pointer-drag-ghost="true"]')
+            ).toBeNull();
+        });
+        expect(harness.source).not.toHaveAttribute('data-pointer-dragging');
+        expect(animate).not.toHaveBeenCalled();
     });
 
     it('invalidates the visible preview when its target is replaced', async () => {

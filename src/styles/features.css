@@ -134,6 +134,10 @@
     opacity: 0.35;
 }
 
+.planner-item-card[data-item-drop-pending='true'] {
+    opacity: 0;
+}
+
 .planner-item-card-drag-ghost {
     left: 0;
     margin: 0;

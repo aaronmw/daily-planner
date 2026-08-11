@@ -19,8 +19,7 @@ export const placeItemDropProjection = (
     bounds: DOMRect
 ): void => {
     element.style.height = `${bounds.height}px`;
-    element.style.transform =
-        `translate3d(${bounds.left}px, ${bounds.top}px, 0)`;
+    element.style.transform = `translate3d(${bounds.left}px, ${bounds.top}px, 0)`;
     element.style.width = `${bounds.width}px`;
 };
 

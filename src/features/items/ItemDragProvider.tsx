@@ -13,10 +13,12 @@ import {
 import type { ItemId } from '../../core/domain/ids';
 import { usePlannerStoreApi } from '../../core/store/plannerContext';
 import { hasCrossedItemDragThreshold } from './itemDragSession';
+import { startItemDropProjection } from './itemDropProjection';
 import {
     areActiveItemDropsEqual,
     resolveRegisteredItemDrop,
     type ActiveItemDrop,
+    type ItemDropPreview,
     type ItemDropTarget,
 } from './itemDropTargets';
 
@@ -31,6 +33,14 @@ interface PointerDrag {
     source: HTMLElement;
     startX: number;
     startY: number;
+}
+
+interface PendingItemDrop {
+    ghost: HTMLElement;
+    id: ItemId;
+    preview: ItemDropPreview;
+    source: HTMLElement;
+    target: ItemDropTarget;
 }
 
 interface ItemDragContextValue {
@@ -80,6 +90,7 @@ export function ItemDragProvider({ children }: PropsWithChildren): ReactNode {
     const activeDropRef = useRef<ActiveItemDrop | null>(null);
     const activeTargetRef = useRef<ItemDropTarget | null>(null);
     const visibleActiveDropRef = useRef<ActiveItemDrop | null>(null);
+    const pendingTargetIdRef = useRef<string | null>(null);
     const mountedRef = useRef(false);
     const [activeDrop, setActiveDrop] = useState<ActiveItemDrop | null>(null);
     const [activeItemId, setActiveItemId] = useState<ItemId | null>(null);
@@ -96,6 +107,7 @@ export function ItemDragProvider({ children }: PropsWithChildren): ReactNode {
     }, [activeDrop]);
 
     const invalidateActiveDropForTarget = useCallback((targetId: string) => {
+        if (pendingTargetIdRef.current === targetId) return;
         if (activeDropRef.current?.targetId !== targetId) return;
         activeDropRef.current = null;
         activeTargetRef.current = null;
@@ -122,14 +134,48 @@ export function ItemDragProvider({ children }: PropsWithChildren): ReactNode {
 
     useEffect(() => {
         let drag: PointerDrag | null = null;
+        let pendingDrop: PendingItemDrop | null = null;
         let clickSuppressionTimer: number | null = null;
         let suppressClickFrom: HTMLElement | null = null;
+
+        const clearDropState = (updateReactState: boolean) => {
+            delete document.documentElement.dataset.itemDragging;
+            activeDropRef.current = null;
+            activeTargetRef.current = null;
+            visibleActiveDropRef.current = null;
+            pendingTargetIdRef.current = null;
+            if (updateReactState) {
+                setActiveItemId(null);
+                setActiveDrop(null);
+            }
+        };
+
+        const releasePointerGesture = (currentDrag: PointerDrag) => {
+            drag = null;
+            if (currentDrag.source.hasPointerCapture(currentDrag.pointerId)) {
+                currentDrag.source.releasePointerCapture(currentDrag.pointerId);
+            }
+            delete document.documentElement.dataset.itemDragging;
+        };
+
+        const finishPendingDrop = (
+            session: PendingItemDrop,
+            updateReactState = true
+        ) => {
+            if (pendingDrop !== session) return;
+            pendingDrop = null;
+            session.ghost.remove();
+            delete session.source.dataset.itemDropPending;
+            delete session.source.dataset.pointerDragging;
+            clearDropState(updateReactState);
+        };
 
         const resetDrag = (updateReactState = true) => {
             const currentDrag = drag;
             drag = null;
             currentDrag?.ghost?.remove();
             if (currentDrag) {
+                delete currentDrag.source.dataset.itemDropPending;
                 delete currentDrag.source.dataset.pointerDragging;
                 if (
                     currentDrag.source.hasPointerCapture(currentDrag.pointerId)
@@ -139,18 +185,19 @@ export function ItemDragProvider({ children }: PropsWithChildren): ReactNode {
                     );
                 }
             }
-            delete document.documentElement.dataset.itemDragging;
-            activeDropRef.current = null;
-            activeTargetRef.current = null;
-            visibleActiveDropRef.current = null;
-            if (updateReactState) {
-                setActiveItemId(null);
-                setActiveDrop(null);
+            const currentPendingDrop = pendingDrop;
+            pendingDrop = null;
+            if (currentPendingDrop) {
+                currentPendingDrop.ghost.remove();
+                delete currentPendingDrop.source.dataset.itemDropPending;
+                delete currentPendingDrop.source.dataset.pointerDragging;
             }
+            clearDropState(updateReactState);
         };
 
         const handlePointerDown = (event: PointerEvent) => {
-            if (!event.isPrimary || event.button !== 0 || drag) return;
+            if (!event.isPrimary || event.button !== 0 || drag || pendingDrop)
+                return;
             const target = event.target;
             const card =
                 target instanceof Element
@@ -291,9 +338,16 @@ export function ItemDragProvider({ children }: PropsWithChildren): ReactNode {
                 )
                     ? releaseDrop
                     : null;
-            resetDrag();
+            const ghost = currentDrag.ghost;
+            const previewBounds =
+                activeDrop && target
+                    ? target.getPreviewBounds(activeDrop.preview)
+                    : null;
 
-            if (!wasActive) return;
+            if (!wasActive) {
+                resetDrag();
+                return;
+            }
             event.preventDefault();
             suppressClickFrom = source;
             if (clickSuppressionTimer !== null) {
@@ -303,17 +357,61 @@ export function ItemDragProvider({ children }: PropsWithChildren): ReactNode {
                 suppressClickFrom = null;
                 clickSuppressionTimer = null;
             }, 0);
-            if (activeDrop && target) {
+            if (!activeDrop || !target || !ghost || !previewBounds) {
+                resetDrag();
+                return;
+            }
+
+            releasePointerGesture(currentDrag);
+            const session: PendingItemDrop = {
+                ghost,
+                id,
+                preview: activeDrop.preview,
+                source,
+                target,
+            };
+            pendingDrop = session;
+            pendingTargetIdRef.current = target.id;
+            ghost.dataset.itemDropPending = 'true';
+            source.dataset.itemDropPending = 'true';
+            const reducedMotion =
+                typeof window.matchMedia === 'function' &&
+                window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            const settle = startItemDropProjection(ghost, previewBounds, {
+                durationMs: 150,
+                reducedMotion,
+            });
+
+            void (async () => {
                 try {
-                    void Promise.resolve(
-                        target.commit(id, activeDrop.preview)
-                    ).catch(error =>
-                        console.error('Unable to drop item', error)
+                    await Promise.all([
+                        settle.finished,
+                        Promise.resolve().then(() =>
+                            target.commit(id, activeDrop.preview)
+                        ),
+                    ]);
+                    await new Promise<void>(resolve =>
+                        requestAnimationFrame(() => resolve())
                     );
                 } catch (error) {
                     console.error('Unable to drop item', error);
+                    settle.stopAtCurrentBounds();
+                    ghost.dataset.itemDropRollback = 'true';
+                    const sourceBounds = source.isConnected
+                        ? source.getBoundingClientRect()
+                        : null;
+                    if (sourceBounds) {
+                        const rollback = startItemDropProjection(
+                            ghost,
+                            sourceBounds,
+                            { durationMs: 200, reducedMotion }
+                        );
+                        await rollback.finished;
+                    }
+                } finally {
+                    finishPendingDrop(session);
                 }
-            }
+            })();
         };
 
         const handlePointerCancel = (event: PointerEvent) => {
@@ -332,7 +430,9 @@ export function ItemDragProvider({ children }: PropsWithChildren): ReactNode {
             event.stopImmediatePropagation();
             suppressClickFrom = null;
         };
-        const handleWindowBlur = () => resetDrag();
+        const handleWindowBlur = () => {
+            if (drag) resetDrag();
+        };
         const pointerMoveOptions = { capture: true, passive: false } as const;
 
         document.addEventListener('pointerdown', handlePointerDown, true);

@@ -56,9 +56,13 @@ export function ItemColumn({
     const draggedItem = usePlannerSelector(state =>
         activeItemId ? (state.itemsById.get(activeItemId) ?? null) : null
     );
+    const renderedItemIds =
+        insertion && activeItemId
+            ? itemIds.filter(id => id !== activeItemId)
+            : itemIds;
     const entries: ItemColumnEntry[] = [
         { kind: 'create' },
-        ...itemIds.map(id => ({ id, kind: 'item' }) as const),
+        ...renderedItemIds.map(id => ({ id, kind: 'item' }) as const),
     ];
     if (insertion && draggedItem) {
         entries.splice(insertion.index + 1, 0, {
