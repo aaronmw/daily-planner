@@ -30,7 +30,7 @@ The clock uses chained timeouts aligned to the next real second rather than an u
 ## Sheen Motion
 
 - The sheen is clipped to the marker surface to the right of the badge; it never passes through the badge or the time-label gutter.
-- Each pass contains a single narrow white diagonal gradient with transparent edges.
+- Each pass contains a single elongated white diagonal gradient with transparent edges. Its visible band is angled only a few degrees from horizontal so it reads as a glancing streak across the short marker surface rather than a compact dot.
 - At the second boundary, the gradient begins outside the marker's left clipping edge at zero opacity.
 - Its opacity reaches 100% only after the entire gradient has entered the visible marker, ensuring that the left edge does not visibly crop an opaque gradient.
 - It travels across and fades out at the far edge within 500ms.
