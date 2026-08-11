@@ -375,16 +375,21 @@ describe('item drag behavior in a real browser', () => {
     });
 
     it('commits the neighbour pair rendered from padded row geometry', async () => {
-        const list = createPlannerList({ label: 'Padded destination' });
-        const existing = createPlannerItem({ listId: list.id });
+        const sourceList = createPlannerList({ label: 'Drag source' });
+        const destinationList = createPlannerList({
+            label: 'Padded destination',
+        });
+        const existing = createPlannerItem({ listId: destinationList.id });
         const scheduled = {
-            ...createPlannerItem({ listId: list.id }),
+            ...createPlannerItem({ listId: sourceList.id }),
             scheduledStartMinutes: 480,
         };
         const store = createPlannerStore();
-        store
-            .getState()
-            .applySnapshot({ items: [existing, scheduled], lists: [list] });
+        store.getState().applySnapshot({
+            items: [existing, scheduled],
+            lists: [sourceList, destinationList],
+        });
+        store.getState().setSelection(destinationList.id, null);
         const returnItemToList = vi.fn();
         const commands = {
             ...createTestCommands(),
@@ -406,7 +411,7 @@ describe('item drag behavior in a real browser', () => {
                             </button>
                             <PaddedItemListTarget
                                 itemId={existing.id}
-                                listId={list.id}
+                                listId={destinationList.id}
                             />
                         </div>
                     </ItemDragProvider>
@@ -439,6 +444,7 @@ describe('item drag behavior in a real browser', () => {
         });
         expect(target).not.toHaveAttribute('data-insertion-previous-id');
         expect(target).toHaveAttribute('data-insertion-next-id', existing.id);
+        expect(returnItemToList).not.toHaveBeenCalled();
 
         act(() => {
             dispatchPointer(
@@ -451,7 +457,7 @@ describe('item drag behavior in a real browser', () => {
         await waitFor(() => {
             expect(returnItemToList).toHaveBeenCalledWith(
                 scheduled.id,
-                list.id,
+                destinationList.id,
                 null,
                 existing.id
             );
