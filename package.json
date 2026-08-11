@@ -9,7 +9,8 @@
         "node": ">=22.12.0"
     },
     "scripts": {
-        "dev": "vite --host 127.0.0.1 --port 3010 --strictPort",
+        "dev": "pnpm tauri:dev",
+        "dev:web": "vite --host 127.0.0.1 --port 3010 --strictPort",
         "dev:desktop": "vite --host 127.0.0.1 --port 1420 --strictPort",
         "build": "pnpm typecheck && vite build",
         "desktop:build": "vite build",
