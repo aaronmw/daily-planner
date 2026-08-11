@@ -191,17 +191,19 @@ describe('planner collection scale in a real browser', () => {
             <PlannerStoreProvider store={store}>
                 <CollaborationProvider>
                     <PlannerCommandsProvider commands={commands}>
-                        <div
-                            style={{
-                                display: 'grid',
-                                gridTemplateColumns: '1fr 1fr',
-                                height: 640,
-                                width: 1400,
-                            }}
-                        >
-                            <ListColumn />
-                            <ItemColumn minuteHeight={1} />
-                        </div>
+                        <ItemDragProvider>
+                            <div
+                                style={{
+                                    display: 'grid',
+                                    gridTemplateColumns: '1fr 1fr',
+                                    height: 640,
+                                    width: 1400,
+                                }}
+                            >
+                                <ListColumn />
+                                <ItemColumn minuteHeight={1} />
+                            </div>
+                        </ItemDragProvider>
                     </PlannerCommandsProvider>
                 </CollaborationProvider>
             </PlannerStoreProvider>
@@ -328,15 +330,17 @@ describe('planner collection scale in a real browser', () => {
             <PlannerStoreProvider store={store}>
                 <CollaborationProvider>
                     <PlannerCommandsProvider commands={commands}>
-                        <button data-testid="outside-item-focus">
-                            Outside
-                        </button>
-                        <div style={{ height: 640, width: 500 }}>
-                            <ItemColumn
-                                focusRequestId={focusRequestId}
-                                minuteHeight={1}
-                            />
-                        </div>
+                        <ItemDragProvider>
+                            <button data-testid="outside-item-focus">
+                                Outside
+                            </button>
+                            <div style={{ height: 640, width: 500 }}>
+                                <ItemColumn
+                                    focusRequestId={focusRequestId}
+                                    minuteHeight={1}
+                                />
+                            </div>
+                        </ItemDragProvider>
                     </PlannerCommandsProvider>
                 </CollaborationProvider>
             </PlannerStoreProvider>

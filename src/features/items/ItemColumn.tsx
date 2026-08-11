@@ -10,8 +10,14 @@ import { useListCapability } from '../collaboration/useListCapability';
 import type { ItemId } from '../../core/domain/ids';
 import { GhostButton } from '../shell/GhostButton';
 import { isTextEntryTarget } from '../shell/isTextEntryTarget';
+import { useItemListDropTarget } from './useItemListDropTarget';
 
 const EMPTY_ITEM_IDS: readonly ItemId[] = [];
+
+type ItemColumnEntry =
+    | { kind: 'create' }
+    | { id: ItemId; kind: 'item' }
+    | { id: ItemId; kind: 'drop-preview' };
 
 interface ItemColumnProps {
     focusRequestId?: number;
@@ -39,19 +45,45 @@ export function ItemColumn({
     const parentRef = useRef<HTMLDivElement>(null);
     const focusFrameRef = useRef<number | null>(null);
     const fulfilledFocusRequestRef = useRef(0);
+    const { activeItemId, insertion } = useItemListDropTarget({
+        canWrite,
+        containerRef: parentRef,
+        itemIds,
+        selectedListId,
+    });
+    const draggedItem = usePlannerSelector(state =>
+        activeItemId ? (state.itemsById.get(activeItemId) ?? null) : null
+    );
+    const entries: ItemColumnEntry[] = [
+        { kind: 'create' },
+        ...itemIds.map(id => ({ id, kind: 'item' }) as const),
+    ];
+    if (insertion && draggedItem) {
+        entries.splice(insertion.index + 1, 0, {
+            id: draggedItem.id,
+            kind: 'drop-preview',
+        });
+    }
     const virtualizer = useVirtualizer({
-        count: itemIds.length + 1,
+        count: entries.length,
         estimateSize: index => {
-            if (!relative) return index === 0 ? 72 : 64;
-            const itemId = itemIds[index - 1];
-            const duration = itemId
-                ? (store.getState().itemsById.get(itemId)?.durationMinutes ??
-                  30)
-                : 30;
+            const entry = entries[index];
+            if (!relative) return entry?.kind === 'create' ? 72 : 64;
+            const duration =
+                entry?.kind === 'item'
+                    ? (store.getState().itemsById.get(entry.id)
+                          ?.durationMinutes ?? 30)
+                    : entry?.kind === 'drop-preview'
+                      ? (draggedItem?.durationMinutes ?? 30)
+                      : 30;
             return duration * minuteHeight;
         },
-        getItemKey: index =>
-            index === 0 ? 'create-item' : (itemIds[index - 1] ?? index),
+        getItemKey: index => {
+            const entry = entries[index];
+            if (entry?.kind === 'create') return 'create-item';
+            if (entry?.kind === 'drop-preview') return 'item-drop-preview';
+            return entry?.id ?? index;
+        },
         getScrollElement: () => parentRef.current,
         overscan: 6,
     });
@@ -222,16 +254,26 @@ export function ItemColumn({
                 style={{ height: virtualizer.getTotalSize() }}
             >
                 {virtualizer.getVirtualItems().map(item => {
-                    const itemId = itemIds[item.index - 1] ?? null;
+                    const entry = entries[item.index];
+                    if (!entry) return null;
+                    const shortcut =
+                        entry.kind === 'item'
+                            ? itemIds.indexOf(entry.id) + 1
+                            : null;
+                    const previewItem =
+                        entry.kind === 'drop-preview' ? draggedItem : null;
                     return (
                         <div
                             className="absolute left-0 top-0 w-full pb-[10px]"
+                            data-item-list-row-id={
+                                entry.kind === 'item' ? entry.id : undefined
+                            }
                             data-index={item.index}
                             key={item.key}
                             ref={virtualizer.measureElement}
                             style={{ top: item.start }}
                         >
-                            {item.index === 0 ? (
+                            {entry.kind === 'create' ? (
                                 <GhostButton
                                     className="w-full font-semibold transition-[height] duration-150"
                                     data-create-item
@@ -245,12 +287,24 @@ export function ItemColumn({
                                 >
                                     {canWrite ? 'Create Item' : 'Read only'}
                                 </GhostButton>
-                            ) : itemId ? (
+                            ) : entry.kind === 'item' ? (
                                 <ItemCard
-                                    id={itemId}
-                                    {...(item.index <= 9
-                                        ? { shortcut: item.index }
+                                    id={entry.id}
+                                    {...(shortcut !== null &&
+                                    shortcut >= 1 &&
+                                    shortcut <= 9
+                                        ? { shortcut }
                                         : {})}
+                                />
+                            ) : previewItem ? (
+                                <div
+                                    aria-hidden="true"
+                                    className="planner-item-list-drag-preview w-full"
+                                    style={{
+                                        height: relative
+                                            ? `calc(var(--planner-minute-height) * ${previewItem.durationMinutes})`
+                                            : 54,
+                                    }}
                                 />
                             ) : null}
                         </div>

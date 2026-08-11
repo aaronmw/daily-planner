@@ -177,9 +177,15 @@ html[data-item-dragging='true'] * {
     opacity: 1;
 }
 
-.planner-timeline-drag-preview {
+.planner-timeline-drag-preview,
+.planner-item-list-drag-preview {
     border: var(--planner-stroke-width) solid var(--planner-item-border-hover);
     border-radius: var(--radius-planner);
+}
+
+.planner-item-list-drag-preview {
+    background: transparent;
+    pointer-events: none;
 }
 
 .planner-timeline-container:focus {
