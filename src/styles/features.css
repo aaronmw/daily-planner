@@ -196,6 +196,87 @@ html[data-item-dragging='true'] * {
     outline: none !important;
 }
 
+.planner-current-time-label-slot {
+    left: 0;
+    position: absolute;
+    top: 0;
+    width: 72px;
+}
+
+.planner-current-time-badge {
+    align-items: baseline;
+    border-radius: var(--radius-planner);
+    display: inline-flex;
+    font-size: 0.85rem;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+    padding: 4px;
+    position: absolute;
+    right: 4px;
+    top: 0;
+    transform: translateY(-50%);
+    white-space: nowrap;
+    z-index: 1;
+}
+
+.planner-current-time-badge [data-current-time-colon] {
+    opacity: 0;
+}
+
+.planner-current-time-badge [data-current-time-colon][data-visible='true'] {
+    opacity: 1;
+}
+
+.planner-current-time-surface {
+    height: calc(var(--planner-stroke-width) * 2);
+    left: 72px;
+    overflow: hidden;
+    position: absolute;
+    right: 0;
+    top: 0;
+    transform: translateY(-50%);
+}
+
+.planner-current-time-sheen {
+    animation: planner-current-time-sheen 500ms ease-in-out both;
+    background-image: linear-gradient(
+        110deg,
+        transparent 0%,
+        rgb(255 255 255 / 35%) 32%,
+        white 50%,
+        rgb(255 255 255 / 35%) 68%,
+        transparent 100%
+    );
+    background-position: right;
+    background-repeat: no-repeat;
+    background-size: 48px 100%;
+    bottom: 0;
+    left: 0;
+    opacity: 0;
+    position: absolute;
+    top: 0;
+    transform: translateX(-100%);
+    width: calc(100% + 48px);
+    will-change: opacity, transform;
+}
+
+@keyframes planner-current-time-sheen {
+    0% {
+        opacity: 0;
+        transform: translateX(-100%);
+    }
+    25% {
+        opacity: 1;
+    }
+    80% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0;
+        transform: translateX(0);
+    }
+}
+
 .planner-item-card:hover {
     box-shadow: inset 0 0 0 var(--planner-stroke-width)
         var(--planner-item-border-hover);
@@ -243,6 +324,14 @@ html[data-item-dragging='true'] * {
 }
 
 @media (prefers-reduced-motion: reduce) {
+    .planner-current-time-badge [data-current-time-colon] {
+        opacity: 1;
+    }
+
+    .planner-current-time-sheen {
+        display: none;
+    }
+
     .planner-ghost-tracer {
         animation: none;
     }

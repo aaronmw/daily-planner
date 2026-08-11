@@ -1,5 +1,6 @@
 import { act, cleanup, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import '../../styles/index.css';
 import { CurrentTimeMarker } from './CurrentTimeMarker';
 
 describe('CurrentTimeMarker', () => {
@@ -27,7 +28,16 @@ describe('CurrentTimeMarker', () => {
         const firstSheen = container.querySelector<HTMLElement>(
             '[data-current-time-sheen]'
         );
+        const surface = container.querySelector<HTMLElement>(
+            '.planner-current-time-surface'
+        );
+        const sheen = container.querySelector<HTMLElement>(
+            '.planner-current-time-sheen'
+        );
         const firstSecond = Number(firstSheen?.dataset.second);
+        expect(surface).toBeTruthy();
+        expect(sheen?.style.animationDelay).toBe('-250ms');
+        expect(getComputedStyle(surface!).overflow).toBe('hidden');
         expect(colon?.dataset.visible).toBe('true');
         expect(Number.isFinite(firstSecond)).toBe(true);
 
@@ -38,8 +48,9 @@ describe('CurrentTimeMarker', () => {
         expect(colon?.dataset.visible).toBe('false');
         expect(
             Number(
-                container.querySelector<HTMLElement>('[data-current-time-sheen]')
-                    ?.dataset.second
+                container.querySelector<HTMLElement>(
+                    '[data-current-time-sheen]'
+                )?.dataset.second
             )
         ).toBe(firstSecond + 1);
     });

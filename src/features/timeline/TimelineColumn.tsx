@@ -1,8 +1,9 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { usePlannerSelector } from '../../core/store/plannerContext';
 import { ItemCard } from '../items/ItemCard';
+import { CurrentTimeMarker } from './CurrentTimeMarker';
 import { scheduledItemsInWindow } from './scheduledWindow';
-import { currentTimelineMinute, initialTimelineMinute } from './timelineScale';
+import { initialTimelineMinute } from './timelineScale';
 import { useTimelineItemDropTarget } from './useTimelineItemDropTarget';
 
 const DAY_MINUTES = 24 * 60;
@@ -16,27 +17,6 @@ const formatMinute = (minute: number): string => {
 interface TimelineColumnProps {
     focusRequestId?: number;
     minuteHeight: number;
-}
-
-function CurrentTimeMarker({ pixelsPerMinute }: { pixelsPerMinute: number }) {
-    const [minute, setMinute] = useState(() =>
-        currentTimelineMinute(new Date())
-    );
-
-    useEffect(() => {
-        const timer = window.setInterval(() => {
-            setMinute(currentTimelineMinute(new Date()));
-        }, 1_000);
-        return () => window.clearInterval(timer);
-    }, []);
-
-    return (
-        <div
-            aria-label="Current time"
-            className="pointer-events-none absolute left-0 right-0 z-20 h-[var(--planner-stroke-width)] bg-red-600"
-            style={{ top: minute * pixelsPerMinute }}
-        />
-    );
 }
 
 export function TimelineColumn({
