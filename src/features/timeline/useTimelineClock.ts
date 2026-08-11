@@ -21,10 +21,7 @@ export function useTimelineClock(): Date {
             schedule();
         };
 
-        timer = window.setTimeout(
-            schedule,
-            millisecondsUntilNextSecond(new Date())
-        );
+        schedule();
         document.addEventListener('visibilitychange', resynchronize);
         return () => {
             if (timer !== null) window.clearTimeout(timer);

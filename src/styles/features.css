@@ -265,7 +265,7 @@ html[data-item-dragging='true'] * {
         opacity: 0;
         transform: translateX(-100%);
     }
-    25% {
+    35% {
         opacity: 1;
     }
     80% {
