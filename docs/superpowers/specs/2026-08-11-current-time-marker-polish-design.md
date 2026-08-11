@@ -31,9 +31,9 @@ The clock uses chained timeouts aligned to the next real second rather than an u
 ## Sheen Motion
 
 - The sheen is clipped to the marker surface to the right of the badge; it never passes through the badge or the time-label gutter.
-- Each pass contains a single elongated white diagonal gradient with transparent edges. The CSS gradient direction is `4deg` (nearly vertical), which makes its visible color band nearly horizontal so it reads as a glancing streak across the short marker surface rather than a compact dot.
+- Each pass contains one full-surface white streak with transparent edges. Its centerline runs exactly from the marker's bottom-left corner to its top-right corner, using the live surface aspect ratio (`atan2(height, width)`) rather than a fixed angle.
 - At the second boundary, the gradient begins outside the marker's left clipping edge at zero opacity.
-- Its opacity reaches 100% only after the entire gradient has entered the visible marker, ensuring that the left edge does not visibly crop an opaque gradient.
+- Its opacity reaches 100% when the full-width streak is centered over the marker, ensuring that neither edge crops the fully opaque streak.
 - It travels across and fades out at the far edge within 500ms.
 - No sheen is present for the remaining 500ms before the next second boundary.
 - Motion uses compositor-friendly transforms and opacity rather than animating layout geometry.

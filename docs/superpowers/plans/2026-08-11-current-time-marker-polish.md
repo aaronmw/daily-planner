@@ -17,7 +17,7 @@
 - Clip the sheen to the current-time marker surface to the right of the 72px label gutter.
 - Start one sheen at each real second boundary; complete it within 500ms and remain still for the rest of the second.
 - Begin the sheen outside the marker at 0% opacity and reach 100% only after its full width has cleared the left clipping edge.
-- Use a `4deg` CSS gradient direction so the visible color band is nearly horizontal and the 4px marker renders an elongated glancing streak rather than a compact dot.
+- Make the streak layer exactly as wide as the marker and rotate its centerline by `-atan2(marker height, marker width)`, placing it from the bottom-left corner to the top-right corner at every responsive width.
 - Use one wall-clock source for marker position, colon phase, and sheen identity; resynchronize immediately after backgrounding or suspension.
 - Under `prefers-reduced-motion: reduce`, keep the marker accurate, keep the colon visible, and omit the sheen.
 - Do not alter scrolling, drag-and-drop behavior, planner persistence, or planner-store state.
@@ -421,6 +421,7 @@ Add the following focused feature styles, refining only token names or selector 
 }
 
 .planner-current-time-surface {
+    container-type: inline-size;
     height: calc(var(--planner-stroke-width) * 2);
     left: 72px;
     overflow: hidden;
@@ -432,25 +433,37 @@ Add the following focused feature styles, refining only token names or selector 
 
 .planner-current-time-sheen {
     animation: planner-current-time-sheen 500ms ease-in-out both;
-    background-image: linear-gradient(
-        4deg,
-        transparent 0%,
-        rgb(255 255 255 / 35%) 32%,
-        white 50%,
-        rgb(255 255 255 / 35%) 68%,
-        transparent 100%
-    );
-    background-position: right;
-    background-repeat: no-repeat;
-    background-size: 48px 100%;
     bottom: 0;
     left: 0;
     opacity: 0;
     position: absolute;
     top: 0;
     transform: translateX(-100%);
-    width: calc(100% + 48px);
+    width: 100%;
     will-change: opacity, transform;
+}
+
+.planner-current-time-sheen::before {
+    background-image: linear-gradient(
+        0deg,
+        transparent 0%,
+        rgb(255 255 255 / 35%) 32%,
+        white 50%,
+        rgb(255 255 255 / 35%) 68%,
+        transparent 100%
+    );
+    content: '';
+    inset: 0;
+    position: absolute;
+    transform: rotate(
+        calc(
+            0deg -
+                atan2(
+                    calc(var(--planner-stroke-width) * 2),
+                    100cqi
+                )
+        )
+    );
 }
 
 @keyframes planner-current-time-sheen {
@@ -458,20 +471,18 @@ Add the following focused feature styles, refining only token names or selector 
         opacity: 0;
         transform: translateX(-100%);
     }
-    35% {
+    50% {
         opacity: 1;
-    }
-    80% {
-        opacity: 1;
+        transform: translateX(0);
     }
     100% {
         opacity: 0;
-        transform: translateX(0);
+        transform: translateX(100%);
     }
 }
 ```
 
-The badge's `right: 4px` plus `padding-right: 4px` places its text edge at 64px, matching the hourly labels' 72px width minus 8px right padding. The sheen element is the marker width plus its 48px gradient; translating that compositor layer from `-100%` to `0` moves its right-anchored gradient fully across the clipped marker without animating layout.
+The badge's `right: 4px` plus `padding-right: 4px` places its text edge at 64px, matching the hourly labels' 72px width minus 8px right padding. The sheen wrapper translates from `-100%` through `0` to `100%`; its full-width pseudo-element calculates the exact responsive corner-to-corner angle from the 4px surface height and `100cqi` width without animating layout.
 
 - [ ] **Step 3: Add reduced-motion behavior**
 

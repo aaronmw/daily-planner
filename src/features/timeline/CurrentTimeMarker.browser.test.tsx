@@ -93,7 +93,7 @@ describe('CurrentTimeMarker', () => {
         ).toBe('false');
     });
 
-    it('reaches full sheen opacity only after its gradient clears the minimum-width clip', () => {
+    it('spans the marker with a corner-to-corner sheen at full opacity', () => {
         vi.setSystemTime(new Date(2026, 7, 11, 15, 42, 18));
         const { container } = render(
             <div style={{ height: 1440, position: 'relative', width: 280 }}>
@@ -108,31 +108,25 @@ describe('CurrentTimeMarker', () => {
         )!;
         const animation = sheen.getAnimations()[0];
         if (!animation) throw new Error('Expected the sheen CSS animation.');
-        expect(getComputedStyle(sheen).backgroundImage).toMatch(
-            /^linear-gradient\(4deg,/
-        );
         animation.pause();
+        animation.currentTime = 250;
 
-        let firstOpaqueTime: number | null = null;
-        for (let time = 0; time <= 500; time += 1) {
-            animation.currentTime = time;
-            if (Number.parseFloat(getComputedStyle(sheen).opacity) >= 0.999) {
-                firstOpaqueTime = time;
-                break;
-            }
-        }
-
-        expect(firstOpaqueTime).not.toBeNull();
         const surfaceBounds = surface.getBoundingClientRect();
         const sheenBounds = sheen.getBoundingClientRect();
-        const gradientWidth = Number.parseFloat(
-            getComputedStyle(sheen).backgroundSize
-        );
+        const streakStyle = getComputedStyle(sheen, '::before');
+        const streakTransform = new DOMMatrix(streakStyle.transform);
+        const streakAngle =
+            (Math.atan2(streakTransform.b, streakTransform.a) * 180) / Math.PI;
+        const cornerAngle =
+            (Math.atan2(surfaceBounds.height, surfaceBounds.width) * 180) /
+            Math.PI;
+
+        expect(Number.parseFloat(getComputedStyle(sheen).opacity)).toBe(1);
+        expect(streakStyle.backgroundImage).toMatch(/^linear-gradient\(0deg,/);
         expect(surfaceBounds.width).toBe(208);
-        expect(sheenBounds.width).toBe(256);
-        expect(sheenBounds.right - gradientWidth).toBeGreaterThanOrEqual(
-            surfaceBounds.left
-        );
+        expect(sheenBounds.left).toBeCloseTo(surfaceBounds.left, 3);
+        expect(sheenBounds.right).toBeCloseTo(surfaceBounds.right, 3);
+        expect(streakAngle).toBeCloseTo(-cornerAngle, 3);
     });
 
     it('keeps the colon visible and removes the sheen for reduced motion', async () => {
