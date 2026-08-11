@@ -17,9 +17,7 @@ export function resolveItemListInsertion(
     itemIds: readonly ItemId[],
     rows: readonly ItemListRowGeometry[]
 ): ItemListInsertion {
-    const nextRow = rows.find(
-        row => pointerOffsetY < row.start + row.size / 2
-    );
+    const nextRow = rows.find(row => pointerOffsetY < row.start + row.size / 2);
     const lastRow = rows.at(-1) ?? null;
     const rawIndex = nextRow
         ? itemIds.indexOf(nextRow.id)
