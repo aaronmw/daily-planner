@@ -526,7 +526,7 @@ Expected: formatting, lint, typecheck, all Vitest projects, and Vite production 
 
 - [ ] **Step 6: Run React Doctor**
 
-Run `npx -y react-doctor@latest . --verbose --no-interactive`, compare the score and warnings to the known baseline, and fix only regressions introduced by these files. Do not broaden this feature into unrelated cleanup.
+Run `npx react-doctor@latest --verbose --scope changed`, compare the changed-code score and diagnostics to the known baseline, and fix only regressions introduced by these files. Do not broaden this feature into unrelated cleanup.
 
 - [ ] **Step 7: Build, install, stop the exact app, and reopen it**
 
