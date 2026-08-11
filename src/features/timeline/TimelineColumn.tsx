@@ -1,16 +1,9 @@
-import {
-    type DragEvent,
-    useEffect,
-    useLayoutEffect,
-    useMemo,
-    useRef,
-    useState,
-} from 'react';
-import { usePlannerCommands } from '../../core/application/plannerContext';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { usePlannerSelector } from '../../core/store/plannerContext';
 import { ItemCard } from '../items/ItemCard';
 import { scheduledItemsInWindow } from './scheduledWindow';
-import { initialTimelineMinute } from './timelineScale';
+import { currentTimelineMinute, initialTimelineMinute } from './timelineScale';
+import { useTimelineItemDrag } from './useTimelineItemDrag';
 
 const DAY_MINUTES = 24 * 60;
 
@@ -25,11 +18,31 @@ interface TimelineColumnProps {
     minuteHeight: number;
 }
 
+function CurrentTimeMarker({ pixelsPerMinute }: { pixelsPerMinute: number }) {
+    const [minute, setMinute] = useState(() =>
+        currentTimelineMinute(new Date())
+    );
+
+    useEffect(() => {
+        const timer = window.setInterval(() => {
+            setMinute(currentTimelineMinute(new Date()));
+        }, 1_000);
+        return () => window.clearInterval(timer);
+    }, []);
+
+    return (
+        <div
+            aria-label="Current time"
+            className="pointer-events-none absolute left-0 right-0 z-20 h-[var(--planner-stroke-width)] bg-red-600"
+            style={{ top: minute * pixelsPerMinute }}
+        />
+    );
+}
+
 export function TimelineColumn({
     focusRequestId = 0,
     minuteHeight,
 }: TimelineColumnProps) {
-    const commands = usePlannerCommands();
     const scheduledItemIds = usePlannerSelector(
         state => state.scheduledItemIds
     );
@@ -50,6 +63,13 @@ export function TimelineColumn({
         start: initialTopMinute,
     });
     const pixelsPerMinute = minuteHeight;
+    const { draggedItemId, dropPreviewMinute } = useTimelineItemDrag(
+        containerRef,
+        pixelsPerMinute
+    );
+    const draggedItem = draggedItemId
+        ? (itemsById.get(draggedItemId) ?? null)
+        : null;
     const scheduledItems = useMemo(
         () =>
             scheduledItemIds.flatMap(id => {
@@ -157,41 +177,12 @@ export function TimelineColumn({
         });
     };
 
-    const dropItem = (event: DragEvent<HTMLDivElement>) => {
-        event.preventDefault();
-        const id = event.dataTransfer.getData(
-            'application/x-daily-planner-item-id'
-        );
-        const item = Array.from(itemsById.values()).find(
-            item => item.id === id
-        );
-        const element = containerRef.current;
-        if (!item || !element) return;
-        const bounds = element.getBoundingClientRect();
-        const minute = Math.max(
-            0,
-            Math.min(
-                DAY_MINUTES - 15,
-                Math.round(
-                    (element.scrollTop + event.clientY - bounds.top) /
-                        pixelsPerMinute /
-                        15
-                ) * 15
-            )
-        );
-        void commands.updateItem(item.id, { scheduledStartMinutes: minute });
-    };
-
     const ticks = Array.from({ length: 49 }, (_, index) => index * 30);
-    const now = new Date();
-    const currentMinute = now.getHours() * 60 + now.getMinutes();
 
     return (
         <div
             aria-label="Timeline schedule"
-            className="relative h-full overflow-auto select-none"
-            onDragOver={event => event.preventDefault()}
-            onDrop={dropItem}
+            className="planner-timeline-container relative h-full overflow-auto select-none"
             onScroll={updateVisibleRange}
             ref={containerRef}
             tabIndex={-1}
@@ -200,6 +191,24 @@ export function TimelineColumn({
                 className="relative min-w-[280px]"
                 style={{ height: DAY_MINUTES * pixelsPerMinute }}
             >
+                <div
+                    aria-hidden="true"
+                    className="pointer-events-none absolute inset-0 z-30"
+                    data-timeline-drag-layer="true"
+                >
+                    {draggedItem && dropPreviewMinute !== null && (
+                        <div
+                            className="planner-timeline-drag-preview pointer-events-none absolute left-[72px] right-3"
+                            data-timeline-drop-preview="true"
+                            style={{
+                                height:
+                                    draggedItem.durationMinutes *
+                                    pixelsPerMinute,
+                                top: dropPreviewMinute * pixelsPerMinute,
+                            }}
+                        />
+                    )}
+                </div>
                 {ticks.map(minute => (
                     <div
                         className="absolute left-0 right-0 h-0 text-planner-text-faded"
@@ -226,11 +235,7 @@ export function TimelineColumn({
                         <ItemCard context="timeline" id={item.id} />
                     </div>
                 ))}
-                <div
-                    aria-label="Current time"
-                    className="pointer-events-none absolute left-0 right-0 z-20 h-[var(--planner-stroke-width)] bg-red-600"
-                    style={{ top: currentMinute * pixelsPerMinute }}
-                />
+                <CurrentTimeMarker pixelsPerMinute={pixelsPerMinute} />
             </div>
         </div>
     );

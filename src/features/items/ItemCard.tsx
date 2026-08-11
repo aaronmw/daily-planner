@@ -1,10 +1,4 @@
-import {
-    type CSSProperties,
-    type DragEvent,
-    useLayoutEffect,
-    useRef,
-    useState,
-} from 'react';
+import { type CSSProperties, useLayoutEffect, useRef, useState } from 'react';
 import type { ItemId } from '../../core/domain/ids';
 import { usePlannerCommands } from '../../core/application/plannerContext';
 import { usePlannerSelector } from '../../core/store/plannerContext';
@@ -108,23 +102,16 @@ export function ItemCard({
     };
     const singleLine = !item.label.includes('\n') && item.label.length < 72;
 
-    const handleDragStart = (event: DragEvent<HTMLElement>) => {
-        event.dataTransfer.effectAllowed = 'move';
-        event.dataTransfer.setData('application/x-daily-planner-item-id', id);
-        event.dataTransfer.setData('text/plain', id);
-    };
-
     return (
         <button
             aria-label={item.label || 'Untitled item'}
             className={`planner-item-card relative flex w-full min-w-0 cursor-pointer bg-planner-background text-left focus:outline-none ${singleLine ? 'items-center' : 'items-start'} ${item.isComplete ? 'opacity-60' : ''}`}
             data-active={selected}
             data-card-context={context}
+            data-draggable={canWrite}
             data-single-line={singleLine}
             data-item-id={id}
-            draggable={canWrite}
             onClick={() => commands.selectItem(id)}
-            onDragStart={handleDragStart}
             ref={cardRef}
             style={cardStyle}
             tabIndex={selected ? 0 : -1}

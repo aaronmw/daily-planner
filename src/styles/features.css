@@ -124,8 +124,31 @@
         transform var(--planner-motion-fast) var(--planner-motion-ease);
 }
 
-.planner-item-card[draggable='true'] {
-    -webkit-user-drag: element;
+.planner-item-card[data-draggable='true'] {
+    -webkit-user-drag: none;
+    cursor: grab;
+    user-select: none;
+}
+
+.planner-item-card[data-pointer-dragging='true'] {
+    opacity: 0.35;
+}
+
+.planner-item-card-drag-ghost {
+    left: 0;
+    margin: 0;
+    opacity: 0.85;
+    pointer-events: none;
+    position: fixed;
+    top: 0;
+    transition: none;
+    will-change: transform;
+    z-index: 1000;
+}
+
+html[data-item-dragging='true'],
+html[data-item-dragging='true'] * {
+    cursor: grabbing !important;
 }
 
 .planner-item-card::before {
@@ -152,6 +175,15 @@
 
 .planner-item-card[data-active='true']::before {
     opacity: 1;
+}
+
+.planner-timeline-drag-preview {
+    border: var(--planner-stroke-width) solid var(--planner-item-border-hover);
+    border-radius: var(--radius-planner);
+}
+
+.planner-timeline-container:focus {
+    outline: none !important;
 }
 
 .planner-item-card:hover {
