@@ -20,7 +20,7 @@
 - Under `prefers-reduced-motion: reduce`, keep the marker accurate, keep the colon visible, and omit the sheen.
 - Do not alter scrolling, drag-and-drop behavior, planner persistence, or planner-store state.
 - Do not add a motion or date dependency.
-- Per repository policy, keep implementation changes uncommitted through the post-implementation decision audit; create the code checkpoint only after Aaron accepts that audit.
+- Local per-task checkpoint commits are allowed as internal artifacts for the selected subagent-driven review workflow. The post-implementation decision audit still gates merging, pushing, pull requests, deployment, release, and other integration/finalization.
 
 ---
 
@@ -137,11 +137,16 @@ Run: `./node_modules/.bin/vitest run --project unit src/features/timeline/__test
 
 Expected: 3 tests pass.
 
-- [ ] **Step 5: Review Task 1 without committing**
+- [ ] **Step 5: Review and checkpoint Task 1**
 
 Run: `git diff --check && ./node_modules/.bin/eslint src/features/timeline/timelineClock.ts src/features/timeline/__tests__/timelineClock.test.ts --max-warnings 0`
 
-Expected: no whitespace or lint errors. Leave the files uncommitted for the decision-audit gate.
+Expected: no whitespace or lint errors. Then create the local review checkpoint:
+
+```bash
+git add src/features/timeline/timelineClock.ts src/features/timeline/__tests__/timelineClock.test.ts
+git commit -m "feat: add synchronized timeline clock"
+```
 
 ### Task 2: Drift-resistant wall-clock lifecycle
 
@@ -342,11 +347,16 @@ Run: `./node_modules/.bin/vitest run --project browser src/features/timeline/Cur
 
 Expected: 2 tests pass, and the observed second key advances by exactly one.
 
-- [ ] **Step 6: Review Task 2 without committing**
+- [ ] **Step 6: Review and checkpoint Task 2**
 
 Run: `git diff --check && ./node_modules/.bin/eslint src/features/timeline/useTimelineClock.ts src/features/timeline/CurrentTimeMarker.tsx src/features/timeline/CurrentTimeMarker.browser.test.tsx --max-warnings 0`
 
-Expected: no whitespace or lint errors. Leave the files uncommitted for the decision-audit gate.
+Expected: no whitespace or lint errors. Then create the local review checkpoint:
+
+```bash
+git add src/features/timeline/useTimelineClock.ts src/features/timeline/CurrentTimeMarker.tsx src/features/timeline/CurrentTimeMarker.browser.test.tsx
+git commit -m "feat: render synchronized current time marker"
+```
 
 ### Task 3: Integrate and style the synchronized marker
 
@@ -536,17 +546,13 @@ codesign --verify --deep --strict '/Applications/Daily Planner.app'
 
 Confirm exactly one installed-app process is running after installation and that the installed executable hash matches the newly built executable. The installer, not an ad-hoc kill command, owns replacement and relaunch.
 
-- [ ] **Step 8: Perform the post-implementation decision audit**
-
-Report every implementation decision and tradeoff, confidence, validation gaps, remaining edge cases, the pride gate, and an overall readiness verdict. Keep all implementation files in place and do not commit them until Aaron accepts the audit.
-
-- [ ] **Step 9: Create the accepted implementation checkpoint**
-
-After Aaron accepts the audit:
+- [ ] **Step 8: Create the local Task 3 review checkpoint**
 
 ```bash
-git add src/features/timeline/timelineClock.ts src/features/timeline/useTimelineClock.ts src/features/timeline/CurrentTimeMarker.tsx src/features/timeline/CurrentTimeMarker.browser.test.tsx src/features/timeline/__tests__/timelineClock.test.ts src/features/timeline/TimelineColumn.tsx src/styles/features.css
-git commit -m "feat: polish current time marker"
+git add src/features/timeline/TimelineColumn.tsx src/styles/features.css src/features/timeline/CurrentTimeMarker.browser.test.tsx
+git commit -m "style: polish current time marker"
 ```
 
-Expected: one focused implementation commit on top of the committed design and plan documents; no unrelated files staged.
+- [ ] **Step 9: Perform the post-implementation decision audit**
+
+Report every implementation decision and tradeoff, confidence, validation gaps, remaining edge cases, the pride gate, and an overall readiness verdict. The local checkpoints remain internal review artifacts; do not merge, push, create a pull request, deploy, release, or otherwise integrate/finalize the work until Aaron accepts the audit.
