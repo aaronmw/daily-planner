@@ -26,14 +26,10 @@ describe('timelineClock', () => {
 
     it('aligns the next callback to the real second boundary', () => {
         expect(
-            millisecondsUntilNextSecond(
-                new Date(2026, 7, 11, 15, 4, 38, 250)
-            )
+            millisecondsUntilNextSecond(new Date(2026, 7, 11, 15, 4, 38, 250))
         ).toBe(750);
         expect(
-            millisecondsUntilNextSecond(
-                new Date(2026, 7, 11, 15, 4, 39, 0)
-            )
+            millisecondsUntilNextSecond(new Date(2026, 7, 11, 15, 4, 39, 0))
         ).toBe(1_000);
     });
 });

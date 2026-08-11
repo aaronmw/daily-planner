@@ -11,9 +11,7 @@ interface CurrentTimeMarkerProps {
     pixelsPerMinute: number;
 }
 
-export function CurrentTimeMarker({
-    pixelsPerMinute,
-}: CurrentTimeMarkerProps) {
+export function CurrentTimeMarker({ pixelsPerMinute }: CurrentTimeMarkerProps) {
     const now = useTimelineClock();
     const time = currentTimeParts(now);
     const second = currentSecondKey(now);
