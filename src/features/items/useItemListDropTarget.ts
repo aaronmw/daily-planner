@@ -91,14 +91,7 @@ export function useItemListDropTarget({
                 };
             },
         }),
-        [
-            canWrite,
-            commands,
-            containerRef,
-            itemIds,
-            previewRef,
-            selectedListId,
-        ]
+        [canWrite, commands, containerRef, itemIds, previewRef, selectedListId]
     );
     useItemDropTarget(target);
 
