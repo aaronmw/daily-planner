@@ -12,11 +12,12 @@
 
 - Show the local current time as `h:mm AM/PM`; do not display seconds.
 - Blink only the colon, preserving its layout width while hidden.
+- Shape the minute and meridiem as one text run with one normal space so their spacing matches ordinary timeline labels.
 - Align the badge's text edge—not its outer edge—with the existing hourly labels.
 - Clip the sheen to the current-time marker surface to the right of the 72px label gutter.
 - Start one sheen at each real second boundary; complete it within 500ms and remain still for the rest of the second.
 - Begin the sheen outside the marker at 0% opacity and reach 100% only after its full width has cleared the left clipping edge.
-- Angle the visible sheen band only a few degrees from horizontal so the 4px marker renders an elongated glancing streak rather than a compact dot.
+- Use a `4deg` CSS gradient direction so the visible color band is nearly horizontal and the 4px marker renders an elongated glancing streak rather than a compact dot.
 - Use one wall-clock source for marker position, colon phase, and sheen identity; resynchronize immediately after backgrounding or suspension.
 - Under `prefers-reduced-motion: reduce`, keep the marker accurate, keep the colon visible, and omit the sheen.
 - Do not alter scrolling, drag-and-drop behavior, planner persistence, or planner-store state.
@@ -321,8 +322,7 @@ export function CurrentTimeMarker({
                     >
                         :
                     </span>
-                    <span>{time.minute}</span>
-                    <span>&nbsp;{time.period}</span>
+                    <span>{`${time.minute} ${time.period}`}</span>
                 </time>
             </span>
             <span
@@ -433,7 +433,7 @@ Add the following focused feature styles, refining only token names or selector 
 .planner-current-time-sheen {
     animation: planner-current-time-sheen 500ms ease-in-out both;
     background-image: linear-gradient(
-        94deg,
+        4deg,
         transparent 0%,
         rgb(255 255 255 / 35%) 32%,
         white 50%,

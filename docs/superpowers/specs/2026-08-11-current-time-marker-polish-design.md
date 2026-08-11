@@ -14,6 +14,7 @@ This change applies only to the current-time marker in the timeline column. It d
 - The filled marker begins at the timeline-content boundary, to the right of the 72px time-label gutter, and continues to the right edge of the timeline.
 - A filled red badge is vertically centered over the marker's left edge in the time-label gutter.
 - The badge displays the local current time as `h:mm AM/PM`, with tabular numerals and no seconds.
+- The minute and meridiem are shaped as one text run with a normal space so their optical spacing matches the ordinary timeline labels; only the colon is isolated for blinking.
 - The badge's time text shares the same right alignment as the ordinary hourly labels. Its outer positioning compensates for its right-side badge padding so the glyphs align rather than the two surfaces' edges.
 - The colon keeps its layout width while hidden so the badge never changes width or shifts when it blinks.
 
@@ -30,7 +31,7 @@ The clock uses chained timeouts aligned to the next real second rather than an u
 ## Sheen Motion
 
 - The sheen is clipped to the marker surface to the right of the badge; it never passes through the badge or the time-label gutter.
-- Each pass contains a single elongated white diagonal gradient with transparent edges. Its visible band is angled only a few degrees from horizontal so it reads as a glancing streak across the short marker surface rather than a compact dot.
+- Each pass contains a single elongated white diagonal gradient with transparent edges. The CSS gradient direction is `4deg` (nearly vertical), which makes its visible color band nearly horizontal so it reads as a glancing streak across the short marker surface rather than a compact dot.
 - At the second boundary, the gradient begins outside the marker's left clipping edge at zero opacity.
 - Its opacity reaches 100% only after the entire gradient has entered the visible marker, ensuring that the left edge does not visibly crop an opaque gradient.
 - It travels across and fades out at the far edge within 500ms.
