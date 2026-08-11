@@ -240,7 +240,7 @@ html[data-item-dragging='true'] * {
 .planner-current-time-sheen {
     animation: planner-current-time-sheen 500ms ease-in-out both;
     background-image: linear-gradient(
-        110deg,
+        94deg,
         transparent 0%,
         rgb(255 255 255 / 35%) 32%,
         white 50%,

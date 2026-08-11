@@ -108,6 +108,7 @@ describe('CurrentTimeMarker', () => {
         )!;
         const animation = sheen.getAnimations()[0];
         if (!animation) throw new Error('Expected the sheen CSS animation.');
+        expect(getComputedStyle(sheen).backgroundImage).toContain('94deg');
         animation.pause();
 
         let firstOpaqueTime: number | null = null;
