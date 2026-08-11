@@ -1,7 +1,5 @@
-import { type CSSProperties } from 'react';
 import { currentTimelineMinute } from './timelineScale';
 import {
-    currentSecondKey,
     currentTimeParts,
     isCurrentTimeColonVisible,
 } from './timelineClock';
@@ -14,11 +12,7 @@ interface CurrentTimeMarkerProps {
 export function CurrentTimeMarker({ pixelsPerMinute }: CurrentTimeMarkerProps) {
     const now = useTimelineClock();
     const time = currentTimeParts(now);
-    const second = currentSecondKey(now);
     const colonVisible = isCurrentTimeColonVisible(now);
-    const sheenStyle = {
-        animationDelay: `-${now.getMilliseconds()}ms`,
-    } as CSSProperties;
 
     return (
         <div
@@ -50,9 +44,6 @@ export function CurrentTimeMarker({ pixelsPerMinute }: CurrentTimeMarkerProps) {
                 <span
                     className="planner-current-time-sheen"
                     data-current-time-sheen
-                    data-second={second}
-                    key={second}
-                    style={sheenStyle}
                 />
             </span>
         </div>

@@ -23,7 +23,7 @@ describe('CurrentTimeMarker', () => {
         vi.useRealTimers();
     });
 
-    it('shows minutes and advances every surface on the next whole second', async () => {
+    it('shows minutes and advances the clock without restarting the sweep', async () => {
         const { container } = render(
             <div className="relative h-[1440px] w-[320px]">
                 <CurrentTimeMarker pixelsPerMinute={1} />
@@ -46,13 +46,11 @@ describe('CurrentTimeMarker', () => {
         const sheen = container.querySelector<HTMLElement>(
             '.planner-current-time-sheen'
         );
-        const firstSecond = Number(firstSheen?.dataset.second);
         const firstTop = Number.parseFloat(marker?.style.top ?? '');
         expect(surface).toBeTruthy();
-        expect(sheen?.style.animationDelay).toBe('-250ms');
+        expect(sheen).toBe(firstSheen);
         expect(getComputedStyle(surface!).overflow).toBe('hidden');
         expect(colon?.dataset.visible).toBe('true');
-        expect(Number.isFinite(firstSecond)).toBe(true);
         expect(Number.isFinite(firstTop)).toBe(true);
 
         await act(async () => {
@@ -61,18 +59,14 @@ describe('CurrentTimeMarker', () => {
 
         expect(colon?.dataset.visible).toBe('false');
         expect(
-            Number(
-                container.querySelector<HTMLElement>(
-                    '[data-current-time-sheen]'
-                )?.dataset.second
-            )
-        ).toBe(firstSecond + 1);
+            container.querySelector<HTMLElement>('[data-current-time-sheen]')
+        ).toBe(firstSheen);
         expect(Number.parseFloat(marker?.style.top ?? '')).toBeGreaterThan(
             firstTop
         );
     });
 
-    it('synchronizes the setup snapshot when mounting across a second boundary', () => {
+    it('synchronizes the colon when mounting across a second boundary', () => {
         vi.setSystemTime(new Date('2026-08-11T15:42:18.999Z'));
         const { container } = render(
             <>
@@ -84,16 +78,12 @@ describe('CurrentTimeMarker', () => {
         );
 
         expect(
-            container.querySelector<HTMLElement>('[data-current-time-sheen]')
-                ?.dataset.second
-        ).toBe('1786462939');
-        expect(
             container.querySelector<HTMLElement>('[data-current-time-colon]')
                 ?.dataset.visible
         ).toBe('false');
     });
 
-    it('spans the marker with a corner-to-corner sheen at full opacity', () => {
+    it('sweeps a horizontal gradient across the full marker surface', () => {
         vi.setSystemTime(new Date(2026, 7, 11, 15, 42, 18));
         const { container } = render(
             <div style={{ height: 1440, position: 'relative', width: 280 }}>
@@ -109,24 +99,22 @@ describe('CurrentTimeMarker', () => {
         const animation = sheen.getAnimations()[0];
         if (!animation) throw new Error('Expected the sheen CSS animation.');
         animation.pause();
-        animation.currentTime = 250;
+        animation.currentTime = 1000;
 
         const surfaceBounds = surface.getBoundingClientRect();
         const sheenBounds = sheen.getBoundingClientRect();
-        const streakStyle = getComputedStyle(sheen, '::before');
-        const streakTransform = new DOMMatrix(streakStyle.transform);
-        const streakAngle =
-            (Math.atan2(streakTransform.b, streakTransform.a) * 180) / Math.PI;
-        const cornerAngle =
-            (Math.atan2(surfaceBounds.height, surfaceBounds.width) * 180) /
-            Math.PI;
+        const sheenStyle = getComputedStyle(sheen);
 
-        expect(Number.parseFloat(getComputedStyle(sheen).opacity)).toBe(1);
-        expect(streakStyle.backgroundImage).toMatch(/^linear-gradient\(0deg,/);
+        expect(sheenStyle.animationDuration).toBe('2s');
+        expect(sheenStyle.animationIterationCount).toBe('infinite');
+        expect(sheenStyle.animationTimingFunction).toBe('linear');
+        expect(sheenStyle.backgroundImage).toMatch(
+            /^linear-gradient\(90deg, rgba?\(255, 255, 255, 0\) 0%, rgba\(255, 255, 255, 0\.5\) 50%, rgba?\(255, 255, 255, 0\) 100%\)$/
+        );
+        expect(surfaceBounds.height).toBe(2);
         expect(surfaceBounds.width).toBe(208);
         expect(sheenBounds.left).toBeCloseTo(surfaceBounds.left, 3);
         expect(sheenBounds.right).toBeCloseTo(surfaceBounds.right, 3);
-        expect(streakAngle).toBeCloseTo(-cornerAngle, 3);
     });
 
     it('keeps the colon visible and removes the sheen for reduced motion', async () => {
