@@ -3,7 +3,7 @@ import { usePlannerSelector } from '../../core/store/plannerContext';
 import { ItemCard } from '../items/ItemCard';
 import { scheduledItemsInWindow } from './scheduledWindow';
 import { currentTimelineMinute, initialTimelineMinute } from './timelineScale';
-import { useTimelineItemDrag } from './useTimelineItemDrag';
+import { useTimelineItemDropTarget } from './useTimelineItemDropTarget';
 
 const DAY_MINUTES = 24 * 60;
 
@@ -63,7 +63,7 @@ export function TimelineColumn({
         start: initialTopMinute,
     });
     const pixelsPerMinute = minuteHeight;
-    const { draggedItemId, dropPreviewMinute } = useTimelineItemDrag(
+    const { draggedItemId, dropPreviewMinute } = useTimelineItemDropTarget(
         containerRef,
         pixelsPerMinute
     );

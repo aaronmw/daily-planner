@@ -1,9 +1,23 @@
-import { type RefObject, useEffect, useState } from 'react';
-import { usePlannerCommands } from '../../core/application/plannerContext';
+import {
+    createContext,
+    type PropsWithChildren,
+    type ReactNode,
+    useCallback,
+    useContext,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+} from 'react';
 import type { ItemId } from '../../core/domain/ids';
 import { usePlannerSelector } from '../../core/store/plannerContext';
-import { hasCrossedItemDragThreshold } from '../items/itemDragSession';
-import { snapTimelineDragMinute } from './timelineScale';
+import { hasCrossedItemDragThreshold } from './itemDragSession';
+import {
+    areActiveItemDropsEqual,
+    resolveRegisteredItemDrop,
+    type ActiveItemDrop,
+    type ItemDropTarget,
+} from './itemDropTargets';
 
 interface PointerDrag {
     active: boolean;
@@ -17,6 +31,14 @@ interface PointerDrag {
     startX: number;
     startY: number;
 }
+
+interface ItemDragContextValue {
+    activeDrop: ActiveItemDrop | null;
+    activeItemId: ItemId | null;
+    registerDropTarget: (target: ItemDropTarget) => () => void;
+}
+
+const ItemDragContext = createContext<ItemDragContextValue | null>(null);
 
 const positionDragGhost = (
     ghost: HTMLElement,
@@ -51,60 +73,26 @@ const createDragGhost = (
     return ghost;
 };
 
-export const useTimelineItemDrag = (
-    containerRef: RefObject<HTMLDivElement | null>,
-    pixelsPerMinute: number
-) => {
-    const commands = usePlannerCommands();
+export function ItemDragProvider({ children }: PropsWithChildren): ReactNode {
     const itemsById = usePlannerSelector(state => state.itemsById);
-    const [dropPreviewMinute, setDropPreviewMinute] = useState<number | null>(
-        null
-    );
-    const [draggedItemId, setDraggedItemId] = useState<ItemId | null>(null);
+    const targetsRef = useRef(new Map<string, ItemDropTarget>());
+    const activeDropRef = useRef<ActiveItemDrop | null>(null);
+    const [activeDrop, setActiveDrop] = useState<ActiveItemDrop | null>(null);
+    const [activeItemId, setActiveItemId] = useState<ItemId | null>(null);
+
+    const registerDropTarget = useCallback((target: ItemDropTarget) => {
+        targetsRef.current.set(target.id, target);
+        return () => {
+            if (targetsRef.current.get(target.id) === target) {
+                targetsRef.current.delete(target.id);
+            }
+        };
+    }, []);
 
     useEffect(() => {
         let drag: PointerDrag | null = null;
         let clickSuppressionTimer: number | null = null;
         let suppressClickFrom: HTMLElement | null = null;
-
-        const minuteAtPosition = (
-            clientX: number,
-            clientY: number,
-            durationMinutes: number,
-            grabRatioY: number
-        ) => {
-            const element = containerRef.current;
-            if (!element) return null;
-            const bounds = element.getBoundingClientRect();
-            const isInsideTimeline =
-                clientX >= bounds.left &&
-                clientX <= bounds.right &&
-                clientY >= bounds.top &&
-                clientY <= bounds.bottom;
-            if (!isInsideTimeline) return null;
-            const rawMinute =
-                (element.scrollTop + clientY - bounds.top) / pixelsPerMinute -
-                durationMinutes * grabRatioY;
-            return snapTimelineDragMinute(rawMinute, durationMinutes);
-        };
-        const updateDropPreview = (
-            currentDrag: PointerDrag,
-            clientX: number,
-            clientY: number
-        ) => {
-            const item = itemsById.get(currentDrag.id);
-            const minute = item
-                ? minuteAtPosition(
-                      clientX,
-                      clientY,
-                      item.durationMinutes,
-                      currentDrag.grabRatioY
-                  )
-                : null;
-            setDropPreviewMinute(current =>
-                current === minute ? current : minute
-            );
-        };
 
         const resetDrag = (updateReactState = true) => {
             const currentDrag = drag;
@@ -121,9 +109,10 @@ export const useTimelineItemDrag = (
                 }
             }
             delete document.documentElement.dataset.itemDragging;
+            activeDropRef.current = null;
             if (updateReactState) {
-                setDraggedItemId(null);
-                setDropPreviewMinute(null);
+                setActiveItemId(null);
+                setActiveDrop(null);
             }
         };
 
@@ -200,7 +189,7 @@ export const useTimelineItemDrag = (
                 );
                 currentDrag.source.dataset.pointerDragging = 'true';
                 document.documentElement.dataset.itemDragging = 'true';
-                setDraggedItemId(currentDrag.id);
+                setActiveItemId(currentDrag.id);
             } else if (currentDrag.ghost) {
                 positionDragGhost(
                     currentDrag.ghost,
@@ -212,7 +201,22 @@ export const useTimelineItemDrag = (
             }
 
             event.preventDefault();
-            updateDropPreview(currentDrag, event.clientX, event.clientY);
+            const item = itemsById.get(currentDrag.id);
+            const nextDrop = item
+                ? resolveRegisteredItemDrop(
+                      Array.from(targetsRef.current.values()),
+                      {
+                          clientX: event.clientX,
+                          clientY: event.clientY,
+                          grabRatioY: currentDrag.grabRatioY,
+                      },
+                      item
+                  )
+                : null;
+            activeDropRef.current = nextDrop;
+            setActiveDrop(current =>
+                areActiveItemDropsEqual(current, nextDrop) ? current : nextDrop
+            );
         };
 
         const handlePointerUp = (event: PointerEvent) => {
@@ -221,16 +225,12 @@ export const useTimelineItemDrag = (
                 return;
             }
 
-            const item = itemsById.get(currentDrag.id);
-            const minute =
-                currentDrag.active && item
-                    ? minuteAtPosition(
-                          event.clientX,
-                          event.clientY,
-                          item.durationMinutes,
-                          currentDrag.grabRatioY
-                      )
-                    : null;
+            const activeDrop = currentDrag.active
+                ? activeDropRef.current
+                : null;
+            const target = activeDrop
+                ? targetsRef.current.get(activeDrop.targetId)
+                : undefined;
             const source = currentDrag.source;
             const id = currentDrag.id;
             const wasActive = currentDrag.active;
@@ -246,10 +246,16 @@ export const useTimelineItemDrag = (
                 suppressClickFrom = null;
                 clickSuppressionTimer = null;
             }, 0);
-            if (minute !== null) {
-                void commands.updateItem(id, {
-                    scheduledStartMinutes: minute,
-                });
+            if (activeDrop && target) {
+                try {
+                    void Promise.resolve(
+                        target.commit(id, activeDrop.preview)
+                    ).catch(error =>
+                        console.error('Unable to drop item', error)
+                    );
+                } catch (error) {
+                    console.error('Unable to drop item', error);
+                }
             }
         };
 
@@ -306,7 +312,37 @@ export const useTimelineItemDrag = (
             }
             resetDrag(false);
         };
-    }, [commands, containerRef, itemsById, pixelsPerMinute]);
+    }, [itemsById]);
 
-    return { draggedItemId, dropPreviewMinute };
+    const contextValue = useMemo(
+        () => ({ activeDrop, activeItemId, registerDropTarget }),
+        [activeDrop, activeItemId, registerDropTarget]
+    );
+
+    return (
+        <ItemDragContext.Provider value={contextValue}>
+            {children}
+        </ItemDragContext.Provider>
+    );
+}
+
+const useItemDragContext = (): ItemDragContextValue => {
+    const context = useContext(ItemDragContext);
+    if (!context) {
+        throw new Error('ItemDragProvider is missing from the app shell.');
+    }
+    return context;
 };
+
+export function useItemDragState(): Pick<
+    ItemDragContextValue,
+    'activeDrop' | 'activeItemId'
+> {
+    const { activeDrop, activeItemId } = useItemDragContext();
+    return { activeDrop, activeItemId };
+}
+
+export function useItemDropTarget(target: ItemDropTarget): void {
+    const { registerDropTarget } = useItemDragContext();
+    useEffect(() => registerDropTarget(target), [registerDropTarget, target]);
+}

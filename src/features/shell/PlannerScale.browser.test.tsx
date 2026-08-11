@@ -12,6 +12,7 @@ import type { ListId, ItemId } from '../../core/domain/ids';
 import type { PlannerItem } from '../../core/domain/types';
 import { PlannerStoreProvider } from '../../core/store/plannerContext';
 import { createPlannerStore } from '../../core/store/plannerStore';
+import { ItemDragProvider } from '../items/ItemDragProvider';
 import { ListColumn } from '../lists/ListColumn';
 import { ItemColumn } from '../items/ItemColumn';
 import { ItemCard } from '../items/ItemCard';
@@ -115,9 +116,11 @@ describe('planner collection scale in a real browser', () => {
             <PlannerStoreProvider store={store}>
                 <CollaborationProvider>
                     <PlannerCommandsProvider commands={commands}>
-                        <div style={{ height: 640, width: 320 }}>
-                            <TimelineColumn minuteHeight={1.15} />
-                        </div>
+                        <ItemDragProvider>
+                            <div style={{ height: 640, width: 320 }}>
+                                <TimelineColumn minuteHeight={1.15} />
+                            </div>
+                        </ItemDragProvider>
                     </PlannerCommandsProvider>
                 </CollaborationProvider>
             </PlannerStoreProvider>
@@ -384,15 +387,17 @@ describe('planner collection scale in a real browser', () => {
             <PlannerStoreProvider store={store}>
                 <CollaborationProvider>
                     <PlannerCommandsProvider commands={commands}>
-                        <button data-testid="outside-timeline-focus">
-                            Outside
-                        </button>
-                        <div style={{ height: 640, width: 500 }}>
-                            <TimelineColumn
-                                focusRequestId={focusRequestId}
-                                minuteHeight={1}
-                            />
-                        </div>
+                        <ItemDragProvider>
+                            <button data-testid="outside-timeline-focus">
+                                Outside
+                            </button>
+                            <div style={{ height: 640, width: 500 }}>
+                                <TimelineColumn
+                                    focusRequestId={focusRequestId}
+                                    minuteHeight={1}
+                                />
+                            </div>
+                        </ItemDragProvider>
                     </PlannerCommandsProvider>
                 </CollaborationProvider>
             </PlannerStoreProvider>
