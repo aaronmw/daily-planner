@@ -40,8 +40,7 @@ export function CurrentTimeMarker({ pixelsPerMinute }: CurrentTimeMarkerProps) {
                     >
                         :
                     </span>
-                    <span>{time.minute}</span>
-                    <span>&nbsp;{time.period}</span>
+                    <span>{`${time.minute} ${time.period}`}</span>
                 </time>
             </span>
             <span

@@ -108,7 +108,9 @@ describe('CurrentTimeMarker', () => {
         )!;
         const animation = sheen.getAnimations()[0];
         if (!animation) throw new Error('Expected the sheen CSS animation.');
-        expect(getComputedStyle(sheen).backgroundImage).toContain('94deg');
+        expect(getComputedStyle(sheen).backgroundImage).toMatch(
+            /^linear-gradient\(4deg,/
+        );
         animation.pause();
 
         let firstOpaqueTime: number | null = null;
@@ -162,6 +164,18 @@ describe('CurrentTimeMarker', () => {
                 ],
             });
         }
+    });
+
+    it('shapes the minute and meridiem as one normal-space text run', () => {
+        vi.setSystemTime(new Date(2026, 7, 11, 15, 2, 18, 250));
+        render(<CurrentTimeMarker pixelsPerMinute={1} />);
+
+        const badge = screen.getByLabelText('Current time, 3:02 PM');
+        expect(Array.from(badge.children, child => child.textContent)).toEqual([
+            '3',
+            ':',
+            '02 PM',
+        ]);
     });
 
     it('resynchronizes immediately and cancels the stale cadence when visible', async () => {
