@@ -49,6 +49,36 @@ button {
     padding: 0;
 }
 
+:is(
+    a[href],
+    button:not(:disabled),
+    input:is(
+            [type='button'],
+            [type='checkbox'],
+            [type='color'],
+            [type='file'],
+            [type='radio'],
+            [type='range'],
+            [type='reset'],
+            [type='submit']
+        ):not(:disabled),
+    label[for],
+    select:not(:disabled),
+    summary,
+    [role='button']:not([aria-disabled='true']),
+    [role='checkbox']:not([aria-disabled='true']),
+    [role='radio']:not([aria-disabled='true']),
+    [role='switch']:not([aria-disabled='true']),
+    [role='tab']:not([aria-disabled='true'])
+) {
+    cursor: pointer;
+}
+
+:is(button, input, select):disabled,
+[aria-disabled='true'] {
+    cursor: not-allowed;
+}
+
 textarea {
     display: block;
     resize: none;

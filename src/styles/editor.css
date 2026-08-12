@@ -38,7 +38,7 @@
     outline: none !important;
 }
 
-.planner-editable-text-marching-ants {
+.planner-editable-text > .planner-editable-text-marching-ants {
     bottom: auto;
     height: calc(100% + var(--spacing-grid) * 0.5);
     left: calc(var(--spacing-grid) * -0.5);
@@ -59,19 +59,44 @@
     stroke: var(--planner-border);
 }
 
-.planner-editable-text.planner-item-notes-editor {
-    padding: calc(var(--spacing-grid) * 0.5);
-    width: 100%;
+.planner-editable-text:is(
+    .planner-item-title-editor,
+    .planner-item-notes-editor
+) {
+    margin: calc(var(--spacing-grid) * -0.25) calc(var(--spacing-grid) * -0.5);
+    padding: calc(var(--spacing-grid) * 0.25) calc(var(--spacing-grid) * 0.5);
 }
 
-.planner-item-notes-editor::before {
+.planner-editable-text:is(
+        .planner-item-title-editor,
+        .planner-item-notes-editor
+    )::before,
+.planner-editable-text:is(
+        .planner-item-title-editor,
+        .planner-item-notes-editor
+    )
+    > .planner-editable-text-marching-ants {
     inset: 0;
 }
 
-.planner-item-notes-editor > .planner-editable-text-marching-ants {
-    inset: 0;
+.planner-editable-text:is(
+        .planner-item-title-editor,
+        .planner-item-notes-editor
+    )
+    > .planner-editable-text-marching-ants {
     height: 100%;
     width: 100%;
+}
+
+.planner-editable-text.planner-item-notes-editor {
+    width: calc(100% + var(--spacing-grid));
+}
+
+.planner-editable-text:is(:focus, :focus-within, [data-editing='true'])
+    > .planner-editable-text-marching-ants
+    .planner-marching-ants {
+    animation-play-state: paused;
+    opacity: 0;
 }
 
 .planner-editable-text-content {
@@ -140,6 +165,10 @@
     position: relative;
     resize: none;
     z-index: 1;
+}
+
+.planner-editable-text-prose-input[data-empty='true'] {
+    color: var(--planner-text);
 }
 
 .planner-editable-text-segment-dimmed {

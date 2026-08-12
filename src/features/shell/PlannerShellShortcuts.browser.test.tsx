@@ -10,7 +10,6 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { PlannerCommands } from '../../core/application/plannerCommands';
 import { PlannerCommandsProvider } from '../../core/application/plannerContext';
 import { CollaborationProvider } from '../../core/collaboration/CollaborationContext';
-import { DEFAULT_DESKTOP_SHORTCUTS } from '../../core/application/commandIds';
 import {
     createPlannerItem,
     createPlannerList,
@@ -19,7 +18,6 @@ import type { PlannerPreferences } from '../../core/domain/types';
 import { PlannerStoreProvider } from '../../core/store/plannerContext';
 import { createPlannerStore } from '../../core/store/plannerStore';
 import { ItemDragProvider } from '../items/ItemDragProvider';
-import { DesktopShortcutSettings } from '../settings/DesktopShortcutSettings';
 import { ShortcutProvider } from '../shortcuts/ShortcutProvider';
 import { PlannerShell } from './PlannerShell';
 import '../../styles/index.css';
@@ -102,35 +100,6 @@ const createHarness = ({ includeDeletedItems = false } = {}) => {
 };
 
 describe('PlannerShell contextual shortcuts', () => {
-    it('divides only adjacent desktop shortcut rows', () => {
-        render(
-            <div
-                style={
-                    {
-                        '--planner-border': '#000',
-                    } as React.CSSProperties
-                }
-            >
-                <ShortcutProvider>
-                    <DesktopShortcutSettings
-                        onUpdate={() => undefined}
-                        shortcuts={DEFAULT_DESKTOP_SHORTCUTS}
-                    />
-                </ShortcutProvider>
-            </div>
-        );
-        const rows = Array.from(
-            document.querySelectorAll<HTMLElement>(
-                '.planner-desktop-shortcut-row'
-            )
-        );
-
-        expect(rows).toHaveLength(3);
-        expect(getComputedStyle(rows[0]!).borderTopWidth).toBe('0px');
-        expect(getComputedStyle(rows[1]!).borderTopStyle).toBe('solid');
-        expect(getComputedStyle(rows[2]!).borderTopStyle).toBe('solid');
-    });
-
     it('hides Deleted items when nothing has been deleted', async () => {
         const user = userEvent.setup();
         createHarness();
@@ -164,31 +133,30 @@ describe('PlannerShell contextual shortcuts', () => {
         ).toBeVisible();
     });
 
-    it('keeps settings separators with the sections they introduce', async () => {
+    it('frames Options without internal horizontal rules', async () => {
         const user = userEvent.setup();
         createHarness();
 
         await user.click(screen.getByRole('button', { name: 'Options' }));
 
         const panel = screen.getByRole('dialog', { name: 'Options' });
+        expect(getComputedStyle(panel).borderTopWidth).toBe('2px');
+        expect(getComputedStyle(panel).borderBottomWidth).toBe('2px');
+
         const sections = Array.from(
             panel.querySelectorAll<HTMLElement>('.planner-settings-section')
         );
         expect(sections.length).toBeGreaterThan(1);
-        for (const section of sections.slice(1)) {
-            expect(getComputedStyle(section).borderTopStyle).toBe('solid');
-            expect(section.firstElementChild).toHaveRole('heading');
+        for (const section of sections) {
+            expect(getComputedStyle(section).borderTopWidth).toBe('0px');
         }
 
-        const syncHeading = screen.getByRole('heading', {
-            name: 'Sync & sharing',
-        });
-        const encryptedSync = screen
-            .getByText('Encrypted sync')
-            .closest('.planner-settings-row');
-        expect(encryptedSync).not.toBeNull();
-        expect(encryptedSync?.previousElementSibling).toBe(syncHeading);
-        expect(getComputedStyle(encryptedSync!).borderTopWidth).toBe('0px');
+        const rows = panel.querySelectorAll<HTMLElement>(
+            '.planner-settings-row, .planner-desktop-shortcut-row'
+        );
+        for (const row of rows) {
+            expect(getComputedStyle(row).borderTopWidth).toBe('0px');
+        }
     });
 
     it('opens Options as a labelled disclosure panel', async () => {
@@ -305,6 +273,73 @@ describe('PlannerShell contextual shortcuts', () => {
             screen.queryByRole('dialog', { name: 'Options' })
         ).not.toBeInTheDocument();
         expect(launcher).toHaveFocus();
+    });
+
+    it('uses the full header as the collapse target without swallowing header actions', async () => {
+        const user = userEvent.setup();
+        const { store } = createHarness();
+        const section = screen.getByRole('region', {
+            name: 'Item Details',
+        });
+        const header = section.querySelector('header');
+        const collapse = screen.getByRole('button', {
+            name: 'Collapse Item Details',
+        });
+        expect(header).not.toBeNull();
+        if (!header) return;
+
+        const headerRect = header.getBoundingClientRect();
+        const collapseRect = collapse.getBoundingClientRect();
+        const borderWidth = Number.parseFloat(
+            getComputedStyle(header).borderBottomWidth
+        );
+        expect(collapseRect.left).toBe(headerRect.left);
+        expect(collapseRect.right).toBe(headerRect.right);
+        expect(collapseRect.top).toBe(headerRect.top);
+        expect(collapseRect.bottom).toBe(headerRect.bottom - borderWidth);
+        expect(getComputedStyle(collapse).cursor).toBe('pointer');
+
+        const options = screen.getByRole('button', { name: 'Options' });
+        expect(getComputedStyle(options).cursor).toBe('pointer');
+        await user.click(options);
+        expect(screen.getByRole('dialog', { name: 'Options' })).toBeVisible();
+        expect(store.getState().preferences.columnVisibility.details).toBe(
+            true
+        );
+
+        await user.click(options);
+        await user.click(collapse);
+        expect(store.getState().preferences.columnVisibility.details).toBe(
+            false
+        );
+    });
+
+    it('uses the full collapsed column as the expand target', async () => {
+        const user = userEvent.setup();
+        const { store } = createHarness();
+        const section = screen.getByRole('region', {
+            name: 'Item Details',
+        });
+
+        await user.click(
+            screen.getByRole('button', { name: 'Collapse Item Details' })
+        );
+
+        const expand = screen.getByRole('button', {
+            name: 'Expand Item Details',
+        });
+        const sectionRect = section.getBoundingClientRect();
+        const expandRect = expand.getBoundingClientRect();
+        expect(expandRect.top).toBe(sectionRect.top);
+        expect(expandRect.right).toBe(sectionRect.right);
+        expect(expandRect.bottom).toBe(sectionRect.bottom);
+        expect(expandRect.left).toBe(sectionRect.left);
+        expect(getComputedStyle(expand).cursor).toBe('pointer');
+
+        await user.click(expand);
+        expect(store.getState().preferences.columnVisibility.details).toBe(
+            true
+        );
     });
 
     it('requires command to cycle the lighting mode', () => {

@@ -3,6 +3,7 @@ import { useLayoutEffect, useRef, useState } from 'react';
 interface MarchingAntsSize {
     height: number;
     radius: number;
+    strokeInset: number;
     width: number;
 }
 
@@ -11,6 +12,7 @@ export function MarchingAnts({ className = '' }: { className?: string }) {
     const [size, setSize] = useState<MarchingAntsSize>({
         height: 0,
         radius: 0,
+        strokeInset: 0,
         width: 0,
     });
 
@@ -22,14 +24,24 @@ export function MarchingAnts({ className = '' }: { className?: string }) {
         const measure = () => {
             const bounds = frame.getBoundingClientRect();
             const styles = getComputedStyle(surface);
+            const strokeInset =
+                (Number.parseFloat(
+                    styles.getPropertyValue('--planner-stroke-width')
+                ) || 0) / 2;
             const nextSize = {
                 height: bounds.height,
-                radius: Number.parseFloat(styles.borderTopLeftRadius) || 0,
+                radius: Math.max(
+                    0,
+                    (Number.parseFloat(styles.borderTopLeftRadius) || 0) -
+                        strokeInset
+                ),
+                strokeInset,
                 width: bounds.width,
             };
             setSize(current =>
                 current.height === nextSize.height &&
                 current.radius === nextSize.radius &&
+                current.strokeInset === nextSize.strokeInset &&
                 current.width === nextSize.width
                     ? current
                     : nextSize
@@ -52,11 +64,11 @@ export function MarchingAnts({ className = '' }: { className?: string }) {
         >
             <rect
                 className="planner-marching-ants"
-                height={size.height}
+                height={Math.max(0, size.height - size.strokeInset * 2)}
                 rx={size.radius}
-                width={size.width}
-                x="0"
-                y="0"
+                width={Math.max(0, size.width - size.strokeInset * 2)}
+                x={size.strokeInset}
+                y={size.strokeInset}
             />
         </svg>
     );

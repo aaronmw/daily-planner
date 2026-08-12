@@ -14,7 +14,23 @@ const accents: Record<AccentKey, string> = {
     yellow: '#eab308',
 };
 
+const accentTints: Record<AccentKey, string> = {
+    amber: '#fbbf24',
+    cyan: '#22d3ee',
+    emerald: '#34d399',
+    green: '#4ade80',
+    lime: '#a3e635',
+    orange: '#fb923c',
+    red: '#fb7185',
+    sky: '#38bdf8',
+    teal: '#2dd4bf',
+    yellow: '#facc15',
+};
+
 export const accentColor = (accentKey: AccentKey): string => accents[accentKey];
+
+export const shadedColor = (accentKey: AccentKey): string =>
+    `color-mix(in srgb, ${accentTints[accentKey]} 10%, transparent)`;
 
 export const resolveTheme = (
     mode: ThemeMode,
@@ -41,7 +57,7 @@ export const buildThemeStyle = (
         '--planner-neutral-background': dark ? '#080808' : '#f8fafc',
         '--planner-neutral-foreground': dark ? '#e2e8f0' : '#0f172a',
         '--planner-primary': dark ? '#94a3b8' : '#475569',
-        '--planner-shaded': dark ? '#030303' : '#f8fafc',
+        '--planner-shaded': shadedColor(accentKey),
         '--planner-item-border': accent,
         '--planner-item-border-active': accent,
         '--planner-item-border-hover': accent,

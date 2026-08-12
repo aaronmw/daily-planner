@@ -328,6 +328,7 @@ export function EditableText({
                             aria-label={ariaLabel ?? placeholder}
                             aria-multiline={multiline}
                             className={`planner-editable-text-input ${prose ? 'planner-editable-text-prose-input' : ''}`}
+                            data-empty={editingValue.length === 0}
                             onBeforeInput={handleBeforeInput}
                             onBlur={handleBlur}
                             onChange={event => {

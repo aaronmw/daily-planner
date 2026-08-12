@@ -3,6 +3,7 @@ import { usePlannerCommands } from '../../core/application/plannerContext';
 import { usePlannerSelector } from '../../core/store/plannerContext';
 import { EditableText } from '../editor/EditableText';
 import { IconButton } from '../shell/IconButton';
+import { TrackedSelection } from '../shell/TrackedSelection';
 import { ItemNotesEditor } from './ItemNotesEditor';
 import { useListCapability } from '../collaboration/useListCapability';
 
@@ -23,6 +24,9 @@ export function ItemDetailsColumn() {
     const editSession = usePlannerSelector(state => state.labelEditSession);
     const preferences = usePlannerSelector(state => state.preferences);
     const canWrite = useListCapability(item?.listId ?? null, 'write');
+    const selectedDurationIndex = DURATIONS.findIndex(
+        duration => duration === item?.durationMinutes
+    );
 
     if (!item) {
         return (
@@ -45,6 +49,7 @@ export function ItemDetailsColumn() {
                 <h1 className="min-w-0 flex-1 px-4 py-3 text-[1.45rem] font-bold leading-[1.35]">
                     <EditableText
                         ariaLabel="Item label"
+                        className="planner-item-title-editor"
                         editRequest={editRequest}
                         isEditable={canWrite}
                         multiline
@@ -88,15 +93,21 @@ export function ItemDetailsColumn() {
                 />
             </section>
 
-            <section className="shrink-0 border-t-[length:var(--planner-stroke-width)] border-planner-border">
+            <section className="shrink-0 bg-planner-shaded">
                 <h2 className="px-4 pt-3 text-[0.8rem] uppercase text-planner-text-faded">
                     Duration
                 </h2>
-                <div className="grid grid-cols-6">
-                    {DURATIONS.map(duration => (
+                <TrackedSelection
+                    ariaLabel="Duration"
+                    className="grid grid-cols-6"
+                    disabled={!canWrite}
+                    selectedIndex={selectedDurationIndex}
+                >
+                    {DURATIONS.map((duration, index) => (
                         <button
                             aria-pressed={item.durationMinutes === duration}
-                            className="h-[45px] border-r-[length:var(--planner-stroke-width)] border-planner-border text-center last:border-r-0 transition-[background-color,color] duration-150 hover:bg-planner-shaded aria-pressed:bg-planner-contrast aria-pressed:text-planner-contrast-text"
+                            className="relative z-10 h-[45px] text-center"
+                            data-tracked-selection-index={index}
                             disabled={!canWrite}
                             key={duration}
                             onClick={() =>
@@ -109,7 +120,7 @@ export function ItemDetailsColumn() {
                             {duration}
                         </button>
                     ))}
-                </div>
+                </TrackedSelection>
             </section>
 
             {preferences.syncEnabled && (
@@ -118,7 +129,7 @@ export function ItemDetailsColumn() {
                 </Suspense>
             )}
 
-            <div className="grid shrink-0 grid-cols-[1fr_45px] border-t-[length:var(--planner-stroke-width)] border-planner-border">
+            <div className="grid shrink-0 grid-cols-[1fr_45px]">
                 <button
                     aria-pressed={item.isComplete}
                     className="px-4 text-left transition-[background-color,color] duration-150 hover:bg-planner-shaded"

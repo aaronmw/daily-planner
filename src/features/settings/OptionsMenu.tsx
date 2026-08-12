@@ -337,7 +337,7 @@ export function OptionsMenu({ onShowDeletedItems }: OptionsMenuProps) {
                         </div>
 
                         {preferences.syncEnabled && identityIsAnonymous && (
-                            <div className="border-t-[length:var(--planner-stroke-width)] border-planner-border p-3">
+                            <div className="p-3">
                                 <p className="mb-2 text-planner-text-faded">
                                     Add an account so this encrypted planner can
                                     be recovered on another device.
@@ -420,7 +420,7 @@ export function OptionsMenu({ onShowDeletedItems }: OptionsMenuProps) {
                                     Use an existing account
                                 </button>
                                 {existingAccountOpen && (
-                                    <div className="mt-3 border-t-[length:var(--planner-stroke-width)] border-planner-border pt-3">
+                                    <div className="mt-3 pt-3">
                                         <p className="text-planner-text-faded">
                                             Your guest lists will be handed to
                                             the account after it is unlocked.
@@ -503,7 +503,7 @@ export function OptionsMenu({ onShowDeletedItems }: OptionsMenuProps) {
                             syncStatus.error
                                 .toLowerCase()
                                 .includes('recovery') && (
-                                <div className="border-t-[length:var(--planner-stroke-width)] border-planner-border p-3">
+                                <div className="p-3">
                                     <label className="block">
                                         <span className="mb-1 block text-planner-text-faded">
                                             Existing account recovery key

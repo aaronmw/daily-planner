@@ -1,5 +1,5 @@
 import type { PropsWithChildren, ReactNode } from 'react';
-import { IconButton } from './IconButton';
+import { Icon } from './Icon';
 import {
     ShortcutHint,
     shortcutAriaKeys,
@@ -40,7 +40,25 @@ export function Column({
             <div
                 className={`flex h-full min-w-[280px] flex-col transition-opacity duration-150 ease-in-out ${isOpen ? 'opacity-100' : 'pointer-events-none opacity-0'}`}
             >
-                <header className="relative flex h-[var(--spacing-icon-slot)] shrink-0 items-center border-b-[length:var(--planner-stroke-width)] border-planner-border">
+                <header className="planner-column-header relative flex h-[var(--spacing-icon-slot)] shrink-0 items-center border-b-[length:var(--planner-stroke-width)] border-planner-border">
+                    <button
+                        aria-keyshortcuts={
+                            shortcut ? shortcutAriaKeys(shortcut) : undefined
+                        }
+                        aria-label={`Collapse ${heading}`}
+                        className="planner-column-collapse"
+                        disabled={!canCollapse}
+                        onClick={onToggle}
+                        title={`Collapse ${heading}`}
+                        type="button"
+                    >
+                        <span
+                            aria-hidden="true"
+                            className="planner-column-collapse-icon"
+                        >
+                            <Icon name="arrow-left-to-line" />
+                        </span>
+                    </button>
                     <h2 className="pointer-events-none absolute inset-0 grid place-items-center text-center uppercase text-planner-primary">
                         <span className="relative inline-flex items-center">
                             {heading}
@@ -52,37 +70,36 @@ export function Column({
                             )}
                         </span>
                     </h2>
-                    <div className="ml-auto flex">{actions}</div>
-                    <IconButton
-                        aria-keyshortcuts={
-                            shortcut ? shortcutAriaKeys(shortcut) : undefined
-                        }
-                        disabled={!canCollapse}
-                        icon="arrow-left-to-line"
-                        label={`Collapse ${heading}`}
-                        onClick={onToggle}
-                    />
+                    <div className="planner-column-actions ml-auto mr-[var(--spacing-icon-slot)] flex">
+                        {actions}
+                    </div>
                 </header>
                 <div className="min-h-0 flex-1">{children}</div>
             </div>
             {!isOpen && (
-                <div className="absolute inset-x-0 top-0 z-10">
+                <button
+                    aria-keyshortcuts={
+                        shortcut ? shortcutAriaKeys(shortcut) : undefined
+                    }
+                    aria-label={`Expand ${heading}`}
+                    className="planner-column-expand"
+                    onClick={onToggle}
+                    title={`Expand ${heading}`}
+                    type="button"
+                >
                     {shortcut && (
                         <ShortcutHint
                             className="planner-column-expand-shortcut"
                             shortcut={shortcut}
                         />
                     )}
-                    <IconButton
-                        aria-keyshortcuts={
-                            shortcut ? shortcutAriaKeys(shortcut) : undefined
-                        }
-                        className="planner-column-expand hover:bg-transparent"
-                        icon="arrow-right-from-line"
-                        label={`Expand ${heading}`}
-                        onClick={onToggle}
-                    />
-                </div>
+                    <span
+                        aria-hidden="true"
+                        className="planner-column-expand-icon"
+                    >
+                        <Icon name="arrow-right-from-line" />
+                    </span>
+                </button>
             )}
         </section>
     );
