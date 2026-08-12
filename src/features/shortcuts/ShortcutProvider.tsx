@@ -60,6 +60,13 @@ interface ActiveShortcutRecorder {
     pending: boolean;
 }
 
+interface PendingShortcutRecorderStart {
+    cancelled: boolean;
+    id: string;
+    onCancel: () => void | Promise<void>;
+    version: number;
+}
+
 interface ShortcutRecordingView {
     id: string;
     pressedKeyLabels: readonly string[];
@@ -110,6 +117,19 @@ const isPromiseLike = (value: unknown): value is PromiseLike<unknown> =>
     'then' in value &&
     typeof value.then === 'function';
 
+const invokeCancellation = (
+    onCancel: () => void | Promise<void>
+): void | Promise<void> => {
+    try {
+        const cancelled = onCancel();
+        if (isPromiseLike(cancelled)) {
+            return Promise.resolve(cancelled).catch(() => undefined);
+        }
+    } catch {
+        // A recorder cleanup failure must not leak through a key or blur event.
+    }
+};
+
 export const shortcutAriaKeys = (shortcut: ShortcutDefinition) =>
     [
         ...shortcut.modifiers.map(modifier => modifierAriaLabels[modifier]),
@@ -134,6 +154,9 @@ export function ShortcutProvider({ children }: PropsWithChildren) {
     const [recordingView, setRecordingView] =
         useState<ShortcutRecordingView | null>(null);
     const activeRecorderRef = useRef<ActiveShortcutRecorder | null>(null);
+    const pendingRecorderStartRef =
+        useRef<PendingShortcutRecorderStart | null>(null);
+    const recordingOperationRef = useRef<Promise<void> | null>(null);
     const recordingStartVersionRef = useRef(0);
     const sourcesRef = useRef(new Map<string, ShortcutSource>());
     const registerSource = useCallback((id: string, source: ShortcutSource) => {
@@ -153,12 +176,19 @@ export function ShortcutProvider({ children }: PropsWithChildren) {
 
     const cancelActiveRecording = useCallback(
         (id?: string): void | Promise<void> => {
+            const pendingStart = pendingRecorderStartRef.current;
+            if (pendingStart && (!id || pendingStart.id === id)) {
+                pendingStart.cancelled = true;
+                pendingRecorderStartRef.current = null;
+                recordingStartVersionRef.current += 1;
+            }
+
             const recorder = activeRecorderRef.current;
             if (!recorder || (id && recorder.id !== id)) return;
 
             activeRecorderRef.current = null;
             setRecordingView(null);
-            return recorder.onCancel();
+            return invokeCancellation(recorder.onCancel);
         },
         []
     );
@@ -175,34 +205,89 @@ export function ShortcutProvider({ children }: PropsWithChildren) {
 
     const startRecording = useCallback(
         (id: string, options: ShortcutRecorderOptions): Promise<void> => {
-            const startVersion = ++recordingStartVersionRef.current;
+            const priorOperation = recordingOperationRef.current;
+            const cancellation = cancelActiveRecording();
+            const pendingStart: PendingShortcutRecorderStart = {
+                cancelled: false,
+                id,
+                onCancel: options.onCancel ?? (() => undefined),
+                version: ++recordingStartVersionRef.current,
+            };
+            pendingRecorderStartRef.current = pendingStart;
             const activate = (): Promise<void> => {
+                const abandonStart = (): void | Promise<void> => {
+                    if (pendingRecorderStartRef.current === pendingStart) {
+                        pendingRecorderStartRef.current = null;
+                    }
+                    return invokeCancellation(pendingStart.onCancel);
+                };
                 const activateRecorder = () => {
-                    if (recordingStartVersionRef.current !== startVersion) {
-                        return;
+                    if (
+                        pendingRecorderStartRef.current !== pendingStart ||
+                        pendingStart.cancelled ||
+                        recordingStartVersionRef.current !== pendingStart.version
+                    ) {
+                        return abandonStart();
                     }
                     const recorder: ActiveShortcutRecorder = {
                         id,
-                        onCancel: options.onCancel ?? (() => undefined),
+                        onCancel: pendingStart.onCancel,
                         onCandidate: options.onCandidate,
                         pending: false,
                     };
                     activeRecorderRef.current = recorder;
+                    pendingRecorderStartRef.current = null;
                     setRecordingView({ id, pressedKeyLabels: [] });
                 };
-                const started = options.onStart?.();
-                if (isPromiseLike(started)) {
-                    return Promise.resolve(started).then(activateRecorder);
+                let started: void | Promise<void>;
+                try {
+                    started = options.onStart?.();
+                } catch {
+                    if (pendingRecorderStartRef.current === pendingStart) {
+                        pendingRecorderStartRef.current = null;
+                    }
+                    return Promise.resolve();
                 }
-                activateRecorder();
+                if (isPromiseLike(started)) {
+                    return Promise.resolve(started).then(
+                        activateRecorder,
+                        () => {
+                            if (
+                                pendingRecorderStartRef.current === pendingStart
+                            ) {
+                                pendingRecorderStartRef.current = null;
+                            }
+                        }
+                    );
+                }
+                const activated = activateRecorder();
+                if (isPromiseLike(activated)) {
+                    return Promise.resolve(activated).then(() => undefined);
+                }
                 return Promise.resolve();
             };
 
-            const cancelled = cancelActiveRecording();
-            if (isPromiseLike(cancelled)) {
-                return Promise.resolve(cancelled).then(activate);
-            }
-            return activate();
+            const begin = (): Promise<void> =>
+                isPromiseLike(cancellation)
+                    ? Promise.resolve(cancellation).then(activate)
+                    : activate();
+            const operation = priorOperation
+                ? priorOperation.then(begin, begin)
+                : begin();
+            recordingOperationRef.current = operation;
+            void operation.then(
+                () => {
+                    if (recordingOperationRef.current === operation) {
+                        recordingOperationRef.current = null;
+                    }
+                },
+                () => {
+                    if (recordingOperationRef.current === operation) {
+                        recordingOperationRef.current = null;
+                    }
+                }
+            );
+            return operation;
         },
         [cancelActiveRecording]
     );
@@ -265,7 +350,8 @@ export function ShortcutProvider({ children }: PropsWithChildren) {
         };
         const captureRecordingKeyDown = (event: KeyboardEvent) => {
             const recorder = activeRecorderRef.current;
-            if (!recorder) return;
+            const pendingStart = pendingRecorderStartRef.current;
+            if (!recorder && !pendingStart) return;
 
             event.preventDefault();
             if (event.key === 'Escape') {
@@ -273,6 +359,7 @@ export function ShortcutProvider({ children }: PropsWithChildren) {
                 return;
             }
             event.stopPropagation();
+            if (!recorder) return;
             if (event.repeat || recorder.pending) return;
 
             setPressedKeyLabels(shortcutKeyLabelsFromKeyboardEvent(event));

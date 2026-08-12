@@ -143,6 +143,14 @@ const renderRecorderHarness = ({
     return { onCandidate, onCancel, onStart, onTrigger, ...view };
 };
 
+const createDeferred = <T,>() => {
+    let resolve!: (value: T | PromiseLike<T>) => void;
+    const promise = new Promise<T>(complete => {
+        resolve = complete;
+    });
+    return { promise, resolve };
+};
+
 const renderHarness = (
     binding: Pick<ShortcutBinding, 'allowInTextEntry' | 'enabled'> = {}
 ) => {
@@ -310,6 +318,7 @@ describe('ShortcutProvider', () => {
         });
         expect(onCandidate).toHaveBeenCalledWith('Super+Digit1');
         expect(onTrigger).not.toHaveBeenCalled();
+        expect(screen.getByTestId('recording-active')).toHaveTextContent('true');
 
         fireEvent.keyDown(window, {
             code: 'Digit1',
@@ -349,9 +358,10 @@ describe('ShortcutProvider', () => {
         expect(screen.getByTestId('pressed-keys')).toBeEmptyDOMElement();
     });
 
-    it('ends a recorder only when its candidate succeeds', async () => {
-        const onCandidate = vi.fn(() => true);
-        renderRecorderHarness({ onCandidate });
+    it('ends a recorder without cancelling it when an asynchronous candidate succeeds', async () => {
+        const onCancel = vi.fn();
+        const onCandidate = vi.fn(() => Promise.resolve(true));
+        renderRecorderHarness({ onCandidate, onCancel });
 
         fireEvent.click(screen.getByRole('button', { name: 'Record' }));
         fireEvent.keyDown(window, {
@@ -365,6 +375,7 @@ describe('ShortcutProvider', () => {
                 'false'
             )
         );
+        expect(onCancel).not.toHaveBeenCalled();
     });
 
     it('keeps listening after a rejected candidate', async () => {
@@ -410,6 +421,103 @@ describe('ShortcutProvider', () => {
         );
         expect(screen.getByTestId('second-recorder-active')).toHaveTextContent(
             'true'
+        );
+    });
+
+    it('stays inactive when Escape cancels an asynchronous start', async () => {
+        const start = createDeferred<undefined>();
+        const onCancel = vi.fn();
+        renderRecorderHarness({ onCancel, onStart: () => start.promise });
+
+        fireEvent.click(screen.getByRole('button', { name: 'Record' }));
+        fireEvent.keyDown(window, {
+            code: 'Escape',
+            key: 'Escape',
+        });
+        await act(async () => start.resolve(undefined));
+
+        expect(screen.getByTestId('recording-active')).toHaveTextContent(
+            'false'
+        );
+        expect(onCancel).toHaveBeenCalledOnce();
+    });
+
+    it('stays inactive when window blur cancels an asynchronous start', async () => {
+        const start = createDeferred<undefined>();
+        const onCancel = vi.fn();
+        renderRecorderHarness({ onCancel, onStart: () => start.promise });
+
+        fireEvent.click(screen.getByRole('button', { name: 'Record' }));
+        fireEvent.blur(window);
+        await act(async () => start.resolve(undefined));
+
+        expect(screen.getByTestId('recording-active')).toHaveTextContent(
+            'false'
+        );
+        expect(onCancel).toHaveBeenCalledOnce();
+    });
+
+    it('stays inactive when a hidden page cancels an asynchronous start', async () => {
+        const start = createDeferred<undefined>();
+        const onCancel = vi.fn();
+        vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('hidden');
+        renderRecorderHarness({ onCancel, onStart: () => start.promise });
+
+        fireEvent.click(screen.getByRole('button', { name: 'Record' }));
+        fireEvent(document, new Event('visibilitychange'));
+        await act(async () => start.resolve(undefined));
+
+        expect(screen.getByTestId('recording-active')).toHaveTextContent(
+            'false'
+        );
+        expect(onCancel).toHaveBeenCalledOnce();
+    });
+
+    it('stays inactive when an unmount cancels an asynchronous start', async () => {
+        const start = createDeferred<undefined>();
+        const onCancel = vi.fn();
+        const { unmount } = renderRecorderHarness({
+            onCancel,
+            onStart: () => start.promise,
+        });
+
+        fireEvent.click(screen.getByRole('button', { name: 'Record' }));
+        unmount();
+        await act(async () => start.resolve(undefined));
+
+        expect(onCancel).toHaveBeenCalledOnce();
+    });
+
+    it('does not activate or throw when onStart throws synchronously', () => {
+        const onStart = vi.fn(() => {
+            throw new Error('start failed');
+        });
+        renderRecorderHarness({ onStart });
+
+        expect(() =>
+            fireEvent.click(screen.getByRole('button', { name: 'Record' }))
+        ).not.toThrow();
+
+        expect(screen.getByTestId('recording-active')).toHaveTextContent(
+            'false'
+        );
+    });
+
+    it('does not throw or reactivate when onCancel throws synchronously', () => {
+        const onCancel = vi.fn(() => {
+            throw new Error('cancel failed');
+        });
+        renderRecorderHarness({ onCancel });
+
+        fireEvent.click(screen.getByRole('button', { name: 'Record' }));
+        expect(() =>
+            fireEvent.click(
+                screen.getByRole('button', { name: 'Cancel recording' })
+            )
+        ).not.toThrow();
+
+        expect(screen.getByTestId('recording-active')).toHaveTextContent(
+            'false'
         );
     });
 
