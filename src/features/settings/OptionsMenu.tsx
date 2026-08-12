@@ -1,9 +1,8 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { usePlannerCommands } from '../../core/application/plannerContext';
 import { usePlannerSelector } from '../../core/store/plannerContext';
 import type { ThemeMode } from '../../core/domain/types';
 import { Icon } from '../shell/Icon';
-import { IconButton } from '../shell/IconButton';
 import { getPlatformAdapter } from '../../platform/runtime/platformAdapter';
 import {
     useCollaboration,
@@ -80,7 +79,10 @@ export function OptionsMenu({ onShowDeletedItems }: OptionsMenuProps) {
         state => state.identityIsAnonymous
     );
     const recoveryCode = useCollaborationSelector(state => state.recoveryCode);
-    const dialogRef = useRef<HTMLDialogElement>(null);
+    const optionsRef = useRef<HTMLDivElement>(null);
+    const launcherRef = useRef<HTMLButtonElement>(null);
+    const panelRef = useRef<HTMLDivElement>(null);
+    const [open, setOpen] = useState(false);
     const [accountEmail, setAccountEmail] = useState('');
     const [accountPending, setAccountPending] = useState(false);
     const [accountMessage, setAccountMessage] = useState('');
@@ -92,7 +94,15 @@ export function OptionsMenu({ onShowDeletedItems }: OptionsMenuProps) {
     const rowClass =
         'grid min-h-[45px] w-full grid-cols-[45px_minmax(0,1fr)_45px] items-center border-t-[length:var(--planner-stroke-width)] border-planner-border text-left transition-[background-color,color] duration-150 hover:bg-planner-shaded';
 
-    const close = () => dialogRef.current?.close();
+    const close = () => setOpen(false);
+    const handleLauncherClick = () => {
+        if (open) {
+            setOpen(false);
+            launcherRef.current?.focus();
+            return;
+        }
+        setOpen(true);
+    };
     const onChallengeError = useCallback(
         (message: string) => setAccountMessage(message),
         []
@@ -101,29 +111,64 @@ export function OptionsMenu({ onShowDeletedItems }: OptionsMenuProps) {
         (token: string) => setExistingCaptchaToken(token),
         []
     );
+
+    useEffect(() => {
+        if (!open) return;
+
+        const panel = panelRef.current;
+        const firstControl = panel?.querySelector<HTMLElement>(
+            'button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])'
+        );
+        firstControl?.focus();
+
+        const onPointerDown = (event: PointerEvent) => {
+            if (!optionsRef.current?.contains(event.target as Node)) {
+                setOpen(false);
+            }
+        };
+        const onKeyDown = (event: KeyboardEvent) => {
+            if (event.key !== 'Escape') return;
+            event.preventDefault();
+            setOpen(false);
+            launcherRef.current?.focus();
+        };
+
+        document.addEventListener('pointerdown', onPointerDown);
+        document.addEventListener('keydown', onKeyDown);
+        return () => {
+            document.removeEventListener('pointerdown', onPointerDown);
+            document.removeEventListener('keydown', onKeyDown);
+        };
+    }, [open]);
+
     return (
-        <>
-            <IconButton
-                icon="gear"
-                label="Options"
-                onClick={() => dialogRef.current?.showModal()}
-            />
-            <dialog
+        <div
+            className="planner-options"
+            data-open={open}
+            ref={optionsRef}
+        >
+            <button
+                aria-controls="planner-options-panel"
+                aria-expanded={open}
                 aria-label="Options"
-                className="fixed inset-auto right-3 top-[57px] m-0 max-h-[calc(100dvh-69px)] w-[min(460px,calc(100vw-24px))] overflow-auto border-[length:var(--planner-stroke-width)] border-planner-border bg-planner-background p-0 text-planner-text shadow-2xl backdrop:bg-black/40"
-                onCancel={close}
-                ref={dialogRef}
+                className="planner-options-trigger"
+                data-open={open}
+                onClick={handleLauncherClick}
+                ref={launcherRef}
+                title="Options"
+                type="button"
             >
-                <div className="flex h-[45px] items-center border-b-[length:var(--planner-stroke-width)] border-planner-border">
-                    <h2 className="min-w-0 flex-1 px-4 text-[1rem] font-semibold">
-                        Options
-                    </h2>
-                    <IconButton
-                        icon="xmark"
-                        label="Close options"
-                        onClick={close}
-                    />
-                </div>
+                <Icon className="planner-options-trigger-gear" name="gear" />
+                <Icon className="planner-options-trigger-close" name="xmark" />
+            </button>
+            {open && (
+                <div
+                    aria-label="Options"
+                    className="planner-options-panel"
+                    id="planner-options-panel"
+                    ref={panelRef}
+                    role="dialog"
+                >
 
                 <section>
                     <GroupLabel shortcut={CYCLE_THEME_SHORTCUT}>
@@ -598,7 +643,8 @@ export function OptionsMenu({ onShowDeletedItems }: OptionsMenuProps) {
                         </span>
                     </button>
                 </section>
-            </dialog>
-        </>
+                </div>
+            )}
+        </div>
     );
 }

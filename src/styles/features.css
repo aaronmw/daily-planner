@@ -390,6 +390,62 @@ html[data-item-dragging='true'] * {
     transform: translateY(-50%);
 }
 
+.planner-options {
+    position: relative;
+}
+
+.planner-options[data-open='true'] {
+    z-index: 10;
+}
+
+.planner-options-trigger {
+    display: grid;
+    flex-shrink: 0;
+    font-size: var(--planner-icon-glyph-size);
+    height: var(--spacing-icon-slot);
+    place-items: center;
+    position: relative;
+    transition:
+        background-color var(--planner-motion-fast) var(--planner-motion-ease),
+        color var(--planner-motion-fast) var(--planner-motion-ease);
+    width: var(--spacing-icon-slot);
+}
+
+.planner-options-trigger:hover {
+    background: var(--planner-shaded);
+}
+
+.planner-options-trigger-gear,
+.planner-options-trigger-close {
+    position: absolute;
+    transition: opacity var(--planner-motion-fast) var(--planner-motion-ease);
+}
+
+.planner-options-trigger-close {
+    opacity: 0;
+}
+
+.planner-options-trigger[data-open='true'] .planner-options-trigger-gear {
+    opacity: 0;
+}
+
+.planner-options-trigger[data-open='true'] .planner-options-trigger-close {
+    opacity: 1;
+}
+
+.planner-options-panel {
+    background: var(--planner-background);
+    border: var(--planner-stroke-width) solid var(--planner-border);
+    box-shadow: var(--shadow-2xl);
+    color: var(--planner-text);
+    max-height: calc(100dvh - 69px);
+    overflow: auto;
+    position: absolute;
+    right: 0;
+    top: 100%;
+    width: min(460px, calc(100vw - 24px));
+}
+
 .planner-item-card-shortcut,
 .planner-item-card-icon {
     transition:

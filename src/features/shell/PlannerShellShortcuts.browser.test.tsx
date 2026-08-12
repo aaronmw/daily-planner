@@ -1,4 +1,11 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import {
+    cleanup,
+    fireEvent,
+    render,
+    screen,
+    waitFor,
+} from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { PlannerCommands } from '../../core/application/plannerCommands';
 import { PlannerCommandsProvider } from '../../core/application/plannerContext';
@@ -70,6 +77,90 @@ const createHarness = () => {
 };
 
 describe('PlannerShell contextual shortcuts', () => {
+    it('opens Options as a labelled disclosure panel', async () => {
+        const user = userEvent.setup();
+        createHarness();
+
+        const launcher = screen.getByRole('button', { name: 'Options' });
+        expect(launcher).toHaveAttribute('aria-controls', 'planner-options-panel');
+        expect(launcher).toHaveAttribute('aria-expanded', 'false');
+        expect(launcher).toHaveAttribute('data-open', 'false');
+
+        const gear = launcher.querySelector<HTMLElement>(
+            '.planner-options-trigger-gear'
+        );
+        const close = launcher.querySelector<HTMLElement>(
+            '.planner-options-trigger-close'
+        );
+        expect(gear).not.toBeNull();
+        expect(close).not.toBeNull();
+        if (!gear || !close) return;
+        expect(getComputedStyle(gear).opacity).toBe('1');
+        expect(getComputedStyle(close).opacity).toBe('0');
+
+        await user.click(launcher);
+
+        expect(launcher).toHaveAttribute('aria-expanded', 'true');
+        expect(launcher).toHaveAttribute('data-open', 'true');
+        expect(screen.getByRole('dialog', { name: 'Options' })).toBeVisible();
+        expect(
+            screen.queryByRole('heading', { name: 'Options' })
+        ).not.toBeInTheDocument();
+        await waitFor(() => {
+            expect(getComputedStyle(gear).opacity).toBe('0');
+            expect(getComputedStyle(close).opacity).toBe('1');
+        });
+        expect(screen.getByRole('radio', { name: 'System' })).toHaveFocus();
+    });
+
+    it('closes Options when Escape is pressed and restores launcher focus', async () => {
+        const user = userEvent.setup();
+        createHarness();
+        const launcher = screen.getByRole('button', { name: 'Options' });
+
+        await user.click(launcher);
+        await user.keyboard('{Escape}');
+
+        expect(launcher).toHaveAttribute('aria-expanded', 'false');
+        expect(screen.queryByRole('dialog', { name: 'Options' })).not.toBeInTheDocument();
+        expect(launcher).toHaveFocus();
+    });
+
+    it('closes Options for a pointer-down outside its wrapper', async () => {
+        const user = userEvent.setup();
+        createHarness();
+        const launcher = screen.getByRole('button', { name: 'Options' });
+
+        await user.click(launcher);
+        fireEvent.pointerDown(document.body);
+
+        expect(launcher).toHaveAttribute('aria-expanded', 'false');
+        expect(screen.queryByRole('dialog', { name: 'Options' })).not.toBeInTheDocument();
+    });
+
+    it('keeps Options open for pointer-down interactions within the panel', async () => {
+        const user = userEvent.setup();
+        createHarness();
+
+        await user.click(screen.getByRole('button', { name: 'Options' }));
+        fireEvent.pointerDown(screen.getByRole('radio', { name: 'System' }));
+
+        expect(screen.getByRole('dialog', { name: 'Options' })).toBeVisible();
+    });
+
+    it('closes Options when its launcher is clicked again', async () => {
+        const user = userEvent.setup();
+        createHarness();
+        const launcher = screen.getByRole('button', { name: 'Options' });
+
+        await user.click(launcher);
+        await user.click(launcher);
+
+        expect(launcher).toHaveAttribute('aria-expanded', 'false');
+        expect(screen.queryByRole('dialog', { name: 'Options' })).not.toBeInTheDocument();
+        expect(launcher).toHaveFocus();
+    });
+
     it('requires command to cycle the lighting mode', () => {
         const { store, updatePreferences } = createHarness();
         fireEvent.click(screen.getByRole('button', { name: 'Options' }));
