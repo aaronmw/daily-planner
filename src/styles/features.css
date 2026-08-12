@@ -398,6 +398,11 @@ html[data-item-dragging='true'] * {
     z-index: 10;
 }
 
+.planner-column:has(.planner-options[data-open='true']) {
+    overflow: visible;
+    z-index: 10;
+}
+
 .planner-options-trigger {
     display: grid;
     flex-shrink: 0;

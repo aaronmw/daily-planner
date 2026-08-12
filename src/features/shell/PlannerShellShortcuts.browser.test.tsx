@@ -148,6 +148,29 @@ describe('PlannerShell contextual shortcuts', () => {
         expect(screen.getByRole('dialog', { name: 'Options' })).toBeVisible();
     });
 
+    it('keeps the wide Options panel visible beyond the Details column', async () => {
+        const user = userEvent.setup();
+        createHarness();
+
+        const detailsColumn = screen.getByRole('region', {
+            name: 'Item Details',
+        });
+        await user.click(screen.getByRole('button', { name: 'Options' }));
+        const panel = screen.getByRole('dialog', { name: 'Options' });
+        const columnBounds = detailsColumn.getBoundingClientRect();
+        const panelBounds = panel.getBoundingClientRect();
+
+        expect(panelBounds.width).toBeGreaterThan(columnBounds.width);
+        expect(panelBounds.left).toBeLessThan(columnBounds.left);
+
+        const hitTarget = document.elementFromPoint(
+            (panelBounds.left + columnBounds.left) / 2,
+            panelBounds.top + 20
+        );
+        expect(hitTarget).not.toBeNull();
+        expect(panel.contains(hitTarget)).toBe(true);
+    });
+
     it('closes Options when its launcher is clicked again', async () => {
         const user = userEvent.setup();
         createHarness();
