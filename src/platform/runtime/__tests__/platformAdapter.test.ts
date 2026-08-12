@@ -3,20 +3,69 @@ import { DEFAULT_DESKTOP_SHORTCUTS } from '../../../core/application/commandIds'
 
 const register = vi.fn();
 const unregister = vi.fn();
+const invoke = vi.fn();
 
 vi.mock('@tauri-apps/plugin-global-shortcut', () => ({
     register,
     unregister,
 }));
 
+vi.mock('@tauri-apps/api/core', () => ({ invoke }));
+
 import { TauriPlatformAdapter } from '../platformAdapter';
 
 describe('TauriPlatformAdapter shortcuts', () => {
     beforeEach(() => {
+        invoke.mockReset();
         register.mockReset();
         unregister.mockReset();
         register.mockResolvedValue(undefined);
         unregister.mockResolvedValue(undefined);
+    });
+
+    it('serializes Dock icon updates', async () => {
+        const adapter = new TauriPlatformAdapter();
+        let resolveFirst: (() => void) | undefined;
+        invoke
+            .mockImplementationOnce(
+                () =>
+                    new Promise<void>(resolve => {
+                        resolveFirst = resolve;
+                    })
+            )
+            .mockResolvedValueOnce(undefined);
+
+        const first = adapter.setDockIconAccent('red');
+        const second = adapter.setDockIconAccent('sky');
+
+        await vi.waitFor(() => expect(invoke).toHaveBeenCalledTimes(1));
+        expect(invoke).toHaveBeenCalledWith('set_dock_icon_accent', {
+            accent: 'red',
+        });
+
+        resolveFirst?.();
+        await first;
+        await second;
+
+        expect(invoke).toHaveBeenNthCalledWith(2, 'set_dock_icon_accent', {
+            accent: 'sky',
+        });
+    });
+
+    it('keeps Dock icon updates retryable after a native failure', async () => {
+        const adapter = new TauriPlatformAdapter();
+        invoke
+            .mockRejectedValueOnce(new Error('Dock update failed'))
+            .mockResolvedValueOnce(undefined);
+
+        await expect(adapter.setDockIconAccent('amber')).rejects.toThrow(
+            'Dock update failed'
+        );
+        await expect(adapter.setDockIconAccent(null)).resolves.toBeUndefined();
+
+        expect(invoke).toHaveBeenLastCalledWith('set_dock_icon_accent', {
+            accent: null,
+        });
     });
 
     it('restores the previous registration transactionally and dispatches only Pressed', async () => {

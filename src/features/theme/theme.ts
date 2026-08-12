@@ -1,18 +1,8 @@
 import type { CSSProperties } from 'react';
 import type { AccentKey, ThemeMode } from '../../core/domain/types';
+import accentColors from '../../core/domain/accent-colors.json';
 
-const accents: Record<AccentKey, string> = {
-    amber: '#f59e0b',
-    cyan: '#06b6d4',
-    emerald: '#10b981',
-    green: '#22c55e',
-    lime: '#84cc16',
-    orange: '#f97316',
-    red: '#f43f5e',
-    sky: '#0ea5e9',
-    teal: '#14b8a6',
-    yellow: '#eab308',
-};
+const accents: Record<AccentKey, string> = accentColors;
 
 const accentTints: Record<AccentKey, string> = {
     amber: '#fbbf24',

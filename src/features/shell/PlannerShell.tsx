@@ -21,6 +21,7 @@ import { Column } from './Column';
 import { useDesktopCommands } from './useDesktopCommands';
 import { resolveColumnShortcut, type ShortcutColumn } from './columnShortcuts';
 import { useShortcuts } from '../shortcuts/ShortcutProvider';
+import { getPlatformAdapter } from '../../platform/runtime/platformAdapter';
 import {
     CYCLE_THEME_SHORTCUT,
     ITEMS_COLUMN_SHORTCUT,
@@ -56,6 +57,7 @@ export function PlannerShell() {
             ? (state.listsById.get(state.selectedListId) ?? null)
             : null
     );
+    const selectedAccentKey = selectedList?.accentKey ?? null;
     const [systemPrefersDark, setSystemPrefersDark] = useState(
         () => matchMedia('(prefers-color-scheme: dark)').matches
     );
@@ -72,6 +74,16 @@ export function PlannerShell() {
         media.addEventListener('change', update);
         return () => media.removeEventListener('change', update);
     }, []);
+
+    useEffect(() => {
+        if (!hydrated) return;
+
+        void getPlatformAdapter()
+            .setDockIconAccent(selectedAccentKey)
+            .catch(error =>
+                console.error('Failed to update Dock icon.', error)
+            );
+    }, [hydrated, selectedAccentKey]);
 
     useEffect(() => {
         const element = rootRef.current;

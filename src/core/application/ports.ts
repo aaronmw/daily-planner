@@ -2,6 +2,7 @@ import type { ListId, ItemId } from '../domain/ids';
 import type { IdentityId } from '../domain/ids';
 import type { PlannerCommandId } from './commandIds';
 import type {
+    AccentKey,
     PlannerList,
     PlannerPreferences,
     PlannerSnapshot,
@@ -87,6 +88,7 @@ export interface PlatformAdapter {
         shortcuts: Readonly<Record<PlannerCommandId, string>>,
         onCommand: (commandId: PlannerCommandId) => void
     ) => Promise<() => void | Promise<void>>;
+    setDockIconAccent: (accent: AccentKey | null) => Promise<void>;
     showPlanner: () => Promise<void>;
 }
 

@@ -38,8 +38,8 @@ test('the default development command launches the isolated Tauri HMR shell', ()
 
     const developmentIcon = readFileSync('src-tauri/icons/dev-icon.png');
     assert.equal(developmentIcon.toString('ascii', 12, 16), 'IHDR');
-    assert.equal(developmentIcon.readUInt32BE(16), 1024);
-    assert.equal(developmentIcon.readUInt32BE(20), 1024);
+    assert.equal(developmentIcon.readUInt32BE(16), 512);
+    assert.equal(developmentIcon.readUInt32BE(20), 512);
     assert.equal(developmentIcon[24], 8, 'dev icon must use 8-bit channels');
     assert.equal(developmentIcon[25], 6, 'dev icon must use RGBA color');
 });

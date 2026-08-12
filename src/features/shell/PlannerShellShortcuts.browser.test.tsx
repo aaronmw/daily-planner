@@ -18,6 +18,7 @@ import type { PlannerPreferences } from '../../core/domain/types';
 import { PlannerStoreProvider } from '../../core/store/plannerContext';
 import { createPlannerStore } from '../../core/store/plannerStore';
 import { ItemDragProvider } from '../items/ItemDragProvider';
+import { getPlatformAdapter } from '../../platform/runtime/platformAdapter';
 import { ShortcutProvider } from '../shortcuts/ShortcutProvider';
 import { PlannerShell } from './PlannerShell';
 import '../../styles/index.css';
@@ -28,7 +29,10 @@ afterEach(() => {
 });
 
 const createHarness = ({ includeDeletedItems = false } = {}) => {
-    const list = createPlannerList({ label: 'Shell shortcut list' });
+    const list = createPlannerList({
+        accentKey: 'red',
+        label: 'Shell shortcut list',
+    });
     const item = createPlannerItem({ label: 'Shell item', listId: list.id });
     const archivedList = {
         ...createPlannerList({ label: 'Archived shell list' }),
@@ -96,10 +100,31 @@ const createHarness = ({ includeDeletedItems = false } = {}) => {
         </PlannerStoreProvider>
     );
 
-    return { store, updatePreferences };
+    return { list, store, updatePreferences };
 };
 
 describe('PlannerShell contextual shortcuts', () => {
+    it('syncs the Dock icon with the active list accent and navy fallback', async () => {
+        const setDockIconAccent = vi
+            .spyOn(getPlatformAdapter(), 'setDockIconAccent')
+            .mockResolvedValue(undefined);
+        const { list, store } = createHarness();
+
+        await waitFor(() =>
+            expect(setDockIconAccent).toHaveBeenLastCalledWith('red')
+        );
+
+        store.getState().upsertList({ ...list, accentKey: 'sky' });
+        await waitFor(() =>
+            expect(setDockIconAccent).toHaveBeenLastCalledWith('sky')
+        );
+
+        store.getState().removeList(list.id);
+        await waitFor(() =>
+            expect(setDockIconAccent).toHaveBeenLastCalledWith(null)
+        );
+    });
+
     it('hides Deleted items when nothing has been deleted', async () => {
         const user = userEvent.setup();
         createHarness();

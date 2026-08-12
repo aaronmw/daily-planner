@@ -1,5 +1,6 @@
 import type { PlatformAdapter } from '../../core/application/ports';
 import type { PlannerCommandId } from '../../core/application/commandIds';
+import type { AccentKey } from '../../core/domain/types';
 
 export const isDesktopRuntime = (): boolean =>
     typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
@@ -23,6 +24,10 @@ class WebPlatformAdapter implements PlatformAdapter {
         return Promise.resolve(() => undefined);
     }
 
+    setDockIconAccent(): Promise<void> {
+        return Promise.resolve();
+    }
+
     showPlanner(): Promise<void> {
         window.focus();
         return Promise.resolve();
@@ -34,6 +39,7 @@ export class TauriPlatformAdapter implements PlatformAdapter {
     #registered: string[] = [];
     #registeredEntries: [PlannerCommandId, string][] = [];
     #registeredHandler: ((commandId: PlannerCommandId) => void) | null = null;
+    #dockIconQueue: Promise<void> = Promise.resolve();
 
     async openExternal(url: string): Promise<void> {
         const { openUrl } = await import('@tauri-apps/plugin-opener');
@@ -97,6 +103,15 @@ export class TauriPlatformAdapter implements PlatformAdapter {
             this.#registeredEntries = [];
             this.#registeredHandler = null;
         };
+    }
+
+    setDockIconAccent(accent: AccentKey | null): Promise<void> {
+        const update = this.#dockIconQueue.then(async () => {
+            const { invoke } = await import('@tauri-apps/api/core');
+            await invoke('set_dock_icon_accent', { accent });
+        });
+        this.#dockIconQueue = update.catch(() => undefined);
+        return update;
     }
 
     async showPlanner(): Promise<void> {
