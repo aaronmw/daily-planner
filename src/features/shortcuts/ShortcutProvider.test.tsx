@@ -1,4 +1,11 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import {
+    act,
+    cleanup,
+    fireEvent,
+    render,
+    screen,
+    waitFor,
+} from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
     ShortcutHint,
@@ -6,6 +13,7 @@ import {
     type ShortcutBinding,
     type ShortcutDefinition,
     useShortcut,
+    useShortcutRecorder,
 } from './ShortcutProvider';
 
 afterEach(() => {
@@ -48,6 +56,92 @@ function ShortcutHarness({
         </>
     );
 }
+
+function RecorderHarness({
+    onCandidate,
+    onCancel,
+    onStart,
+    onTrigger,
+}: {
+    onCandidate: (shortcut: string) => boolean | Promise<boolean>;
+    onCancel?: () => void | Promise<void>;
+    onStart?: () => void | Promise<void>;
+    onTrigger: () => void;
+}) {
+    useShortcut({
+        onTrigger,
+        shortcut: commandOne,
+    });
+    const recorder = useShortcutRecorder({ onCandidate, onCancel, onStart });
+
+    return (
+        <>
+            <button onClick={() => void recorder.start()} type="button">
+                Record
+            </button>
+            <button onClick={recorder.cancel} type="button">
+                Cancel recording
+            </button>
+            <output data-testid="recording-active">{String(recorder.active)}</output>
+            <output data-testid="pressed-keys">
+                {recorder.pressedKeyLabels.join('')}
+            </output>
+        </>
+    );
+}
+
+function CompetingRecorderHarness({
+    firstOnStart,
+    secondOnStart,
+}: {
+    firstOnStart: () => void | Promise<void>;
+    secondOnStart: () => void | Promise<void>;
+}) {
+    const first = useShortcutRecorder({
+        onCandidate: () => false,
+        onStart: firstOnStart,
+    });
+    const second = useShortcutRecorder({
+        onCandidate: () => false,
+        onStart: secondOnStart,
+    });
+
+    return (
+        <>
+            <button onClick={() => void first.start()} type="button">
+                Record first
+            </button>
+            <button onClick={() => void second.start()} type="button">
+                Record second
+            </button>
+            <output data-testid="first-recorder-active">
+                {String(first.active)}
+            </output>
+            <output data-testid="second-recorder-active">
+                {String(second.active)}
+            </output>
+        </>
+    );
+}
+
+const renderRecorderHarness = ({
+    onCandidate = vi.fn(() => false),
+    onCancel = vi.fn(),
+    onStart = vi.fn(),
+    onTrigger = vi.fn(),
+}: Partial<React.ComponentProps<typeof RecorderHarness>> = {}) => {
+    const view = render(
+        <ShortcutProvider>
+            <RecorderHarness
+                onCandidate={onCandidate}
+                onCancel={onCancel}
+                onStart={onStart}
+                onTrigger={onTrigger}
+            />
+        </ShortcutProvider>
+    );
+    return { onCandidate, onCancel, onStart, onTrigger, ...view };
+};
 
 const renderHarness = (
     binding: Pick<ShortcutBinding, 'allowInTextEntry' | 'enabled'> = {}
@@ -196,5 +290,187 @@ describe('ShortcutProvider', () => {
             'aria-keyshortcuts',
             'Meta+1'
         );
+    });
+
+    it('gives an active recorder first refusal and suppresses repeated candidates', () => {
+        const { onCandidate, onTrigger } = renderRecorderHarness();
+
+        fireEvent.click(screen.getByRole('button', { name: 'Record' }));
+        fireEvent.keyDown(window, {
+            code: 'MetaLeft',
+            key: 'Meta',
+            metaKey: true,
+        });
+        expect(screen.getByTestId('pressed-keys')).toHaveTextContent('⌘');
+
+        fireEvent.keyDown(window, {
+            code: 'Digit1',
+            key: '1',
+            metaKey: true,
+        });
+        expect(onCandidate).toHaveBeenCalledWith('Super+Digit1');
+        expect(onTrigger).not.toHaveBeenCalled();
+
+        fireEvent.keyDown(window, {
+            code: 'Digit1',
+            key: '1',
+            metaKey: true,
+            repeat: true,
+        });
+        expect(onCandidate).toHaveBeenCalledOnce();
+    });
+
+    it('refreshes recorded keys on key-up while retaining held modifiers', () => {
+        renderRecorderHarness();
+
+        fireEvent.click(screen.getByRole('button', { name: 'Record' }));
+        fireEvent.keyDown(window, {
+            code: 'MetaLeft',
+            key: 'Meta',
+            metaKey: true,
+        });
+        fireEvent.keyDown(window, {
+            code: 'Digit1',
+            key: '1',
+            metaKey: true,
+        });
+        fireEvent.keyUp(window, {
+            code: 'Digit1',
+            key: '1',
+            metaKey: true,
+        });
+        expect(screen.getByTestId('pressed-keys')).toHaveTextContent('⌘');
+
+        fireEvent.keyUp(window, {
+            code: 'MetaLeft',
+            key: 'Meta',
+            metaKey: false,
+        });
+        expect(screen.getByTestId('pressed-keys')).toBeEmptyDOMElement();
+    });
+
+    it('ends a recorder only when its candidate succeeds', async () => {
+        const onCandidate = vi.fn(() => true);
+        renderRecorderHarness({ onCandidate });
+
+        fireEvent.click(screen.getByRole('button', { name: 'Record' }));
+        fireEvent.keyDown(window, {
+            code: 'Digit1',
+            key: '1',
+            metaKey: true,
+        });
+
+        await waitFor(() =>
+            expect(screen.getByTestId('recording-active')).toHaveTextContent(
+                'false'
+            )
+        );
+    });
+
+    it('keeps listening after a rejected candidate', async () => {
+        const onCandidate = vi.fn(() => Promise.reject(new Error('taken')));
+        renderRecorderHarness({ onCandidate });
+
+        fireEvent.click(screen.getByRole('button', { name: 'Record' }));
+        fireEvent.keyDown(window, {
+            code: 'Digit1',
+            key: '1',
+            metaKey: true,
+        });
+
+        await waitFor(() => expect(onCandidate).toHaveBeenCalledOnce());
+        expect(screen.getByTestId('recording-active')).toHaveTextContent('true');
+    });
+
+    it('does not let an earlier asynchronous start replace a newer recorder', async () => {
+        let finishFirstStart: (() => void) | undefined;
+        const firstOnStart = vi.fn(
+            () =>
+                new Promise<void>(resolve => {
+                    finishFirstStart = resolve;
+                })
+        );
+        const secondOnStart = vi.fn();
+        render(
+            <ShortcutProvider>
+                <CompetingRecorderHarness
+                    firstOnStart={firstOnStart}
+                    secondOnStart={secondOnStart}
+                />
+            </ShortcutProvider>
+        );
+
+        fireEvent.click(screen.getByRole('button', { name: 'Record first' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Record second' }));
+
+        await act(async () => finishFirstStart?.());
+
+        expect(screen.getByTestId('first-recorder-active')).toHaveTextContent(
+            'false'
+        );
+        expect(screen.getByTestId('second-recorder-active')).toHaveTextContent(
+            'true'
+        );
+    });
+
+    it('cancels recording for Escape, an explicit cancellation, blur, and hidden pages', () => {
+        const cases: {
+            cancel: () => void;
+            name: string;
+        }[] = [
+            {
+                name: 'Escape',
+                cancel: () =>
+                    fireEvent.keyDown(window, {
+                        cancelable: true,
+                        code: 'Escape',
+                        key: 'Escape',
+                    }),
+            },
+            {
+                name: 'an explicit cancellation',
+                cancel: () =>
+                    fireEvent.click(
+                        screen.getByRole('button', {
+                            name: 'Cancel recording',
+                        })
+                    ),
+            },
+            { name: 'window blur', cancel: () => fireEvent.blur(window) },
+            {
+                name: 'a hidden page',
+                cancel: () => {
+                    vi.spyOn(document, 'visibilityState', 'get').mockReturnValue(
+                        'hidden'
+                    );
+                    fireEvent(document, new Event('visibilitychange'));
+                },
+            },
+        ];
+
+        for (const scenario of cases) {
+            const onCancel = vi.fn();
+            renderRecorderHarness({ onCancel });
+            fireEvent.click(screen.getByRole('button', { name: 'Record' }));
+
+            scenario.cancel();
+
+            expect(onCancel, scenario.name).toHaveBeenCalledOnce();
+            expect(screen.getByTestId('recording-active')).toHaveTextContent(
+                'false'
+            );
+            cleanup();
+            vi.restoreAllMocks();
+        }
+    });
+
+    it('cancels the active recorder when its hook unmounts', () => {
+        const onCancel = vi.fn();
+        const { unmount } = renderRecorderHarness({ onCancel });
+
+        fireEvent.click(screen.getByRole('button', { name: 'Record' }));
+        unmount();
+
+        expect(onCancel).toHaveBeenCalledOnce();
     });
 });
