@@ -21,6 +21,8 @@ While idle, the row always shows its configured desktop shortcut keycaps. While 
 
 Shortcut recording is coordinated by the app-level shortcut system rather than by a row-local `keydown` handler. A single active recording session receives keyboard events before ordinary app shortcut dispatch, preventing an existing app command from consuming the candidate chord.
 
+Entering a recording session first suspends the native global-shortcut registrations. This is necessary because macOS can consume an already registered global accelerator before the webview receives it. Cancelling restores the snapshot map; a successful candidate replaces it with the newly registered map. Registration, suspension, and restoration are serialized so switching editors cannot leave stale native shortcuts active.
+
 Starting a session snapshots the command's current shortcut. A valid candidate is checked against the complete desktop shortcut map and registered through the existing desktop shortcut coordinator. The preference is persisted and recording ends only after registration succeeds.
 
 If registration fails or the chord conflicts, the existing shortcut remains authoritative, the row stays in listening mode, and an inline error is shown. Escape, outside interaction, focus leaving the recording control, panel closure, window blur, or page hiding cancels the session and restores the snapshot. Pressing and releasing only modifiers leaves the session active.
