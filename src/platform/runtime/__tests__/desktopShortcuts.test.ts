@@ -67,6 +67,7 @@ describe('desktop shortcuts', () => {
 
     it('waits for deferred disposal before registering the next shortcuts', async () => {
         const operations: string[] = [];
+        let resolveOriginalRegistration: (() => void) | undefined;
         let resolveCleanup: (() => void) | undefined;
         const original = DEFAULT_DESKTOP_SHORTCUTS;
         const next = {
@@ -77,6 +78,9 @@ describe('desktop shortcuts', () => {
             registerGlobalShortcuts: vi.fn(async shortcuts => {
                 if (shortcuts === original) {
                     operations.push('register:original');
+                    await new Promise<void>(resolve => {
+                        resolveOriginalRegistration = resolve;
+                    });
                     return () =>
                         new Promise<void>(resolve => {
                             resolveCleanup = () => {
@@ -90,10 +94,14 @@ describe('desktop shortcuts', () => {
             }),
         });
 
-        await desktopShortcutCoordinator.update(original);
+        const originalUpdate = desktopShortcutCoordinator.update(original);
         const disposal = desktopShortcutCoordinator.dispose();
         const update = desktopShortcutCoordinator.update(next);
 
+        await Promise.resolve();
+        expect(resolveOriginalRegistration).toBeTypeOf('function');
+        resolveOriginalRegistration?.();
+        await originalUpdate;
         await Promise.resolve();
         expect(resolveCleanup).toBeTypeOf('function');
         resolveCleanup?.();
