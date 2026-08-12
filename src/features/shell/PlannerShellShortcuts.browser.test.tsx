@@ -121,9 +121,7 @@ describe('PlannerShell contextual shortcuts', () => {
             name: 'Deleted items, 3',
         });
         expect(deletedItemsButton).toHaveTextContent('3');
-        expect(
-            deletedItemsButton.querySelector('.fa-trash')
-        ).not.toBeNull();
+        expect(deletedItemsButton.querySelector('.fa-trash')).not.toBeNull();
 
         await user.click(deletedItemsButton);
 
@@ -154,9 +152,9 @@ describe('PlannerShell contextual shortcuts', () => {
         const syncHeading = screen.getByRole('heading', {
             name: 'Sync & sharing',
         });
-        const encryptedSync = screen.getByText('Encrypted sync').closest(
-            '.planner-settings-row'
-        );
+        const encryptedSync = screen
+            .getByText('Encrypted sync')
+            .closest('.planner-settings-row');
         expect(encryptedSync).not.toBeNull();
         expect(encryptedSync?.previousElementSibling).toBe(syncHeading);
         expect(getComputedStyle(encryptedSync!).borderTopWidth).toBe('0px');
@@ -167,7 +165,10 @@ describe('PlannerShell contextual shortcuts', () => {
         createHarness();
 
         const launcher = screen.getByRole('button', { name: 'Options' });
-        expect(launcher).toHaveAttribute('aria-controls', 'planner-options-panel');
+        expect(launcher).toHaveAttribute(
+            'aria-controls',
+            'planner-options-panel'
+        );
         expect(launcher).toHaveAttribute('aria-expanded', 'false');
         expect(launcher).toHaveAttribute('data-open', 'false');
 
@@ -207,7 +208,9 @@ describe('PlannerShell contextual shortcuts', () => {
         await user.keyboard('{Escape}');
 
         expect(launcher).toHaveAttribute('aria-expanded', 'false');
-        expect(screen.queryByRole('dialog', { name: 'Options' })).not.toBeInTheDocument();
+        expect(
+            screen.queryByRole('dialog', { name: 'Options' })
+        ).not.toBeInTheDocument();
         expect(launcher).toHaveFocus();
     });
 
@@ -220,7 +223,9 @@ describe('PlannerShell contextual shortcuts', () => {
         fireEvent.pointerDown(document.body);
 
         expect(launcher).toHaveAttribute('aria-expanded', 'false');
-        expect(screen.queryByRole('dialog', { name: 'Options' })).not.toBeInTheDocument();
+        expect(
+            screen.queryByRole('dialog', { name: 'Options' })
+        ).not.toBeInTheDocument();
     });
 
     it('keeps Options open for pointer-down interactions within the panel', async () => {
@@ -265,7 +270,9 @@ describe('PlannerShell contextual shortcuts', () => {
         await user.click(launcher);
 
         expect(launcher).toHaveAttribute('aria-expanded', 'false');
-        expect(screen.queryByRole('dialog', { name: 'Options' })).not.toBeInTheDocument();
+        expect(
+            screen.queryByRole('dialog', { name: 'Options' })
+        ).not.toBeInTheDocument();
         expect(launcher).toHaveFocus();
     });
 

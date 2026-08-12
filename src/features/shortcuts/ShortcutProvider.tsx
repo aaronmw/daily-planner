@@ -154,8 +154,9 @@ export function ShortcutProvider({ children }: PropsWithChildren) {
     const [recordingView, setRecordingView] =
         useState<ShortcutRecordingView | null>(null);
     const activeRecorderRef = useRef<ActiveShortcutRecorder | null>(null);
-    const pendingRecorderStartRef =
-        useRef<PendingShortcutRecorderStart | null>(null);
+    const pendingRecorderStartRef = useRef<PendingShortcutRecorderStart | null>(
+        null
+    );
     const recordingOperationRef = useRef<Promise<void> | null>(null);
     const recordingStartVersionRef = useRef(0);
     const sourcesRef = useRef(new Map<string, ShortcutSource>());
@@ -397,7 +398,11 @@ export function ShortcutProvider({ children }: PropsWithChildren) {
         window.addEventListener('keydown', captureRecordingKeyDown, true);
         window.addEventListener('keyup', captureRecordingKeyUp, true);
         return () => {
-            window.removeEventListener('keydown', captureRecordingKeyDown, true);
+            window.removeEventListener(
+                'keydown',
+                captureRecordingKeyDown,
+                true
+            );
             window.removeEventListener('keyup', captureRecordingKeyUp, true);
         };
     }, [cancelRecording, clearRecording, setPressedKeyLabels]);
@@ -509,10 +514,10 @@ export function useShortcutRecorder(
         onStartRef.current = options.onStart;
     }, [options.onCancel, options.onCandidate, options.onStart]);
 
-    const cancel = useCallback(() => cancelRecording(recorderId), [
-        cancelRecording,
-        recorderId,
-    ]);
+    const cancel = useCallback(
+        () => cancelRecording(recorderId),
+        [cancelRecording, recorderId]
+    );
     const start = useCallback(
         () =>
             startRecording(recorderId, {

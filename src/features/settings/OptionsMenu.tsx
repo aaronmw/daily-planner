@@ -150,11 +150,7 @@ export function OptionsMenu({ onShowDeletedItems }: OptionsMenuProps) {
     }, [open]);
 
     return (
-        <div
-            className="planner-options"
-            data-open={open}
-            ref={optionsRef}
-        >
+        <div className="planner-options" data-open={open} ref={optionsRef}>
             <button
                 aria-controls="planner-options-panel"
                 aria-expanded={open}
@@ -177,283 +173,209 @@ export function OptionsMenu({ onShowDeletedItems }: OptionsMenuProps) {
                     ref={panelRef}
                     role="dialog"
                 >
-
-                <section className="planner-settings-section">
-                    <GroupLabel shortcut={CYCLE_THEME_SHORTCUT}>
-                        Lighting mode
-                    </GroupLabel>
-                    {THEME_OPTIONS.map(option => (
-                        <button
-                            aria-checked={preferences.themeMode === option.mode}
-                            className={rowClass}
-                            key={option.mode}
-                            onClick={() =>
-                                commands.updatePreferences({
-                                    themeMode: option.mode,
-                                })
-                            }
-                            role="radio"
-                            type="button"
-                        >
-                            <span className="grid size-[45px] place-items-center text-[1.2rem]">
-                                <Icon name={option.icon} />
-                            </span>
-                            <span>{option.label}</span>
-                            <Check
-                                checked={preferences.themeMode === option.mode}
-                            />
-                        </button>
-                    ))}
-                </section>
-
-                {getPlatformAdapter().kind === 'desktop' && (
                     <section className="planner-settings-section">
-                        <GroupLabel>Desktop shortcuts</GroupLabel>
-                        <DesktopShortcutSettings
-                            onUpdate={desktopShortcuts =>
-                                commands.updatePreferences({
-                                    desktopShortcuts,
-                                })
-                            }
-                            shortcuts={preferences.desktopShortcuts}
-                        />
-                    </section>
-                )}
-
-                <section className="planner-settings-section">
-                    <GroupLabel>Timeline</GroupLabel>
-                    <div className={`${rowClass} cursor-default`}>
-                        <span className="grid size-[45px] place-items-center">
-                            <Icon name="magnifying-glass" />
-                        </span>
-                        <div className="grid min-w-0 grid-cols-[auto_1fr_auto] items-center gap-3">
-                            <span>Zoom</span>
-                            <input
-                                aria-label="Timeline hours visible"
-                                className="min-w-0 accent-[var(--planner-contrast)]"
-                                max={24}
-                                min={4}
-                                onChange={event =>
+                        <GroupLabel shortcut={CYCLE_THEME_SHORTCUT}>
+                            Lighting mode
+                        </GroupLabel>
+                        {THEME_OPTIONS.map(option => (
+                            <button
+                                aria-checked={
+                                    preferences.themeMode === option.mode
+                                }
+                                className={rowClass}
+                                key={option.mode}
+                                onClick={() =>
                                     commands.updatePreferences({
-                                        timelineHoursPerScreen: Number(
-                                            event.target.value
-                                        ),
+                                        themeMode: option.mode,
                                     })
                                 }
-                                step={1}
-                                type="range"
-                                value={preferences.timelineHoursPerScreen}
-                            />
-                            <output>
-                                {preferences.timelineHoursPerScreen}h
-                            </output>
-                        </div>
-                        <span />
-                    </div>
-                    <button
-                        aria-checked={preferences.relativeCardSizingEnabled}
-                        className={rowClass}
-                        onClick={() =>
-                            commands.updatePreferences({
-                                relativeCardSizingEnabled:
-                                    !preferences.relativeCardSizingEnabled,
-                            })
-                        }
-                        role="checkbox"
-                        type="button"
-                    >
-                        <span className="grid size-[45px] place-items-center">
-                            <Icon name="arrows-up-down" />
-                        </span>
-                        <span>Relative card sizing</span>
-                        <Check
-                            checked={preferences.relativeCardSizingEnabled}
-                        />
-                    </button>
-                </section>
+                                role="radio"
+                                type="button"
+                            >
+                                <span className="grid size-[45px] place-items-center text-[1.2rem]">
+                                    <Icon name={option.icon} />
+                                </span>
+                                <span>{option.label}</span>
+                                <Check
+                                    checked={
+                                        preferences.themeMode === option.mode
+                                    }
+                                />
+                            </button>
+                        ))}
+                    </section>
 
-                <section className="planner-settings-section">
-                    <GroupLabel>Editing</GroupLabel>
-                    <button
-                        aria-checked={preferences.focusAssistEnabled}
-                        className={rowClass}
-                        onClick={() =>
-                            commands.updatePreferences({
-                                focusAssistEnabled:
-                                    !preferences.focusAssistEnabled,
-                            })
-                        }
-                        role="checkbox"
-                        type="button"
-                    >
-                        <span className="grid size-[45px] place-items-center">
-                            <Icon name="bullseye" />
-                        </span>
-                        <span>Focus Assist</span>
-                        <Check checked={preferences.focusAssistEnabled} />
-                    </button>
-                    <button
-                        aria-checked={
-                            preferences.highlightIncompleteSentencesEnabled
-                        }
-                        className={rowClass}
-                        onClick={() =>
-                            commands.updatePreferences({
-                                highlightIncompleteSentencesEnabled:
-                                    !preferences.highlightIncompleteSentencesEnabled,
-                            })
-                        }
-                        role="checkbox"
-                        type="button"
-                    >
-                        <span className="grid size-[45px] place-items-center">
-                            <Icon name="spell-check" />
-                        </span>
-                        <span>Highlight incomplete</span>
-                        <Check
-                            checked={
+                    {getPlatformAdapter().kind === 'desktop' && (
+                        <section className="planner-settings-section">
+                            <GroupLabel>Desktop shortcuts</GroupLabel>
+                            <DesktopShortcutSettings
+                                onUpdate={desktopShortcuts =>
+                                    commands.updatePreferences({
+                                        desktopShortcuts,
+                                    })
+                                }
+                                shortcuts={preferences.desktopShortcuts}
+                            />
+                        </section>
+                    )}
+
+                    <section className="planner-settings-section">
+                        <GroupLabel>Timeline</GroupLabel>
+                        <div className={`${rowClass} cursor-default`}>
+                            <span className="grid size-[45px] place-items-center">
+                                <Icon name="magnifying-glass" />
+                            </span>
+                            <div className="grid min-w-0 grid-cols-[auto_1fr_auto] items-center gap-3">
+                                <span>Zoom</span>
+                                <input
+                                    aria-label="Timeline hours visible"
+                                    className="min-w-0 accent-[var(--planner-contrast)]"
+                                    max={24}
+                                    min={4}
+                                    onChange={event =>
+                                        commands.updatePreferences({
+                                            timelineHoursPerScreen: Number(
+                                                event.target.value
+                                            ),
+                                        })
+                                    }
+                                    step={1}
+                                    type="range"
+                                    value={preferences.timelineHoursPerScreen}
+                                />
+                                <output>
+                                    {preferences.timelineHoursPerScreen}h
+                                </output>
+                            </div>
+                            <span />
+                        </div>
+                        <button
+                            aria-checked={preferences.relativeCardSizingEnabled}
+                            className={rowClass}
+                            onClick={() =>
+                                commands.updatePreferences({
+                                    relativeCardSizingEnabled:
+                                        !preferences.relativeCardSizingEnabled,
+                                })
+                            }
+                            role="checkbox"
+                            type="button"
+                        >
+                            <span className="grid size-[45px] place-items-center">
+                                <Icon name="arrows-up-down" />
+                            </span>
+                            <span>Relative card sizing</span>
+                            <Check
+                                checked={preferences.relativeCardSizingEnabled}
+                            />
+                        </button>
+                    </section>
+
+                    <section className="planner-settings-section">
+                        <GroupLabel>Editing</GroupLabel>
+                        <button
+                            aria-checked={preferences.focusAssistEnabled}
+                            className={rowClass}
+                            onClick={() =>
+                                commands.updatePreferences({
+                                    focusAssistEnabled:
+                                        !preferences.focusAssistEnabled,
+                                })
+                            }
+                            role="checkbox"
+                            type="button"
+                        >
+                            <span className="grid size-[45px] place-items-center">
+                                <Icon name="bullseye" />
+                            </span>
+                            <span>Focus Assist</span>
+                            <Check checked={preferences.focusAssistEnabled} />
+                        </button>
+                        <button
+                            aria-checked={
                                 preferences.highlightIncompleteSentencesEnabled
                             }
-                        />
-                    </button>
-                </section>
-
-                <section className="planner-settings-section">
-                    <GroupLabel>Sync &amp; sharing</GroupLabel>
-                    <div className={`${rowClass} cursor-default`}>
-                        <span className="grid size-[45px] place-items-center">
-                            <Icon name="cloud-lock" />
-                        </span>
-                        <span className="min-w-0">
-                            <span className="block">Encrypted sync</span>
-                            <span className="block truncate text-planner-text-faded">
-                                {syncStatus.status === 'local-only'
-                                    ? 'Local only'
-                                    : syncStatus.status === 'error'
-                                      ? syncStatus.error
-                                      : syncStatus.status}
+                            className={rowClass}
+                            onClick={() =>
+                                commands.updatePreferences({
+                                    highlightIncompleteSentencesEnabled:
+                                        !preferences.highlightIncompleteSentencesEnabled,
+                                })
+                            }
+                            role="checkbox"
+                            type="button"
+                        >
+                            <span className="grid size-[45px] place-items-center">
+                                <Icon name="spell-check" />
                             </span>
-                        </span>
-                        <Check checked={syncStatus.status === 'synced'} />
-                    </div>
-
-                    {preferences.syncEnabled && identityIsAnonymous && (
-                        <div className="border-t-[length:var(--planner-stroke-width)] border-planner-border p-3">
-                            <p className="mb-2 text-planner-text-faded">
-                                Add an account so this encrypted planner can be
-                                recovered on another device.
-                            </p>
-                            <div className="grid grid-cols-[1fr_auto]">
-                                <input
-                                    aria-label="Account email"
-                                    className="h-[45px] min-w-0 border-[length:var(--planner-stroke-width)] border-r-0 border-planner-border bg-planner-background px-3"
-                                    onChange={event =>
-                                        setAccountEmail(event.target.value)
-                                    }
-                                    placeholder="you@example.com"
-                                    type="email"
-                                    value={accountEmail}
-                                />
-                                <button
-                                    className="h-[45px] border-[length:var(--planner-stroke-width)] border-planner-border px-3 font-semibold hover:bg-planner-shaded"
-                                    disabled={
-                                        !accountEmail.trim() || accountPending
-                                    }
-                                    onClick={() => {
-                                        setAccountPending(true);
-                                        setAccountMessage('');
-                                        void collaboration
-                                            .continueAccountWithEmail(
-                                                accountEmail.trim()
-                                            )
-                                            .then(() =>
-                                                setAccountMessage(
-                                                    'Check your email to finish linking the account.'
-                                                )
-                                            )
-                                            .catch(caught =>
-                                                setAccountMessage(
-                                                    caught instanceof Error
-                                                        ? caught.message
-                                                        : 'The account could not be linked.'
-                                                )
-                                            )
-                                            .finally(() =>
-                                                setAccountPending(false)
-                                            );
-                                    }}
-                                    type="button"
-                                >
-                                    Link email
-                                </button>
-                            </div>
-                            <button
-                                className="mt-2 h-[45px] w-full border-[length:var(--planner-stroke-width)] border-planner-border px-3 font-semibold hover:bg-planner-shaded"
-                                disabled={accountPending}
-                                onClick={() => {
-                                    setAccountPending(true);
-                                    setAccountMessage('');
-                                    void collaboration
-                                        .continueAccountWithGoogle()
-                                        .catch(caught =>
-                                            setAccountMessage(
-                                                caught instanceof Error
-                                                    ? caught.message
-                                                    : 'Google sign-in could not start.'
-                                            )
-                                        )
-                                        .finally(() =>
-                                            setAccountPending(false)
-                                        );
-                                }}
-                                type="button"
-                            >
-                                Continue with Google
-                            </button>
-                            <button
-                                className="mt-2 h-[45px] w-full border-[length:var(--planner-stroke-width)] border-planner-border px-3 font-semibold hover:bg-planner-shaded"
-                                onClick={() =>
-                                    setExistingAccountOpen(value => !value)
+                            <span>Highlight incomplete</span>
+                            <Check
+                                checked={
+                                    preferences.highlightIncompleteSentencesEnabled
                                 }
-                                type="button"
-                            >
-                                Use an existing account
-                            </button>
-                            {existingAccountOpen && (
-                                <div className="mt-3 border-t-[length:var(--planner-stroke-width)] border-planner-border pt-3">
-                                    <p className="text-planner-text-faded">
-                                        Your guest lists will be handed to the
-                                        account after it is unlocked.
-                                    </p>
-                                    <TurnstileChallenge
-                                        onError={onChallengeError}
-                                        onToken={onChallengeToken}
+                            />
+                        </button>
+                    </section>
+
+                    <section className="planner-settings-section">
+                        <GroupLabel>Sync &amp; sharing</GroupLabel>
+                        <div className={`${rowClass} cursor-default`}>
+                            <span className="grid size-[45px] place-items-center">
+                                <Icon name="cloud-lock" />
+                            </span>
+                            <span className="min-w-0">
+                                <span className="block">Encrypted sync</span>
+                                <span className="block truncate text-planner-text-faded">
+                                    {syncStatus.status === 'local-only'
+                                        ? 'Local only'
+                                        : syncStatus.status === 'error'
+                                          ? syncStatus.error
+                                          : syncStatus.status}
+                                </span>
+                            </span>
+                            <Check checked={syncStatus.status === 'synced'} />
+                        </div>
+
+                        {preferences.syncEnabled && identityIsAnonymous && (
+                            <div className="border-t-[length:var(--planner-stroke-width)] border-planner-border p-3">
+                                <p className="mb-2 text-planner-text-faded">
+                                    Add an account so this encrypted planner can
+                                    be recovered on another device.
+                                </p>
+                                <div className="grid grid-cols-[1fr_auto]">
+                                    <input
+                                        aria-label="Account email"
+                                        className="h-[45px] min-w-0 border-[length:var(--planner-stroke-width)] border-r-0 border-planner-border bg-planner-background px-3"
+                                        onChange={event =>
+                                            setAccountEmail(event.target.value)
+                                        }
+                                        placeholder="you@example.com"
+                                        type="email"
+                                        value={accountEmail}
                                     />
                                     <button
-                                        className="h-[45px] w-full border-[length:var(--planner-stroke-width)] border-planner-border px-3 font-semibold hover:bg-planner-shaded"
+                                        className="h-[45px] border-[length:var(--planner-stroke-width)] border-planner-border px-3 font-semibold hover:bg-planner-shaded"
                                         disabled={
                                             !accountEmail.trim() ||
-                                            !existingCaptchaToken ||
                                             accountPending
                                         }
                                         onClick={() => {
                                             setAccountPending(true);
                                             setAccountMessage('');
                                             void collaboration
-                                                .signInExistingWithEmail(
-                                                    accountEmail.trim(),
-                                                    existingCaptchaToken
+                                                .continueAccountWithEmail(
+                                                    accountEmail.trim()
                                                 )
                                                 .then(() =>
                                                     setAccountMessage(
-                                                        'Check your email to finish signing in.'
+                                                        'Check your email to finish linking the account.'
                                                     )
                                                 )
                                                 .catch(caught =>
                                                     setAccountMessage(
                                                         caught instanceof Error
                                                             ? caught.message
-                                                            : 'Existing account sign-in failed.'
+                                                            : 'The account could not be linked.'
                                                     )
                                                 )
                                                 .finally(() =>
@@ -462,77 +384,22 @@ export function OptionsMenu({ onShowDeletedItems }: OptionsMenuProps) {
                                         }}
                                         type="button"
                                     >
-                                        Sign in with email
-                                    </button>
-                                    <button
-                                        className="mt-2 h-[45px] w-full border-[length:var(--planner-stroke-width)] border-planner-border px-3 font-semibold hover:bg-planner-shaded"
-                                        disabled={accountPending}
-                                        onClick={() => {
-                                            setAccountPending(true);
-                                            setAccountMessage('');
-                                            void collaboration
-                                                .signInExistingWithGoogle()
-                                                .catch(caught =>
-                                                    setAccountMessage(
-                                                        caught instanceof Error
-                                                            ? caught.message
-                                                            : 'Existing account sign-in failed.'
-                                                    )
-                                                )
-                                                .finally(() =>
-                                                    setAccountPending(false)
-                                                );
-                                        }}
-                                        type="button"
-                                    >
-                                        Sign in with Google
+                                        Link email
                                     </button>
                                 </div>
-                            )}
-                            {accountMessage && (
-                                <p className="mt-2" aria-live="polite">
-                                    {accountMessage}
-                                </p>
-                            )}
-                        </div>
-                    )}
-
-                    {syncStatus.status === 'error' &&
-                        syncStatus.error.toLowerCase().includes('recovery') && (
-                            <div className="border-t-[length:var(--planner-stroke-width)] border-planner-border p-3">
-                                <label className="block">
-                                    <span className="mb-1 block text-planner-text-faded">
-                                        Existing account recovery key
-                                    </span>
-                                    <input
-                                        autoComplete="off"
-                                        className="h-[45px] w-full border-[length:var(--planner-stroke-width)] border-planner-border bg-planner-background px-3 uppercase"
-                                        onChange={event =>
-                                            setRecoveryInput(event.target.value)
-                                        }
-                                        value={recoveryInput}
-                                    />
-                                </label>
                                 <button
                                     className="mt-2 h-[45px] w-full border-[length:var(--planner-stroke-width)] border-planner-border px-3 font-semibold hover:bg-planner-shaded"
-                                    disabled={
-                                        !recoveryInput.trim() || accountPending
-                                    }
+                                    disabled={accountPending}
                                     onClick={() => {
                                         setAccountPending(true);
+                                        setAccountMessage('');
                                         void collaboration
-                                            .recoverSync(recoveryInput)
-                                            .then(() => {
-                                                setRecoveryInput('');
-                                                setAccountMessage(
-                                                    'Existing account unlocked.'
-                                                );
-                                            })
+                                            .continueAccountWithGoogle()
                                             .catch(caught =>
                                                 setAccountMessage(
                                                     caught instanceof Error
                                                         ? caught.message
-                                                        : 'The account could not be unlocked.'
+                                                        : 'Google sign-in could not start.'
                                                 )
                                             )
                                             .finally(() =>
@@ -541,117 +408,263 @@ export function OptionsMenu({ onShowDeletedItems }: OptionsMenuProps) {
                                     }}
                                     type="button"
                                 >
-                                    Unlock existing account
+                                    Continue with Google
                                 </button>
+                                <button
+                                    className="mt-2 h-[45px] w-full border-[length:var(--planner-stroke-width)] border-planner-border px-3 font-semibold hover:bg-planner-shaded"
+                                    onClick={() =>
+                                        setExistingAccountOpen(value => !value)
+                                    }
+                                    type="button"
+                                >
+                                    Use an existing account
+                                </button>
+                                {existingAccountOpen && (
+                                    <div className="mt-3 border-t-[length:var(--planner-stroke-width)] border-planner-border pt-3">
+                                        <p className="text-planner-text-faded">
+                                            Your guest lists will be handed to
+                                            the account after it is unlocked.
+                                        </p>
+                                        <TurnstileChallenge
+                                            onError={onChallengeError}
+                                            onToken={onChallengeToken}
+                                        />
+                                        <button
+                                            className="h-[45px] w-full border-[length:var(--planner-stroke-width)] border-planner-border px-3 font-semibold hover:bg-planner-shaded"
+                                            disabled={
+                                                !accountEmail.trim() ||
+                                                !existingCaptchaToken ||
+                                                accountPending
+                                            }
+                                            onClick={() => {
+                                                setAccountPending(true);
+                                                setAccountMessage('');
+                                                void collaboration
+                                                    .signInExistingWithEmail(
+                                                        accountEmail.trim(),
+                                                        existingCaptchaToken
+                                                    )
+                                                    .then(() =>
+                                                        setAccountMessage(
+                                                            'Check your email to finish signing in.'
+                                                        )
+                                                    )
+                                                    .catch(caught =>
+                                                        setAccountMessage(
+                                                            caught instanceof
+                                                                Error
+                                                                ? caught.message
+                                                                : 'Existing account sign-in failed.'
+                                                        )
+                                                    )
+                                                    .finally(() =>
+                                                        setAccountPending(false)
+                                                    );
+                                            }}
+                                            type="button"
+                                        >
+                                            Sign in with email
+                                        </button>
+                                        <button
+                                            className="mt-2 h-[45px] w-full border-[length:var(--planner-stroke-width)] border-planner-border px-3 font-semibold hover:bg-planner-shaded"
+                                            disabled={accountPending}
+                                            onClick={() => {
+                                                setAccountPending(true);
+                                                setAccountMessage('');
+                                                void collaboration
+                                                    .signInExistingWithGoogle()
+                                                    .catch(caught =>
+                                                        setAccountMessage(
+                                                            caught instanceof
+                                                                Error
+                                                                ? caught.message
+                                                                : 'Existing account sign-in failed.'
+                                                        )
+                                                    )
+                                                    .finally(() =>
+                                                        setAccountPending(false)
+                                                    );
+                                            }}
+                                            type="button"
+                                        >
+                                            Sign in with Google
+                                        </button>
+                                    </div>
+                                )}
+                                {accountMessage && (
+                                    <p className="mt-2" aria-live="polite">
+                                        {accountMessage}
+                                    </p>
+                                )}
                             </div>
                         )}
 
-                    {preferences.syncEnabled && !identityIsAnonymous && (
-                        <div className={`${rowClass} cursor-default`}>
-                            <span className="grid size-[45px] place-items-center">
-                                <Icon name="user-shield" />
-                            </span>
-                            <span className="min-w-0 truncate">
-                                {identityEmail ?? 'Permanent account'}
-                            </span>
-                            <Check checked />
-                        </div>
-                    )}
-
-                    {recoveryCode && (
-                        <button
-                            className={rowClass}
-                            onClick={() => {
-                                void navigator.clipboard.writeText(
-                                    recoveryCode
-                                );
-                                setAccountMessage('Recovery key copied.');
-                            }}
-                            type="button"
-                        >
-                            <span className="grid size-[45px] place-items-center">
-                                <Icon name="key" />
-                            </span>
-                            <span>
-                                <span className="block">Copy recovery key</span>
-                                <span className="block text-planner-danger">
-                                    Save this now; it is shown only once.
-                                </span>
-                            </span>
-                            <span />
-                        </button>
-                    )}
-
-                    {preferences.syncEnabled && (
-                        <button
-                            aria-checked={preferences.notificationsEnabled}
-                            className={rowClass}
-                            disabled={notificationPending}
-                            onClick={() => {
-                                const enabled =
-                                    !preferences.notificationsEnabled;
-                                setNotificationPending(true);
-                                setNotificationError('');
-                                void collaboration
-                                    .setNotificationsEnabled(enabled)
-                                    .catch(caught =>
-                                        setNotificationError(
-                                            caught instanceof Error
-                                                ? caught.message
-                                                : 'Notifications could not be updated.'
-                                        )
-                                    )
-                                    .finally(() =>
-                                        setNotificationPending(false)
-                                    );
-                            }}
-                            role="checkbox"
-                            title={notificationError || undefined}
-                            type="button"
-                        >
-                            <span className="grid size-[45px] place-items-center">
-                                <Icon
-                                    name={
-                                        notificationPending ? 'spinner' : 'bell'
-                                    }
-                                />
-                            </span>
-                            <span className="min-w-0">
-                                <span className="block">Notifications</span>
-                                {notificationError && (
-                                    <span
-                                        aria-live="polite"
-                                        className="block truncate text-planner-danger"
+                        {syncStatus.status === 'error' &&
+                            syncStatus.error
+                                .toLowerCase()
+                                .includes('recovery') && (
+                                <div className="border-t-[length:var(--planner-stroke-width)] border-planner-border p-3">
+                                    <label className="block">
+                                        <span className="mb-1 block text-planner-text-faded">
+                                            Existing account recovery key
+                                        </span>
+                                        <input
+                                            autoComplete="off"
+                                            className="h-[45px] w-full border-[length:var(--planner-stroke-width)] border-planner-border bg-planner-background px-3 uppercase"
+                                            onChange={event =>
+                                                setRecoveryInput(
+                                                    event.target.value
+                                                )
+                                            }
+                                            value={recoveryInput}
+                                        />
+                                    </label>
+                                    <button
+                                        className="mt-2 h-[45px] w-full border-[length:var(--planner-stroke-width)] border-planner-border px-3 font-semibold hover:bg-planner-shaded"
+                                        disabled={
+                                            !recoveryInput.trim() ||
+                                            accountPending
+                                        }
+                                        onClick={() => {
+                                            setAccountPending(true);
+                                            void collaboration
+                                                .recoverSync(recoveryInput)
+                                                .then(() => {
+                                                    setRecoveryInput('');
+                                                    setAccountMessage(
+                                                        'Existing account unlocked.'
+                                                    );
+                                                })
+                                                .catch(caught =>
+                                                    setAccountMessage(
+                                                        caught instanceof Error
+                                                            ? caught.message
+                                                            : 'The account could not be unlocked.'
+                                                    )
+                                                )
+                                                .finally(() =>
+                                                    setAccountPending(false)
+                                                );
+                                        }}
+                                        type="button"
                                     >
-                                        {notificationError}
-                                    </span>
-                                )}
-                            </span>
-                            <Check checked={preferences.notificationsEnabled} />
-                        </button>
-                    )}
-                </section>
+                                        Unlock existing account
+                                    </button>
+                                </div>
+                            )}
 
-                {deletedItemCount > 0 && (
-                    <section className="planner-settings-section">
-                        <GhostButton
-                            aria-label={`Deleted items, ${deletedItemCount}`}
-                            className="planner-deleted-items-button"
-                            onClick={() => {
-                                close();
-                                onShowDeletedItems();
-                            }}
-                        >
-                            <span className="grid size-[45px] place-items-center">
-                                <Icon name="trash" />
-                            </span>
-                            <span>Deleted items</span>
-                            <span className="grid size-[45px] place-items-center tabular-nums">
-                                {deletedItemCount}
-                            </span>
-                        </GhostButton>
+                        {preferences.syncEnabled && !identityIsAnonymous && (
+                            <div className={`${rowClass} cursor-default`}>
+                                <span className="grid size-[45px] place-items-center">
+                                    <Icon name="user-shield" />
+                                </span>
+                                <span className="min-w-0 truncate">
+                                    {identityEmail ?? 'Permanent account'}
+                                </span>
+                                <Check checked />
+                            </div>
+                        )}
+
+                        {recoveryCode && (
+                            <button
+                                className={rowClass}
+                                onClick={() => {
+                                    void navigator.clipboard.writeText(
+                                        recoveryCode
+                                    );
+                                    setAccountMessage('Recovery key copied.');
+                                }}
+                                type="button"
+                            >
+                                <span className="grid size-[45px] place-items-center">
+                                    <Icon name="key" />
+                                </span>
+                                <span>
+                                    <span className="block">
+                                        Copy recovery key
+                                    </span>
+                                    <span className="block text-planner-danger">
+                                        Save this now; it is shown only once.
+                                    </span>
+                                </span>
+                                <span />
+                            </button>
+                        )}
+
+                        {preferences.syncEnabled && (
+                            <button
+                                aria-checked={preferences.notificationsEnabled}
+                                className={rowClass}
+                                disabled={notificationPending}
+                                onClick={() => {
+                                    const enabled =
+                                        !preferences.notificationsEnabled;
+                                    setNotificationPending(true);
+                                    setNotificationError('');
+                                    void collaboration
+                                        .setNotificationsEnabled(enabled)
+                                        .catch(caught =>
+                                            setNotificationError(
+                                                caught instanceof Error
+                                                    ? caught.message
+                                                    : 'Notifications could not be updated.'
+                                            )
+                                        )
+                                        .finally(() =>
+                                            setNotificationPending(false)
+                                        );
+                                }}
+                                role="checkbox"
+                                title={notificationError || undefined}
+                                type="button"
+                            >
+                                <span className="grid size-[45px] place-items-center">
+                                    <Icon
+                                        name={
+                                            notificationPending
+                                                ? 'spinner'
+                                                : 'bell'
+                                        }
+                                    />
+                                </span>
+                                <span className="min-w-0">
+                                    <span className="block">Notifications</span>
+                                    {notificationError && (
+                                        <span
+                                            aria-live="polite"
+                                            className="block truncate text-planner-danger"
+                                        >
+                                            {notificationError}
+                                        </span>
+                                    )}
+                                </span>
+                                <Check
+                                    checked={preferences.notificationsEnabled}
+                                />
+                            </button>
+                        )}
                     </section>
-                )}
+
+                    {deletedItemCount > 0 && (
+                        <section className="planner-settings-section">
+                            <GhostButton
+                                aria-label={`Deleted items, ${deletedItemCount}`}
+                                className="planner-deleted-items-button"
+                                onClick={() => {
+                                    close();
+                                    onShowDeletedItems();
+                                }}
+                            >
+                                <span className="grid size-[45px] place-items-center">
+                                    <Icon name="trash" />
+                                </span>
+                                <span>Deleted items</span>
+                                <span className="grid size-[45px] place-items-center tabular-nums">
+                                    {deletedItemCount}
+                                </span>
+                            </GhostButton>
+                        </section>
+                    )}
                 </div>
             )}
         </div>

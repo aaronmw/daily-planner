@@ -11,9 +11,7 @@ import { KeyboardKey } from '../shell/KeyboardKey';
 import { useShortcutRecorder } from '../shortcuts/ShortcutProvider';
 
 interface DesktopShortcutSettingsProps {
-    onUpdate: (
-        shortcuts: Readonly<Record<PlannerCommandId, string>>
-    ) => void;
+    onUpdate: (shortcuts: Readonly<Record<PlannerCommandId, string>>) => void;
     shortcuts: Readonly<Record<PlannerCommandId, string>>;
 }
 

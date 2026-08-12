@@ -66,9 +66,9 @@ describe('DesktopShortcutSettings', () => {
         expect(
             document.querySelector('.fa-window-restore')
         ).toBeInTheDocument();
-        expect(screen.getByTestId('show-planner-shortcut-keys')).toHaveTextContent(
-            '⇧⌃⌥⌘P'
-        );
+        expect(
+            screen.getByTestId('show-planner-shortcut-keys')
+        ).toHaveTextContent('⇧⌃⌥⌘P');
         expect(
             screen.getByRole('button', {
                 name: 'Edit shortcut for Show Daily Planner',
@@ -86,9 +86,9 @@ describe('DesktopShortcutSettings', () => {
             key: 'Meta',
             metaKey: true,
         });
-        expect(screen.getByTestId('show-planner-shortcut-keys')).toHaveTextContent(
-            '⌘'
-        );
+        expect(
+            screen.getByTestId('show-planner-shortcut-keys')
+        ).toHaveTextContent('⌘');
 
         const registered = createDeferred();
         update.mockImplementationOnce(() => registered.promise);
@@ -181,9 +181,9 @@ describe('DesktopShortcutSettings', () => {
             metaKey: false,
         });
 
-        expect(screen.getByTestId('show-planner-shortcut-keys')).toHaveTextContent(
-            '⇧⌃⌥⌘P'
-        );
+        expect(
+            screen.getByTestId('show-planner-shortcut-keys')
+        ).toHaveTextContent('⇧⌃⌥⌘P');
     });
 
     it('retains the listening error and allows retrying after a registration failure', async () => {

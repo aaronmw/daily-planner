@@ -86,7 +86,9 @@ function RecorderHarness({
             <button onClick={recorder.cancel} type="button">
                 Cancel recording
             </button>
-            <output data-testid="recording-active">{String(recorder.active)}</output>
+            <output data-testid="recording-active">
+                {String(recorder.active)}
+            </output>
             <output data-testid="pressed-keys">
                 {recorder.pressedKeyLabels.join('')}
             </output>
@@ -325,7 +327,9 @@ describe('ShortcutProvider', () => {
         });
         expect(onCandidate).toHaveBeenCalledWith('Super+Digit1');
         expect(onTrigger).not.toHaveBeenCalled();
-        expect(screen.getByTestId('recording-active')).toHaveTextContent('true');
+        expect(screen.getByTestId('recording-active')).toHaveTextContent(
+            'true'
+        );
 
         fireEvent.keyDown(window, {
             code: 'Digit1',
@@ -397,7 +401,9 @@ describe('ShortcutProvider', () => {
         });
 
         await waitFor(() => expect(onCandidate).toHaveBeenCalledOnce());
-        expect(screen.getByTestId('recording-active')).toHaveTextContent('true');
+        expect(screen.getByTestId('recording-active')).toHaveTextContent(
+            'true'
+        );
     });
 
     it('does not let an earlier asynchronous start replace a newer recorder', async () => {
@@ -576,9 +582,11 @@ describe('ShortcutProvider', () => {
             {
                 name: 'a hidden page',
                 cancel: () => {
-                    vi.spyOn(document, 'visibilityState', 'get').mockReturnValue(
-                        'hidden'
-                    );
+                    vi.spyOn(
+                        document,
+                        'visibilityState',
+                        'get'
+                    ).mockReturnValue('hidden');
                     fireEvent(document, new Event('visibilitychange'));
                 },
             },
