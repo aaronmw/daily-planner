@@ -58,6 +58,41 @@
     font-weight: 700;
 }
 
+.planner-desktop-shortcut-row {
+    align-items: center;
+    border-top: var(--planner-stroke-width) solid var(--planner-border);
+    display: grid;
+    grid-template-columns: 45px minmax(0, 1fr) auto 45px;
+    min-height: 54px;
+    text-align: left;
+    transition:
+        background-color var(--planner-motion-fast) var(--planner-motion-ease),
+        color var(--planner-motion-fast) var(--planner-motion-ease);
+}
+
+.planner-desktop-shortcut-row:hover,
+.planner-desktop-shortcut-row[data-listening='true'] {
+    background: var(--planner-shaded);
+}
+
+.planner-desktop-shortcut-command-icon {
+    display: grid;
+    font-size: 1.2rem;
+    height: 45px;
+    place-items: center;
+    width: 45px;
+}
+
+.planner-desktop-shortcut-keys {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    justify-content: flex-end;
+    padding-inline: 8px;
+    transition: opacity var(--planner-motion-fast) var(--planner-motion-ease);
+}
+
 .planner-ghost-button,
 .planner-list-card,
 .planner-item-card {

@@ -4,18 +4,7 @@ import { usePlannerSelector } from '../../core/store/plannerContext';
 import type { ThemeMode } from '../../core/domain/types';
 import { Icon } from '../shell/Icon';
 import { IconButton } from '../shell/IconButton';
-import { KeyboardKey } from '../shell/KeyboardKey';
-import {
-    describeShortcut,
-    desktopShortcutCoordinator,
-    shortcutFromKeyboardEvent,
-    shortcutKeyLabels,
-} from '../../platform/runtime/desktopShortcuts';
 import { getPlatformAdapter } from '../../platform/runtime/platformAdapter';
-import {
-    PLANNER_COMMAND_IDS,
-    type PlannerCommandId,
-} from '../../core/application/commandIds';
 import {
     useCollaboration,
     useCollaborationSelector,
@@ -27,6 +16,7 @@ import {
     type ShortcutDefinition,
 } from '../shortcuts/ShortcutProvider';
 import { CYCLE_THEME_SHORTCUT } from '../shortcuts/appShortcuts';
+import { DesktopShortcutSettings } from './DesktopShortcutSettings';
 
 interface OptionsMenuProps {
     onShowDeletedItems: () => void;
@@ -40,28 +30,6 @@ const THEME_OPTIONS: readonly {
     { icon: 'desktop', label: 'System', mode: 'system' },
     { icon: 'sun-bright', label: 'Light', mode: 'light' },
     { icon: 'moon', label: 'Dark', mode: 'dark' },
-];
-
-const DESKTOP_SHORTCUT_OPTIONS: readonly {
-    commandId: PlannerCommandId;
-    icon: string;
-    label: string;
-}[] = [
-    {
-        commandId: PLANNER_COMMAND_IDS.showPlanner,
-        icon: 'window-restore',
-        label: 'Show Daily Planner',
-    },
-    {
-        commandId: PLANNER_COMMAND_IDS.createList,
-        icon: 'rectangle-list',
-        label: 'New List',
-    },
-    {
-        commandId: PLANNER_COMMAND_IDS.createItem,
-        icon: 'square-check',
-        label: 'New Item',
-    },
 ];
 
 function Check({ checked }: { checked: boolean }) {
@@ -97,95 +65,6 @@ function GroupLabel({
                 />
             )}
         </h3>
-    );
-}
-
-function ShortcutRow({
-    commandId,
-    icon,
-    label,
-}: {
-    commandId: PlannerCommandId;
-    icon: string;
-    label: string;
-}) {
-    const commands = usePlannerCommands();
-    const shortcuts = usePlannerSelector(
-        state => state.preferences.desktopShortcuts
-    );
-    const shortcut = shortcuts[commandId];
-    const [recording, setRecording] = useState(false);
-    const [pending, setPending] = useState(false);
-    const [error, setError] = useState('');
-    return (
-        <button
-            aria-label={`${label}, ${describeShortcut(shortcut)}`}
-            aria-pressed={recording}
-            className="grid min-h-[54px] w-full grid-cols-[45px_minmax(0,1fr)] items-center border-t-[length:var(--planner-stroke-width)] border-planner-border text-left transition-colors hover:bg-planner-shaded"
-            onBlur={() => !pending && setRecording(false)}
-            onClick={() => {
-                if (!pending) {
-                    setError('');
-                    setRecording(true);
-                }
-            }}
-            onKeyDown={event => {
-                if (!recording || pending) return;
-                event.preventDefault();
-                event.stopPropagation();
-                if (event.key === 'Escape') {
-                    setRecording(false);
-                    setError('');
-                    return;
-                }
-                const nextShortcut = shortcutFromKeyboardEvent(event);
-                if (!nextShortcut) return;
-                const next = { ...shortcuts, [commandId]: nextShortcut };
-                setPending(true);
-                setError('');
-                void desktopShortcutCoordinator
-                    .update(next)
-                    .then(() => {
-                        commands.updatePreferences({ desktopShortcuts: next });
-                        setRecording(false);
-                    })
-                    .catch(caught =>
-                        setError(
-                            caught instanceof Error
-                                ? caught.message
-                                : 'That shortcut is unavailable.'
-                        )
-                    )
-                    .finally(() => setPending(false));
-            }}
-            title={error || describeShortcut(shortcut)}
-            type="button"
-        >
-            <span className="grid size-[45px] place-items-center text-[1.2rem]">
-                <Icon name={pending ? 'spinner' : icon} />
-            </span>
-            <span className="min-w-0 py-2 pr-3">
-                <span className="block font-semibold">{label}</span>
-                {error || recording ? (
-                    <span className="block text-planner-text-faded">
-                        {error || 'Press a modifier and another key'}
-                    </span>
-                ) : (
-                    <span
-                        aria-hidden="true"
-                        className="mt-1 flex flex-wrap gap-1"
-                    >
-                        {shortcutKeyLabels(shortcut).map((key, index, keys) => (
-                            <KeyboardKey
-                                isIcon={index < keys.length - 1}
-                                key={`${key}:${index}`}
-                                label={key}
-                            />
-                        ))}
-                    </span>
-                )}
-            </span>
-        </button>
     );
 }
 
@@ -275,11 +154,16 @@ export function OptionsMenu({ onShowDeletedItems }: OptionsMenuProps) {
                 </section>
 
                 {getPlatformAdapter().kind === 'desktop' && (
-                    <section>
+                    <section className="planner-settings-section">
                         <GroupLabel>Desktop shortcuts</GroupLabel>
-                        {DESKTOP_SHORTCUT_OPTIONS.map(option => (
-                            <ShortcutRow key={option.commandId} {...option} />
-                        ))}
+                        <DesktopShortcutSettings
+                            onUpdate={desktopShortcuts =>
+                                commands.updatePreferences({
+                                    desktopShortcuts,
+                                })
+                            }
+                            shortcuts={preferences.desktopShortcuts}
+                        />
                     </section>
                 )}
 
