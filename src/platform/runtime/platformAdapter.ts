@@ -90,12 +90,12 @@ export class TauriPlatformAdapter implements PlatformAdapter {
         let released = false;
         return async () => {
             if (released) return;
-            released = true;
             const registered = [...this.#registered];
+            if (registered.length > 0) await unregister(registered);
+            released = true;
             this.#registered = [];
             this.#registeredEntries = [];
             this.#registeredHandler = null;
-            if (registered.length > 0) await unregister(registered);
         };
     }
 

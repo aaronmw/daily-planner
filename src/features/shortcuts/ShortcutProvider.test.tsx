@@ -6,6 +6,7 @@ import {
     screen,
     waitFor,
 } from '@testing-library/react';
+import { useState } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
     ShortcutHint,
@@ -68,6 +69,7 @@ function RecorderHarness({
     onStart?: () => void | Promise<void>;
     onTrigger: () => void;
 }) {
+    const [startError, setStartError] = useState('');
     useShortcut({
         onTrigger,
         shortcut: commandOne,
@@ -80,7 +82,19 @@ function RecorderHarness({
 
     return (
         <>
-            <button onClick={() => void recorder.start()} type="button">
+            <button
+                onClick={() => {
+                    setStartError('');
+                    void recorder.start().catch(error => {
+                        setStartError(
+                            error instanceof Error
+                                ? error.message
+                                : 'Start failed'
+                        );
+                    });
+                }}
+                type="button"
+            >
                 Record
             </button>
             <button onClick={recorder.cancel} type="button">
@@ -92,6 +106,7 @@ function RecorderHarness({
             <output data-testid="pressed-keys">
                 {recorder.pressedKeyLabels.join('')}
             </output>
+            <output data-testid="start-error">{startError}</output>
         </>
     );
 }
@@ -437,6 +452,28 @@ describe('ShortcutProvider', () => {
         );
     });
 
+    it('exposes recorder ownership while an asynchronous start is pending', async () => {
+        const start = createDeferred<undefined>();
+        const onCancel = vi.fn();
+        renderRecorderHarness({ onCancel, onStart: () => start.promise });
+
+        fireEvent.click(screen.getByRole('button', { name: 'Record' }));
+
+        expect(screen.getByTestId('recording-active')).toHaveTextContent(
+            'true'
+        );
+
+        fireEvent.click(
+            screen.getByRole('button', { name: 'Cancel recording' })
+        );
+        expect(screen.getByTestId('recording-active')).toHaveTextContent(
+            'false'
+        );
+
+        await act(async () => start.resolve(undefined));
+        expect(onCancel).toHaveBeenCalledOnce();
+    });
+
     it('does not start a queued recorder after it is cancelled', async () => {
         const firstStart = createDeferred<undefined>();
         const firstOnStart = vi.fn(() => firstStart.promise);
@@ -522,16 +559,19 @@ describe('ShortcutProvider', () => {
         expect(onCancel).toHaveBeenCalledOnce();
     });
 
-    it('does not activate or throw when onStart throws synchronously', () => {
+    it('rejects the start promise when onStart throws synchronously', async () => {
         const onStart = vi.fn(() => {
             throw new Error('start failed');
         });
         renderRecorderHarness({ onStart });
 
-        expect(() =>
-            fireEvent.click(screen.getByRole('button', { name: 'Record' }))
-        ).not.toThrow();
+        fireEvent.click(screen.getByRole('button', { name: 'Record' }));
 
+        await waitFor(() =>
+            expect(screen.getByTestId('start-error')).toHaveTextContent(
+                'start failed'
+            )
+        );
         expect(screen.getByTestId('recording-active')).toHaveTextContent(
             'false'
         );

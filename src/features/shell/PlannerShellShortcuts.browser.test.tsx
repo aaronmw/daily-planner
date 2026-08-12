@@ -10,6 +10,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { PlannerCommands } from '../../core/application/plannerCommands';
 import { PlannerCommandsProvider } from '../../core/application/plannerContext';
 import { CollaborationProvider } from '../../core/collaboration/CollaborationContext';
+import { DEFAULT_DESKTOP_SHORTCUTS } from '../../core/application/commandIds';
 import {
     createPlannerItem,
     createPlannerList,
@@ -18,6 +19,7 @@ import type { PlannerPreferences } from '../../core/domain/types';
 import { PlannerStoreProvider } from '../../core/store/plannerContext';
 import { createPlannerStore } from '../../core/store/plannerStore';
 import { ItemDragProvider } from '../items/ItemDragProvider';
+import { DesktopShortcutSettings } from '../settings/DesktopShortcutSettings';
 import { ShortcutProvider } from '../shortcuts/ShortcutProvider';
 import { PlannerShell } from './PlannerShell';
 import '../../styles/index.css';
@@ -100,6 +102,35 @@ const createHarness = ({ includeDeletedItems = false } = {}) => {
 };
 
 describe('PlannerShell contextual shortcuts', () => {
+    it('divides only adjacent desktop shortcut rows', () => {
+        render(
+            <div
+                style={
+                    {
+                        '--planner-border': '#000',
+                    } as React.CSSProperties
+                }
+            >
+                <ShortcutProvider>
+                    <DesktopShortcutSettings
+                        onUpdate={() => undefined}
+                        shortcuts={DEFAULT_DESKTOP_SHORTCUTS}
+                    />
+                </ShortcutProvider>
+            </div>
+        );
+        const rows = Array.from(
+            document.querySelectorAll<HTMLElement>(
+                '.planner-desktop-shortcut-row'
+            )
+        );
+
+        expect(rows).toHaveLength(3);
+        expect(getComputedStyle(rows[0]!).borderTopWidth).toBe('0px');
+        expect(getComputedStyle(rows[1]!).borderTopStyle).toBe('solid');
+        expect(getComputedStyle(rows[2]!).borderTopStyle).toBe('solid');
+    });
+
     it('hides Deleted items when nothing has been deleted', async () => {
         const user = userEvent.setup();
         createHarness();

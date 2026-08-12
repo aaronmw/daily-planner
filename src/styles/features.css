@@ -60,7 +60,6 @@
 
 .planner-desktop-shortcut-row {
     align-items: center;
-    border-top: var(--planner-stroke-width) solid var(--planner-border);
     display: grid;
     grid-template-columns: 45px minmax(0, 1fr) auto 45px;
     min-height: 54px;
@@ -68,6 +67,10 @@
     transition:
         background-color var(--planner-motion-fast) var(--planner-motion-ease),
         color var(--planner-motion-fast) var(--planner-motion-ease);
+}
+
+.planner-desktop-shortcut-row + .planner-desktop-shortcut-row {
+    border-top: var(--planner-stroke-width) solid var(--planner-border);
 }
 
 .planner-desktop-shortcut-row:hover,

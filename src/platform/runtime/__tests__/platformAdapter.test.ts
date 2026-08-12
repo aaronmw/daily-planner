@@ -86,4 +86,23 @@ describe('TauriPlatformAdapter shortcuts', () => {
         await cleanupPromise;
         expect(cleanupSettled).toBe(true);
     });
+
+    it('keeps a failed global shortcut cleanup retryable', async () => {
+        const adapter = new TauriPlatformAdapter();
+        const registered = Object.values(DEFAULT_DESKTOP_SHORTCUTS);
+        unregister
+            .mockRejectedValueOnce(new Error('Native unregister failed'))
+            .mockResolvedValueOnce(undefined);
+
+        const cleanup = await adapter.registerGlobalShortcuts(
+            DEFAULT_DESKTOP_SHORTCUTS,
+            () => undefined
+        );
+
+        await expect(cleanup()).rejects.toThrow('Native unregister failed');
+        await cleanup();
+
+        expect(unregister).toHaveBeenNthCalledWith(1, registered);
+        expect(unregister).toHaveBeenNthCalledWith(2, registered);
+    });
 });

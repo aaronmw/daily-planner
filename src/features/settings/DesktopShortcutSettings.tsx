@@ -40,6 +40,15 @@ const DESKTOP_SHORTCUT_OPTIONS: readonly {
 const errorMessage = (error: unknown): string =>
     error instanceof Error ? error.message : 'That shortcut is unavailable.';
 
+const persistenceErrorMessage = (error: unknown): string =>
+    `Could not save shortcut: ${errorMessage(error)}`;
+
+const persistenceRestorationErrorMessage = (
+    persistenceError: unknown,
+    restorationError: unknown
+): string =>
+    `${persistenceErrorMessage(persistenceError)}. Restoring the previous shortcut also failed: ${errorMessage(restorationError)}`;
+
 function DesktopShortcutRow({
     commandId,
     icon,
@@ -66,17 +75,38 @@ function DesktopShortcutRow({
             setError('');
             setPending(true);
             try {
-                await desktopShortcutCoordinator.update(next);
+                try {
+                    await desktopShortcutCoordinator.update(next);
+                } catch (caught) {
+                    if (recordingSessionRef.current === recordingSession) {
+                        setError(errorMessage(caught));
+                    }
+                    return false;
+                }
                 if (recordingSessionRef.current !== recordingSession) {
                     return false;
                 }
-                onUpdate(next);
-                return true;
-            } catch (caught) {
-                if (recordingSessionRef.current === recordingSession) {
-                    setError(errorMessage(caught));
+                try {
+                    onUpdate(next);
+                    return true;
+                } catch (persistenceError) {
+                    try {
+                        await desktopShortcutCoordinator.update(shortcuts);
+                        if (recordingSessionRef.current === recordingSession) {
+                            setError(persistenceErrorMessage(persistenceError));
+                        }
+                    } catch (restorationError) {
+                        if (recordingSessionRef.current === recordingSession) {
+                            setError(
+                                persistenceRestorationErrorMessage(
+                                    persistenceError,
+                                    restorationError
+                                )
+                            );
+                        }
+                    }
+                    return false;
                 }
-                return false;
             } finally {
                 if (recordingSessionRef.current === recordingSession) {
                     setPending(false);
@@ -102,7 +132,13 @@ function DesktopShortcutRow({
 
     const beginRecording = async () => {
         setError('');
-        await start();
+        try {
+            await start();
+        } catch (caught) {
+            setError(
+                `Could not start shortcut editing: ${errorMessage(caught)}`
+            );
+        }
     };
 
     return (
@@ -141,8 +177,9 @@ function DesktopShortcutRow({
                 ))}
             </span>
             <IconButton
+                aria-busy={pending || undefined}
                 aria-pressed={active}
-                disabled={pending}
+                disabled={pending && !active}
                 icon={pending ? 'spinner' : 'pencil'}
                 label={`${active ? 'Stop editing' : 'Edit'} shortcut for ${label}`}
                 onBlur={active ? cancel : undefined}

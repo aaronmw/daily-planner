@@ -115,4 +115,26 @@ describe('desktop shortcuts', () => {
 
         await desktopShortcutCoordinator.dispose();
     });
+
+    it('retains a failed cleanup so disposal can be retried', async () => {
+        const cleanup = vi
+            .fn<() => Promise<void>>()
+            .mockRejectedValueOnce(new Error('Native unregister failed'))
+            .mockResolvedValue(undefined);
+        const registerGlobalShortcuts = vi.fn(async () => cleanup);
+        getPlatformAdapter.mockReturnValue({ registerGlobalShortcuts });
+
+        await desktopShortcutCoordinator.update(DEFAULT_DESKTOP_SHORTCUTS);
+
+        await expect(desktopShortcutCoordinator.dispose()).rejects.toThrow(
+            'Native unregister failed'
+        );
+        await desktopShortcutCoordinator.dispose();
+
+        expect(cleanup).toHaveBeenCalledTimes(2);
+
+        await desktopShortcutCoordinator.update(DEFAULT_DESKTOP_SHORTCUTS);
+        expect(registerGlobalShortcuts).toHaveBeenCalledTimes(2);
+        await desktopShortcutCoordinator.dispose();
+    });
 });

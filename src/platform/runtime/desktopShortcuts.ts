@@ -200,9 +200,9 @@ class DesktopShortcutCoordinator {
 
     async #dispose(): Promise<void> {
         const cleanup = this.#cleanup;
+        await cleanup?.();
         this.#cleanup = null;
         this.#serialized = '';
-        await cleanup?.();
     }
 }
 
