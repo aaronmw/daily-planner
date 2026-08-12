@@ -27,11 +27,34 @@ afterEach(() => {
     vi.restoreAllMocks();
 });
 
-const createHarness = () => {
+const createHarness = ({ includeDeletedItems = false } = {}) => {
     const list = createPlannerList({ label: 'Shell shortcut list' });
     const item = createPlannerItem({ label: 'Shell item', listId: list.id });
+    const archivedList = {
+        ...createPlannerList({ label: 'Archived shell list' }),
+        isArchived: true,
+    };
+    const archivedItemInActiveList = {
+        ...createPlannerItem({
+            label: 'Archived shell item',
+            listId: list.id,
+        }),
+        isArchived: true,
+    };
+    const archivedItemInArchivedList = {
+        ...createPlannerItem({
+            label: 'Archived shell list item',
+            listId: archivedList.id,
+        }),
+        isArchived: true,
+    };
     const store = createPlannerStore();
-    store.getState().applySnapshot({ items: [item], lists: [list] });
+    store.getState().applySnapshot({
+        items: includeDeletedItems
+            ? [item, archivedItemInActiveList, archivedItemInArchivedList]
+            : [item],
+        lists: includeDeletedItems ? [list, archivedList] : [list],
+    });
     const updatePreferences = vi.fn((changes: Partial<PlannerPreferences>) => {
         const current = store.getState().preferences;
         store.getState().setPreferences({ ...current, ...changes });
@@ -77,6 +100,68 @@ const createHarness = () => {
 };
 
 describe('PlannerShell contextual shortcuts', () => {
+    it('hides Deleted items when nothing has been deleted', async () => {
+        const user = userEvent.setup();
+        createHarness();
+
+        await user.click(screen.getByRole('button', { name: 'Options' }));
+
+        expect(
+            screen.queryByRole('button', { name: /Deleted items/i })
+        ).not.toBeInTheDocument();
+    });
+
+    it('opens Deleted Items from the counted options button', async () => {
+        const user = userEvent.setup();
+        createHarness({ includeDeletedItems: true });
+
+        await user.click(screen.getByRole('button', { name: 'Options' }));
+
+        const deletedItemsButton = screen.getByRole('button', {
+            name: 'Deleted items, 3',
+        });
+        expect(deletedItemsButton).toHaveTextContent('3');
+        expect(
+            deletedItemsButton.querySelector('.fa-trash')
+        ).not.toBeNull();
+
+        await user.click(deletedItemsButton);
+
+        expect(
+            screen.queryByRole('dialog', { name: 'Options' })
+        ).not.toBeInTheDocument();
+        expect(
+            screen.getByRole('heading', { name: 'Deleted Items' })
+        ).toBeVisible();
+    });
+
+    it('keeps settings separators with the sections they introduce', async () => {
+        const user = userEvent.setup();
+        createHarness();
+
+        await user.click(screen.getByRole('button', { name: 'Options' }));
+
+        const panel = screen.getByRole('dialog', { name: 'Options' });
+        const sections = Array.from(
+            panel.querySelectorAll<HTMLElement>('.planner-settings-section')
+        );
+        expect(sections.length).toBeGreaterThan(1);
+        for (const section of sections.slice(1)) {
+            expect(getComputedStyle(section).borderTopStyle).toBe('solid');
+            expect(section.firstElementChild).toHaveRole('heading');
+        }
+
+        const syncHeading = screen.getByRole('heading', {
+            name: 'Sync & sharing',
+        });
+        const encryptedSync = screen.getByText('Encrypted sync').closest(
+            '.planner-settings-row'
+        );
+        expect(encryptedSync).not.toBeNull();
+        expect(encryptedSync?.previousElementSibling).toBe(syncHeading);
+        expect(getComputedStyle(encryptedSync!).borderTopWidth).toBe('0px');
+    });
+
     it('opens Options as a labelled disclosure panel', async () => {
         const user = userEvent.setup();
         createHarness();

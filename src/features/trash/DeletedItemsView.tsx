@@ -5,16 +5,7 @@ import { usePlannerSelector } from '../../core/store/plannerContext';
 import { listIdSchema, itemIdSchema } from '../../core/domain/ids';
 import { IconButton } from '../shell/IconButton';
 import { useListCapability } from '../collaboration/useListCapability';
-
-type DeletedItem =
-    | { id: string; label: string; listId: string; type: 'list' }
-    | {
-          id: string;
-          label: string;
-          listArchived: boolean;
-          listId: string;
-          type: 'item';
-      };
+import { buildDeletedItems, type DeletedItem } from './deletedItems';
 
 function DeletedItemRow({
     armed,
@@ -84,31 +75,10 @@ export function DeletedItems({ onClose }: { onClose: () => void }) {
     const plannerItems = usePlannerSelector(state => state.itemsById);
     const [armedId, setArmedId] = useState<string | null>(null);
     const parentRef = useRef<HTMLDivElement>(null);
-    const deletedItems = useMemo<DeletedItem[]>(() => {
-        const deletedItems: DeletedItem[] = [];
-        for (const list of lists.values()) {
-            if (list.isArchived) {
-                deletedItems.push({
-                    id: list.id,
-                    label: list.label || 'Untitled list',
-                    listId: list.id,
-                    type: 'list',
-                });
-            }
-        }
-        for (const item of plannerItems.values()) {
-            if (item.isArchived) {
-                deletedItems.push({
-                    id: item.id,
-                    label: item.label || 'Untitled item',
-                    listArchived: lists.get(item.listId)?.isArchived ?? false,
-                    listId: item.listId,
-                    type: 'item',
-                });
-            }
-        }
-        return deletedItems;
-    }, [lists, plannerItems]);
+    const deletedItems = useMemo(
+        () => buildDeletedItems(lists, plannerItems),
+        [lists, plannerItems]
+    );
     const virtualizer = useVirtualizer({
         count: deletedItems.length,
         estimateSize: () => 47,

@@ -34,7 +34,7 @@ const ItemDetailsColumn = lazy(async () => {
 });
 
 const DeletedItems = lazy(async () => {
-    const module = await import('../trash/DeletedItems');
+    const module = await import('../trash/DeletedItemsView');
     return { default: module.DeletedItems };
 });
 

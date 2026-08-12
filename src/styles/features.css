@@ -451,6 +451,26 @@ html[data-item-dragging='true'] * {
     width: min(460px, calc(100vw - 24px));
 }
 
+.planner-settings-section + .planner-settings-section {
+    border-top: var(--planner-stroke-width) solid var(--planner-border);
+}
+
+.planner-settings-row + .planner-settings-row {
+    border-top: var(--planner-stroke-width) solid var(--planner-border);
+}
+
+.planner-deleted-items-button {
+    min-height: 45px;
+    text-align: left;
+    width: 100%;
+}
+
+.planner-deleted-items-button .planner-ghost-button-content {
+    align-items: center;
+    display: grid;
+    grid-template-columns: 45px minmax(0, 1fr) 45px;
+}
+
 .planner-item-card-shortcut,
 .planner-item-card-icon {
     transition:

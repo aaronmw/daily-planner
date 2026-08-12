@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { usePlannerCommands } from '../../core/application/plannerContext';
 import { usePlannerSelector } from '../../core/store/plannerContext';
 import type { ThemeMode } from '../../core/domain/types';
@@ -16,6 +16,8 @@ import {
 } from '../shortcuts/ShortcutProvider';
 import { CYCLE_THEME_SHORTCUT } from '../shortcuts/appShortcuts';
 import { DesktopShortcutSettings } from './DesktopShortcutSettings';
+import { GhostButton } from '../shell/GhostButton';
+import { buildDeletedItems } from '../trash/deletedItems';
 
 interface OptionsMenuProps {
     onShowDeletedItems: () => void;
@@ -72,6 +74,8 @@ export function OptionsMenu({ onShowDeletedItems }: OptionsMenuProps) {
     const collaboration = useCollaboration();
     const preferences = usePlannerSelector(state => state.preferences);
     const syncStatus = usePlannerSelector(state => state.syncStatus);
+    const lists = usePlannerSelector(state => state.listsById);
+    const plannerItems = usePlannerSelector(state => state.itemsById);
     const identityEmail = useCollaborationSelector(
         state => state.identityEmail
     );
@@ -92,7 +96,11 @@ export function OptionsMenu({ onShowDeletedItems }: OptionsMenuProps) {
     const [notificationPending, setNotificationPending] = useState(false);
     const [notificationError, setNotificationError] = useState('');
     const rowClass =
-        'grid min-h-[45px] w-full grid-cols-[45px_minmax(0,1fr)_45px] items-center border-t-[length:var(--planner-stroke-width)] border-planner-border text-left transition-[background-color,color] duration-150 hover:bg-planner-shaded';
+        'planner-settings-row grid min-h-[45px] w-full grid-cols-[45px_minmax(0,1fr)_45px] items-center text-left transition-[background-color,color] duration-150 hover:bg-planner-shaded';
+    const deletedItemCount = useMemo(
+        () => buildDeletedItems(lists, plannerItems).length,
+        [lists, plannerItems]
+    );
 
     const close = () => setOpen(false);
     const handleLauncherClick = () => {
@@ -170,7 +178,7 @@ export function OptionsMenu({ onShowDeletedItems }: OptionsMenuProps) {
                     role="dialog"
                 >
 
-                <section>
+                <section className="planner-settings-section">
                     <GroupLabel shortcut={CYCLE_THEME_SHORTCUT}>
                         Lighting mode
                     </GroupLabel>
@@ -212,7 +220,7 @@ export function OptionsMenu({ onShowDeletedItems }: OptionsMenuProps) {
                     </section>
                 )}
 
-                <section>
+                <section className="planner-settings-section">
                     <GroupLabel>Timeline</GroupLabel>
                     <div className={`${rowClass} cursor-default`}>
                         <span className="grid size-[45px] place-items-center">
@@ -264,7 +272,7 @@ export function OptionsMenu({ onShowDeletedItems }: OptionsMenuProps) {
                     </button>
                 </section>
 
-                <section>
+                <section className="planner-settings-section">
                     <GroupLabel>Editing</GroupLabel>
                     <button
                         aria-checked={preferences.focusAssistEnabled}
@@ -310,7 +318,7 @@ export function OptionsMenu({ onShowDeletedItems }: OptionsMenuProps) {
                     </button>
                 </section>
 
-                <section>
+                <section className="planner-settings-section">
                     <GroupLabel>Sync &amp; sharing</GroupLabel>
                     <div className={`${rowClass} cursor-default`}>
                         <span className="grid size-[45px] place-items-center">
@@ -624,25 +632,26 @@ export function OptionsMenu({ onShowDeletedItems }: OptionsMenuProps) {
                     )}
                 </section>
 
-                <section>
-                    <GroupLabel>Planner</GroupLabel>
-                    <button
-                        className={rowClass}
-                        onClick={() => {
-                            close();
-                            onShowDeletedItems();
-                        }}
-                        type="button"
-                    >
-                        <span className="grid size-[45px] place-items-center">
-                            <Icon name="trash" />
-                        </span>
-                        <span>Deleted items</span>
-                        <span className="grid size-[45px] place-items-center">
-                            <Icon name="chevron-right" />
-                        </span>
-                    </button>
-                </section>
+                {deletedItemCount > 0 && (
+                    <section className="planner-settings-section">
+                        <GhostButton
+                            aria-label={`Deleted items, ${deletedItemCount}`}
+                            className="planner-deleted-items-button"
+                            onClick={() => {
+                                close();
+                                onShowDeletedItems();
+                            }}
+                        >
+                            <span className="grid size-[45px] place-items-center">
+                                <Icon name="trash" />
+                            </span>
+                            <span>Deleted items</span>
+                            <span className="grid size-[45px] place-items-center tabular-nums">
+                                {deletedItemCount}
+                            </span>
+                        </GhostButton>
+                    </section>
+                )}
                 </div>
             )}
         </div>
