@@ -57,4 +57,33 @@ describe('TauriPlatformAdapter shortcuts', () => {
         });
         expect(dispatched).toEqual(['create-item']);
     });
+
+    it('waits for global shortcuts to unregister before cleanup resolves', async () => {
+        const adapter = new TauriPlatformAdapter();
+        const registered = Object.values(DEFAULT_DESKTOP_SHORTCUTS);
+        let resolveUnregister: (() => void) | undefined;
+        unregister.mockImplementationOnce(
+            () =>
+                new Promise<void>(resolve => {
+                    resolveUnregister = resolve;
+                })
+        );
+
+        const cleanup = await adapter.registerGlobalShortcuts(
+            DEFAULT_DESKTOP_SHORTCUTS,
+            () => undefined
+        );
+        let cleanupSettled = false;
+        const cleanupPromise = Promise.resolve(cleanup()).then(() => {
+            cleanupSettled = true;
+        });
+
+        await Promise.resolve();
+        expect(unregister).toHaveBeenCalledWith(registered);
+        expect(cleanupSettled).toBe(false);
+
+        resolveUnregister?.();
+        await cleanupPromise;
+        expect(cleanupSettled).toBe(true);
+    });
 });

@@ -86,7 +86,7 @@ export interface PlatformAdapter {
     registerGlobalShortcuts: (
         shortcuts: Readonly<Record<PlannerCommandId, string>>,
         onCommand: (commandId: PlannerCommandId) => void
-    ) => Promise<() => void>;
+    ) => Promise<() => void | Promise<void>>;
     showPlanner: () => Promise<void>;
 }
 

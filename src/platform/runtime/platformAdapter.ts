@@ -43,7 +43,7 @@ export class TauriPlatformAdapter implements PlatformAdapter {
     async registerGlobalShortcuts(
         shortcuts: Readonly<Record<PlannerCommandId, string>>,
         onCommand: (commandId: PlannerCommandId) => void
-    ): Promise<() => void> {
+    ): Promise<() => void | Promise<void>> {
         if (!shortcutsAreUnique(shortcuts)) {
             throw new Error('Desktop shortcuts must be unique.');
         }
@@ -88,14 +88,14 @@ export class TauriPlatformAdapter implements PlatformAdapter {
             throw error;
         }
         let released = false;
-        return () => {
+        return async () => {
             if (released) return;
             released = true;
             const registered = [...this.#registered];
             this.#registered = [];
             this.#registeredEntries = [];
             this.#registeredHandler = null;
-            if (registered.length > 0) void unregister(registered);
+            if (registered.length > 0) await unregister(registered);
         };
     }
 

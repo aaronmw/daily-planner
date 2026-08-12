@@ -1,11 +1,19 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { DEFAULT_DESKTOP_SHORTCUTS } from '../../../core/application/commandIds';
 import {
+    desktopShortcutCoordinator,
     describeShortcut,
     shortcutFromKeyboardEvent,
     shortcutKeyLabels,
+    shortcutKeyLabelsFromKeyboardEvent,
     validateShortcutMap,
 } from '../desktopShortcuts';
+
+const getPlatformAdapter = vi.hoisted(() => vi.fn());
+
+vi.mock('../platformAdapter', () => ({
+    getPlatformAdapter,
+}));
 
 describe('desktop shortcuts', () => {
     it('formats the default planner accelerator', () => {
@@ -32,5 +40,71 @@ describe('desktop shortcuts', () => {
                 'create-item': DEFAULT_DESKTOP_SHORTCUTS['create-list'],
             })
         ).toThrow('unique');
+    });
+
+    it('formats modifier-only and completed keyboard-event previews', () => {
+        expect(
+            shortcutKeyLabelsFromKeyboardEvent(
+                new KeyboardEvent('keydown', {
+                    code: 'MetaLeft',
+                    key: 'Meta',
+                    metaKey: true,
+                })
+            )
+        ).toEqual(['⌘']);
+
+        expect(
+            shortcutKeyLabelsFromKeyboardEvent(
+                new KeyboardEvent('keydown', {
+                    code: 'KeyP',
+                    key: 'p',
+                    metaKey: true,
+                    shiftKey: true,
+                })
+            )
+        ).toEqual(['⇧', '⌘', 'P']);
+    });
+
+    it('waits for deferred disposal before registering the next shortcuts', async () => {
+        const operations: string[] = [];
+        let resolveCleanup: (() => void) | undefined;
+        const original = DEFAULT_DESKTOP_SHORTCUTS;
+        const next = {
+            ...DEFAULT_DESKTOP_SHORTCUTS,
+            'create-item': 'Shift+Control+Alt+Super+KeyN',
+        } as const;
+        getPlatformAdapter.mockReturnValue({
+            registerGlobalShortcuts: vi.fn(async shortcuts => {
+                if (shortcuts === original) {
+                    operations.push('register:original');
+                    return () =>
+                        new Promise<void>(resolve => {
+                            resolveCleanup = () => {
+                                operations.push('unregister:original');
+                                resolve();
+                            };
+                        });
+                }
+                operations.push('register:next');
+                return () => undefined;
+            }),
+        });
+
+        await desktopShortcutCoordinator.update(original);
+        const disposal = desktopShortcutCoordinator.dispose();
+        const update = desktopShortcutCoordinator.update(next);
+
+        await Promise.resolve();
+        expect(resolveCleanup).toBeTypeOf('function');
+        resolveCleanup?.();
+        await Promise.all([disposal, update]);
+
+        expect(operations).toEqual([
+            'register:original',
+            'unregister:original',
+            'register:next',
+        ]);
+
+        await desktopShortcutCoordinator.dispose();
     });
 });

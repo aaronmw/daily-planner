@@ -107,6 +107,22 @@ export const shortcutFromKeyboardEvent = (
     return [...modifiers.map(value => value.accelerator), event.code].join('+');
 };
 
+export const shortcutKeyLabelsFromKeyboardEvent = (
+    event: KeyboardEvent | React.KeyboardEvent
+): string[] => {
+    const labels = MODIFIERS.filter(value => event[value.eventProperty]).map(
+        value => value.symbol
+    );
+    if (
+        event.code &&
+        !MODIFIER_CODES.has(event.code) &&
+        supportedCode(event.code)
+    ) {
+        labels.push(keyLabel(event.code));
+    }
+    return labels;
+};
+
 export const shortcutKeyLabels = (shortcut: string): string[] => {
     const parsed = parseShortcut(shortcut);
     if (!parsed) return [];
@@ -142,13 +158,33 @@ export const validateShortcutMap = (
 class DesktopShortcutCoordinator {
     #cleanup: (() => void | Promise<void>) | null = null;
     #handler: ((command: PlannerCommandId) => void) | null = null;
+    #operation: Promise<void> = Promise.resolve();
     #serialized = '';
 
     setHandler(handler: (command: PlannerCommandId) => void): void {
         this.#handler = handler;
     }
 
-    async update(
+    update(
+        shortcuts: Readonly<Record<PlannerCommandId, string>>
+    ): Promise<void> {
+        return this.#enqueue(() => this.#update(shortcuts));
+    }
+
+    dispose(): Promise<void> {
+        return this.#enqueue(() => this.#dispose());
+    }
+
+    #enqueue<T>(operation: () => Promise<T>): Promise<T> {
+        const result = this.#operation.then(operation, operation);
+        this.#operation = result.then(
+            () => undefined,
+            () => undefined
+        );
+        return result;
+    }
+
+    async #update(
         shortcuts: Readonly<Record<PlannerCommandId, string>>
     ): Promise<void> {
         validateShortcutMap(shortcuts);
@@ -162,7 +198,7 @@ class DesktopShortcutCoordinator {
         this.#serialized = serialized;
     }
 
-    async dispose(): Promise<void> {
+    async #dispose(): Promise<void> {
         const cleanup = this.#cleanup;
         this.#cleanup = null;
         this.#serialized = '';
