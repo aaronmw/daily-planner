@@ -11,6 +11,15 @@ import type { ItemId } from '../../core/domain/ids';
 import { GhostButton } from '../shell/GhostButton';
 import { isTextEntryTarget } from '../shell/isTextEntryTarget';
 import { useItemListDropTarget } from './useItemListDropTarget';
+import {
+    ShortcutHint,
+    useShortcut,
+    useShortcuts,
+} from '../shortcuts/ShortcutProvider';
+import {
+    CREATE_ITEM_SHORTCUT,
+    ITEM_SELECTION_SHORTCUTS,
+} from '../shortcuts/appShortcuts';
 
 const EMPTY_ITEM_IDS: readonly ItemId[] = [];
 
@@ -159,6 +168,18 @@ export function ItemColumn({
         },
         [commands, scheduleItemFocus, itemIds, virtualizer]
     );
+    useShortcuts(
+        ITEM_SELECTION_SHORTCUTS.map((shortcut, index) => ({
+            enabled: index < itemIds.length,
+            onTrigger: () => focusIndex(index),
+            shortcut,
+        }))
+    );
+    const createItemShortcutProps = useShortcut({
+        enabled: canWrite,
+        onTrigger: () => void commands.createItem(),
+        shortcut: CREATE_ITEM_SHORTCUT,
+    });
 
     useEffect(() => {
         if (
@@ -218,23 +239,10 @@ export function ItemColumn({
                 focusIndex(next);
                 return;
             }
-            if (/^[1-9]$/.test(event.key)) {
-                const index = Number(event.key) - 1;
-                if (index < itemIds.length) {
-                    event.preventDefault();
-                    focusIndex(index);
-                }
-                return;
-            }
-            if (event.key.toLowerCase() === 'n' && canWrite) {
-                event.preventDefault();
-                void commands.createItem();
-                return;
-            }
         };
         document.addEventListener('keydown', listener);
         return () => document.removeEventListener('keydown', listener);
-    }, [canWrite, commands, focusIndex, selectedItemId, itemIds]);
+    }, [focusIndex, selectedItemId, itemIds]);
 
     useEffect(
         () => () => {
@@ -262,10 +270,16 @@ export function ItemColumn({
                 {virtualizer.getVirtualItems().map(item => {
                     const entry = entries[item.index];
                     if (!entry) return null;
-                    const shortcut =
+                    const shortcutNumber =
                         entry.kind === 'item'
                             ? itemIds.indexOf(entry.id) + 1
                             : null;
+                    const shortcut =
+                        shortcutNumber !== null &&
+                        shortcutNumber >= 1 &&
+                        shortcutNumber <= 9
+                            ? ITEM_SELECTION_SHORTCUTS[shortcutNumber - 1]
+                            : undefined;
                     const previewItem =
                         entry.kind === 'drop-preview' ? draggedItem : null;
                     return (
@@ -281,6 +295,7 @@ export function ItemColumn({
                         >
                             {entry.kind === 'create' ? (
                                 <GhostButton
+                                    {...createItemShortcutProps}
                                     className="w-full font-semibold transition-[height] duration-150"
                                     data-create-item
                                     disabled={!canWrite}
@@ -291,16 +306,22 @@ export function ItemColumn({
                                             : 72,
                                     }}
                                 >
-                                    {canWrite ? 'Create Item' : 'Read only'}
+                                    {canWrite ? (
+                                        <>
+                                            Create Item
+                                            <ShortcutHint
+                                                className="planner-create-item-shortcut"
+                                                shortcut={CREATE_ITEM_SHORTCUT}
+                                            />
+                                        </>
+                                    ) : (
+                                        'Read only'
+                                    )}
                                 </GhostButton>
                             ) : entry.kind === 'item' ? (
                                 <ItemCard
                                     id={entry.id}
-                                    {...(shortcut !== null &&
-                                    shortcut >= 1 &&
-                                    shortcut <= 9
-                                        ? { shortcut }
-                                        : {})}
+                                    {...(shortcut ? { shortcut } : {})}
                                 />
                             ) : previewItem ? (
                                 <div

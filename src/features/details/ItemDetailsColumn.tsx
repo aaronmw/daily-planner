@@ -73,7 +73,7 @@ export function ItemDetailsColumn() {
                 </div>
             </div>
 
-            <section className="min-h-[240px] flex-1 p-4">
+            <section className="flex min-h-[240px] min-w-0 flex-1 flex-col p-4">
                 <h2 className="mb-2 text-[0.8rem] uppercase text-planner-text-faded">
                     Notes
                 </h2>

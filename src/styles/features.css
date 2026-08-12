@@ -17,10 +17,24 @@
     border-radius: 2px;
     display: inline-grid;
     font-family: inherit;
-    height: 21px;
+    height: var(--planner-keyboard-key-size);
     justify-items: center;
-    min-width: 21px;
+    min-width: var(--planner-keyboard-key-size);
     padding: 2px 3px 3px;
+}
+
+.planner-shortcut-hint {
+    align-items: center;
+    display: inline-flex;
+    gap: 2px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--planner-motion-fast) var(--planner-motion-ease);
+    white-space: nowrap;
+}
+
+.planner-shortcut-hint[data-visible='true'] {
+    opacity: 1;
 }
 
 .planner-keyboard-key-face {
@@ -85,7 +99,7 @@
     opacity: 0.5;
 }
 
-.planner-ghost-tracer-frame {
+.planner-marching-ants-frame {
     display: block;
     height: 100%;
     inset: 0;
@@ -95,7 +109,7 @@
     width: 100%;
 }
 
-.planner-ghost-tracer {
+.planner-marching-ants {
     animation: planner-tracer 0.5s linear infinite paused;
     fill: none;
     stroke: var(--planner-dotted-line);
@@ -106,8 +120,8 @@
         stroke var(--planner-motion-fast) var(--planner-motion-ease);
 }
 
-.planner-ghost-button:hover .planner-ghost-tracer,
-.planner-ghost-button:focus .planner-ghost-tracer {
+.planner-ghost-button:hover .planner-marching-ants,
+.planner-ghost-button:focus .planner-marching-ants {
     animation-play-state: running;
     stroke: var(--planner-border);
 }
@@ -295,11 +309,50 @@ html[data-item-dragging='true'] * {
 }
 
 .planner-item-card-shortcut {
-    left: 0;
+    position: absolute;
+    right: calc(var(--planner-keyboard-key-size) / -3);
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 1;
+}
+
+.planner-item-card-shortcut[data-visible='true'] ~ .planner-item-card-icon {
+    opacity: 0;
+}
+
+.planner-create-item-shortcut {
+    position: absolute;
+    right: calc(var(--planner-keyboard-key-size) / -3);
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 1;
+}
+
+.planner-column-shortcut {
+    left: calc(100% + 8px);
     position: absolute;
     top: 50%;
-    transform: translate(-50%, -50%);
+    transform: translateY(-50%);
+}
+
+.planner-column-expand-shortcut {
+    position: absolute;
+    right: calc(var(--planner-keyboard-key-size) / -3);
+    top: calc(
+        (var(--spacing-icon-slot) - var(--planner-keyboard-key-size)) / 2
+    );
     z-index: 1;
+}
+
+.planner-column-expand-shortcut[data-visible='true'] ~ .planner-column-expand {
+    opacity: 0;
+}
+
+.planner-settings-group-shortcut {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
 }
 
 .planner-item-card-shortcut,
@@ -319,7 +372,7 @@ html[data-item-dragging='true'] * {
         display: none;
     }
 
-    .planner-ghost-tracer {
+    .planner-marching-ants {
         animation: none;
     }
 }

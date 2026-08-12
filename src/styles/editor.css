@@ -1,4 +1,5 @@
 .planner-editable-text {
+    border-radius: var(--radius-planner);
     cursor: pointer;
     height: auto;
     position: relative;
@@ -12,10 +13,10 @@
 }
 
 .planner-editable-text::before {
-    border: var(--planner-stroke-width) dashed var(--planner-dotted-line);
     border-radius: var(--radius-planner);
     bottom: calc(var(--spacing-grid) * -0.25);
-    box-shadow: 0 0 0 0 var(--planner-primary);
+    box-shadow: inset 0 0 0 var(--planner-focus-ring-width)
+        var(--planner-contrast);
     content: '';
     left: calc(var(--spacing-grid) * -0.5);
     opacity: 0;
@@ -23,21 +24,65 @@
     position: absolute;
     right: calc(var(--spacing-grid) * -0.5);
     top: calc(var(--spacing-grid) * -0.25);
-    transition:
-        border-color var(--planner-motion-fast) var(--planner-motion-ease),
-        box-shadow var(--planner-motion-fast) var(--planner-motion-ease),
-        opacity var(--planner-motion-fast) var(--planner-motion-ease);
-}
-
-.planner-editable-text[data-editing='true']::before {
-    border: none;
-    box-shadow: 0 0 0 var(--planner-stroke-width) var(--planner-primary);
-    opacity: 1;
+    transition: opacity var(--planner-motion-fast) var(--planner-motion-ease);
 }
 
 .planner-editable-text[data-editable='true']:focus::before,
-.planner-editable-text[data-editable='true']:hover::before {
+.planner-editable-text[data-editing='true']::before,
+.planner-editable-text:focus-within::before {
     opacity: 1;
+}
+
+.planner-editable-text:focus,
+.planner-editable-text-input:focus {
+    outline: none !important;
+}
+
+.planner-editable-text-marching-ants {
+    bottom: auto;
+    height: calc(100% + var(--spacing-grid) * 0.5);
+    left: calc(var(--spacing-grid) * -0.5);
+    right: auto;
+    top: calc(var(--spacing-grid) * -0.25);
+    width: calc(100% + var(--spacing-grid));
+}
+
+.planner-editable-text-marching-ants .planner-marching-ants {
+    opacity: 0;
+}
+
+.planner-editable-text[data-editable='true']:hover:not(:focus-within)
+    > .planner-editable-text-marching-ants
+    .planner-marching-ants {
+    animation-play-state: running;
+    opacity: 1;
+    stroke: var(--planner-border);
+}
+
+.planner-editable-text.planner-item-notes-editor {
+    padding: calc(var(--spacing-grid) * 0.5);
+    width: 100%;
+}
+
+.planner-item-notes-editor::before {
+    inset: 0;
+}
+
+.planner-item-notes-editor > .planner-editable-text-marching-ants {
+    inset: 0;
+    height: 100%;
+    width: 100%;
+}
+
+.planner-editable-text-content {
+    position: relative;
+    z-index: 1;
+}
+
+.planner-item-notes-editor > .planner-editable-text-content,
+.planner-item-notes-editor .planner-editable-text-prose-canvas {
+    height: 100%;
+    min-height: 0;
 }
 
 .planner-editable-text-input {

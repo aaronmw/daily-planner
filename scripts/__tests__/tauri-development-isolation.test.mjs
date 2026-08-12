@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 
 test('the default development command launches the isolated Tauri HMR shell', () => {
     const packageJson = JSON.parse(readFileSync('package.json', 'utf8'));
@@ -33,4 +33,13 @@ test('the default development command launches the isolated Tauri HMR shell', ()
         'com.aaronwright.dailyplanner.dev'
     );
     assert.equal(developmentConfig.productName, 'Daily Planner Dev');
+    assert.deepEqual(developmentConfig.bundle.icon, ['icons/dev-icon.png']);
+    assert.equal(existsSync('src-tauri/icons/dev-icon.png'), true);
+
+    const developmentIcon = readFileSync('src-tauri/icons/dev-icon.png');
+    assert.equal(developmentIcon.toString('ascii', 12, 16), 'IHDR');
+    assert.equal(developmentIcon.readUInt32BE(16), 1024);
+    assert.equal(developmentIcon.readUInt32BE(20), 1024);
+    assert.equal(developmentIcon[24], 8, 'dev icon must use 8-bit channels');
+    assert.equal(developmentIcon[25], 6, 'dev icon must use RGBA color');
 });

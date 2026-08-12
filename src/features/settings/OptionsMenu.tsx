@@ -21,6 +21,12 @@ import {
     useCollaborationSelector,
 } from '../../core/collaboration/CollaborationContext';
 import { TurnstileChallenge } from '../collaboration/TurnstileChallenge';
+import {
+    ShortcutHint,
+    shortcutAriaKeys,
+    type ShortcutDefinition,
+} from '../shortcuts/ShortcutProvider';
+import { CYCLE_THEME_SHORTCUT } from '../shortcuts/appShortcuts';
 
 interface OptionsMenuProps {
     onShowDeletedItems: () => void;
@@ -69,10 +75,27 @@ function Check({ checked }: { checked: boolean }) {
     );
 }
 
-function GroupLabel({ children }: { children: string }) {
+function GroupLabel({
+    children,
+    shortcut,
+}: {
+    children: string;
+    shortcut?: ShortcutDefinition;
+}) {
     return (
-        <h3 className="px-[45px] py-3 text-[0.8rem] uppercase text-planner-text-faded">
+        <h3
+            aria-keyshortcuts={
+                shortcut ? shortcutAriaKeys(shortcut) : undefined
+            }
+            className="relative px-[45px] py-3 text-[0.8rem] uppercase text-planner-text-faded"
+        >
             {children}
+            {shortcut && (
+                <ShortcutHint
+                    className="planner-settings-group-shortcut"
+                    shortcut={shortcut}
+                />
+            )}
         </h3>
     );
 }
@@ -224,7 +247,9 @@ export function OptionsMenu({ onShowDeletedItems }: OptionsMenuProps) {
                 </div>
 
                 <section>
-                    <GroupLabel>Lighting mode</GroupLabel>
+                    <GroupLabel shortcut={CYCLE_THEME_SHORTCUT}>
+                        Lighting mode
+                    </GroupLabel>
                     {THEME_OPTIONS.map(option => (
                         <button
                             aria-checked={preferences.themeMode === option.mode}
@@ -241,12 +266,7 @@ export function OptionsMenu({ onShowDeletedItems }: OptionsMenuProps) {
                             <span className="grid size-[45px] place-items-center text-[1.2rem]">
                                 <Icon name={option.icon} />
                             </span>
-                            <span>
-                                {option.label}{' '}
-                                <span className="ml-2 text-planner-text-faded">
-                                    D
-                                </span>
-                            </span>
+                            <span>{option.label}</span>
                             <Check
                                 checked={preferences.themeMode === option.mode}
                             />

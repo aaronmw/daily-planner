@@ -86,10 +86,10 @@ export function ItemNotesEditor({
     );
 
     return (
-        <>
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
             <EditableText
                 ariaLabel="Item notes"
-                className="min-h-[200px] text-[1rem] leading-[1.6]"
+                className="planner-item-notes-editor min-h-[200px] min-w-0 flex-1 text-[1rem] leading-[1.6]"
                 draftValue={draft}
                 focusAssistEnabled={focusAssistEnabled}
                 highlightIncompleteSentencesEnabled={
@@ -251,7 +251,7 @@ export function ItemNotesEditor({
                 value={item.notes}
             />
             {item.attachments.length > 0 && (
-                <div className="mt-4 max-h-[188px] overflow-auto border-[length:var(--planner-stroke-width)] border-planner-border">
+                <div className="mt-4 max-h-[188px] shrink-0 overflow-auto border-[length:var(--planner-stroke-width)] border-planner-border">
                     {item.attachments.map(attachment => {
                         const armed = armedClientId === attachment.clientId;
                         const remove = async () => {
@@ -366,6 +366,6 @@ export function ItemNotesEditor({
                     })}
                 </div>
             )}
-        </>
+        </div>
     );
 }

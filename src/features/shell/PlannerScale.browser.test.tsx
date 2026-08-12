@@ -17,6 +17,8 @@ import { ListColumn } from '../lists/ListColumn';
 import { ItemColumn } from '../items/ItemColumn';
 import { ItemCard } from '../items/ItemCard';
 import { TimelineColumn } from '../timeline/TimelineColumn';
+import { ITEM_SELECTION_SHORTCUTS } from '../shortcuts/appShortcuts';
+import { ShortcutProvider } from '../shortcuts/ShortcutProvider';
 import '../../styles/index.css';
 
 const noop = () => undefined;
@@ -61,9 +63,14 @@ describe('planner collection scale in a real browser', () => {
             <PlannerStoreProvider store={store}>
                 <CollaborationProvider>
                     <PlannerCommandsProvider commands={commands}>
-                        <div style={cardContainerStyle}>
-                            <ItemCard id={item.id} shortcut={1} />
-                        </div>
+                        <ShortcutProvider>
+                            <div style={cardContainerStyle}>
+                                <ItemCard
+                                    id={item.id}
+                                    shortcut={ITEM_SELECTION_SHORTCUTS[0]!}
+                                />
+                            </div>
+                        </ShortcutProvider>
                     </PlannerCommandsProvider>
                 </CollaborationProvider>
             </PlannerStoreProvider>
@@ -191,19 +198,21 @@ describe('planner collection scale in a real browser', () => {
             <PlannerStoreProvider store={store}>
                 <CollaborationProvider>
                     <PlannerCommandsProvider commands={commands}>
-                        <ItemDragProvider>
-                            <div
-                                style={{
-                                    display: 'grid',
-                                    gridTemplateColumns: '1fr 1fr',
-                                    height: 640,
-                                    width: 1400,
-                                }}
-                            >
-                                <ListColumn />
-                                <ItemColumn minuteHeight={1} />
-                            </div>
-                        </ItemDragProvider>
+                        <ShortcutProvider>
+                            <ItemDragProvider>
+                                <div
+                                    style={{
+                                        display: 'grid',
+                                        gridTemplateColumns: '1fr 1fr',
+                                        height: 640,
+                                        width: 1400,
+                                    }}
+                                >
+                                    <ListColumn />
+                                    <ItemColumn minuteHeight={1} />
+                                </div>
+                            </ItemDragProvider>
+                        </ShortcutProvider>
                     </PlannerCommandsProvider>
                 </CollaborationProvider>
             </PlannerStoreProvider>
@@ -330,17 +339,19 @@ describe('planner collection scale in a real browser', () => {
             <PlannerStoreProvider store={store}>
                 <CollaborationProvider>
                     <PlannerCommandsProvider commands={commands}>
-                        <ItemDragProvider>
-                            <button data-testid="outside-item-focus">
-                                Outside
-                            </button>
-                            <div style={{ height: 640, width: 500 }}>
-                                <ItemColumn
-                                    focusRequestId={focusRequestId}
-                                    minuteHeight={1}
-                                />
-                            </div>
-                        </ItemDragProvider>
+                        <ShortcutProvider>
+                            <ItemDragProvider>
+                                <button data-testid="outside-item-focus">
+                                    Outside
+                                </button>
+                                <div style={{ height: 640, width: 500 }}>
+                                    <ItemColumn
+                                        focusRequestId={focusRequestId}
+                                        minuteHeight={1}
+                                    />
+                                </div>
+                            </ItemDragProvider>
+                        </ShortcutProvider>
                     </PlannerCommandsProvider>
                 </CollaborationProvider>
             </PlannerStoreProvider>

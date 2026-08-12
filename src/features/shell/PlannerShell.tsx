@@ -19,8 +19,14 @@ import { CollaborationLauncher } from '../collaboration/CollaborationLauncher';
 import { ConflictLauncher } from '../collaboration/ConflictLauncher';
 import { Column } from './Column';
 import { useDesktopCommands } from './useDesktopCommands';
-import { isTextEntryTarget } from './isTextEntryTarget';
 import { resolveColumnShortcut, type ShortcutColumn } from './columnShortcuts';
+import { useShortcuts } from '../shortcuts/ShortcutProvider';
+import {
+    CYCLE_THEME_SHORTCUT,
+    ITEMS_COLUMN_SHORTCUT,
+    LISTS_COLUMN_SHORTCUT,
+    TIMELINE_COLUMN_SHORTCUT,
+} from '../shortcuts/appShortcuts';
 
 const ItemDetailsColumn = lazy(async () => {
     const module = await import('../details/ItemDetailsColumn');
@@ -77,52 +83,44 @@ export function PlannerShell() {
         return () => observer.disconnect();
     }, []);
 
-    useEffect(() => {
-        const listener = (event: KeyboardEvent) => {
-            const target = event.target as HTMLElement | null;
-            if (
-                event.defaultPrevented ||
-                isTextEntryTarget(target) ||
-                event.metaKey ||
-                event.ctrlKey ||
-                event.altKey ||
-                event.shiftKey
-            ) {
-                return;
-            }
-            const key = event.key.toLowerCase();
-            if (key === 'd') {
-                event.preventDefault();
+    const runColumnShortcut = (key: string) => {
+        const result = resolveColumnShortcut(key, preferences.columnVisibility);
+        if (!result) return;
+
+        if (result.visibility !== preferences.columnVisibility) {
+            commands.updatePreferences({
+                columnVisibility: result.visibility,
+            });
+        }
+        const focusColumn = result.focusColumn;
+        if (focusColumn) {
+            setColumnFocusRequests(current => ({
+                ...current,
+                [focusColumn]: current[focusColumn] + 1,
+            }));
+        }
+    };
+    useShortcuts([
+        {
+            onTrigger: () =>
                 commands.updatePreferences({
                     themeMode: nextThemeMode(preferences.themeMode),
-                });
-                return;
-            }
-
-            if (event.repeat) return;
-            const result = resolveColumnShortcut(
-                key,
-                preferences.columnVisibility
-            );
-            if (!result) return;
-
-            event.preventDefault();
-            if (result.visibility !== preferences.columnVisibility) {
-                commands.updatePreferences({
-                    columnVisibility: result.visibility,
-                });
-            }
-            const focusColumn = result.focusColumn;
-            if (focusColumn) {
-                setColumnFocusRequests(current => ({
-                    ...current,
-                    [focusColumn]: current[focusColumn] + 1,
-                }));
-            }
-        };
-        document.addEventListener('keydown', listener);
-        return () => document.removeEventListener('keydown', listener);
-    }, [commands, preferences.columnVisibility, preferences.themeMode]);
+                }),
+            shortcut: CYCLE_THEME_SHORTCUT,
+        },
+        {
+            onTrigger: () => runColumnShortcut('i'),
+            shortcut: ITEMS_COLUMN_SHORTCUT,
+        },
+        {
+            onTrigger: () => runColumnShortcut('l'),
+            shortcut: LISTS_COLUMN_SHORTCUT,
+        },
+        {
+            onTrigger: () => runColumnShortcut('t'),
+            shortcut: TIMELINE_COLUMN_SHORTCUT,
+        },
+    ]);
 
     const resolvedTheme = resolveTheme(
         preferences.themeMode,
@@ -173,6 +171,7 @@ export function PlannerShell() {
                 heading="Timeline"
                 isOpen={preferences.columnVisibility.timeline}
                 onToggle={() => toggle('timeline')}
+                shortcut={TIMELINE_COLUMN_SHORTCUT}
                 weight={1.1}
             >
                 <TimelineColumn
@@ -185,6 +184,7 @@ export function PlannerShell() {
                 heading="Lists"
                 isOpen={preferences.columnVisibility.lists}
                 onToggle={() => toggle('lists')}
+                shortcut={LISTS_COLUMN_SHORTCUT}
                 weight={1.45}
             >
                 <ListColumn focusRequestId={columnFocusRequests.lists} />
@@ -194,6 +194,7 @@ export function PlannerShell() {
                 heading="Items"
                 isOpen={preferences.columnVisibility.items}
                 onToggle={() => toggle('items')}
+                shortcut={ITEMS_COLUMN_SHORTCUT}
                 weight={1.05}
             >
                 <ItemColumn

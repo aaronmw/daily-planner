@@ -3,9 +3,13 @@ import type { ItemId } from '../../core/domain/ids';
 import { usePlannerCommands } from '../../core/application/plannerContext';
 import { usePlannerSelector } from '../../core/store/plannerContext';
 import { accentColor } from '../theme/theme';
-import { KeyboardKey } from '../shell/KeyboardKey';
 import { CardOwnerAvatar } from '../collaboration/CardOwnerAvatar';
 import { useListCapability } from '../collaboration/useListCapability';
+import {
+    ShortcutHint,
+    shortcutAriaKeys,
+    type ShortcutDefinition,
+} from '../shortcuts/ShortcutProvider';
 
 type ItemCardStyle = CSSProperties &
     Record<`--planner-${string}`, string | number>;
@@ -16,7 +20,7 @@ const MAXIMUM_LABEL_FONT_SIZE = 16;
 interface ItemCardProps {
     context?: 'collection' | 'timeline';
     id: ItemId;
-    shortcut?: number;
+    shortcut?: ShortcutDefinition;
     style?: ItemCardStyle;
 }
 
@@ -105,6 +109,9 @@ export function ItemCard({
     return (
         <button
             aria-label={item.label || 'Untitled item'}
+            aria-keyshortcuts={
+                shortcut ? shortcutAriaKeys(shortcut) : undefined
+            }
             className={`planner-item-card relative flex w-full min-w-0 cursor-pointer bg-planner-background text-left focus:outline-none ${singleLine ? 'items-center' : 'items-start'} ${item.isComplete ? 'opacity-60' : ''}`}
             data-active={selected}
             data-card-context={context}
@@ -118,9 +125,10 @@ export function ItemCard({
             type="button"
         >
             {shortcut !== undefined && (
-                <span className="planner-item-card-shortcut grid size-[var(--spacing-icon-slot)] shrink-0 place-items-center self-center">
-                    <KeyboardKey label={String(shortcut)} />
-                </span>
+                <ShortcutHint
+                    className="planner-item-card-shortcut"
+                    shortcut={shortcut}
+                />
             )}
             <CardOwnerAvatar
                 compact={item.durationMinutes < 30}

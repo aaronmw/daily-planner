@@ -1,5 +1,10 @@
 import type { PropsWithChildren, ReactNode } from 'react';
 import { IconButton } from './IconButton';
+import {
+    ShortcutHint,
+    shortcutAriaKeys,
+    type ShortcutDefinition,
+} from '../shortcuts/ShortcutProvider';
 
 interface ColumnProps extends PropsWithChildren {
     actions?: ReactNode;
@@ -7,6 +12,7 @@ interface ColumnProps extends PropsWithChildren {
     heading: string;
     isOpen: boolean;
     onToggle: () => void;
+    shortcut?: ShortcutDefinition;
     weight: number;
 }
 
@@ -17,6 +23,7 @@ export function Column({
     heading,
     isOpen,
     onToggle,
+    shortcut,
     weight,
 }: ColumnProps) {
     return (
@@ -35,10 +42,21 @@ export function Column({
             >
                 <header className="relative flex h-[var(--spacing-icon-slot)] shrink-0 items-center border-b-[length:var(--planner-stroke-width)] border-planner-border">
                     <h2 className="pointer-events-none absolute inset-0 grid place-items-center text-center uppercase text-planner-primary">
-                        {heading}
+                        <span className="relative inline-flex items-center">
+                            {heading}
+                            {shortcut && (
+                                <ShortcutHint
+                                    className="planner-column-shortcut"
+                                    shortcut={shortcut}
+                                />
+                            )}
+                        </span>
                     </h2>
                     <div className="ml-auto flex">{actions}</div>
                     <IconButton
+                        aria-keyshortcuts={
+                            shortcut ? shortcutAriaKeys(shortcut) : undefined
+                        }
                         disabled={!canCollapse}
                         icon="arrow-left-to-line"
                         label={`Collapse ${heading}`}
@@ -49,7 +67,16 @@ export function Column({
             </div>
             {!isOpen && (
                 <div className="absolute inset-x-0 top-0 z-10">
+                    {shortcut && (
+                        <ShortcutHint
+                            className="planner-column-expand-shortcut"
+                            shortcut={shortcut}
+                        />
+                    )}
                     <IconButton
+                        aria-keyshortcuts={
+                            shortcut ? shortcutAriaKeys(shortcut) : undefined
+                        }
                         className="planner-column-expand hover:bg-transparent"
                         icon="arrow-right-from-line"
                         label={`Expand ${heading}`}

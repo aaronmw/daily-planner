@@ -17,6 +17,7 @@ import {
     selectionWrapperForInput,
     wrapTextSelection,
 } from './textEditing';
+import { MarchingAnts } from '../shell/MarchingAnts';
 
 interface EditRequest {
     id: string;
@@ -300,10 +301,9 @@ export function EditableText({
             role={isEditable ? 'button' : undefined}
             tabIndex={isEditable ? 0 : undefined}
         >
+            <MarchingAnts className="planner-editable-text-marching-ants" />
             <div
-                className={
-                    editing && prose ? 'planner-editable-text-prose-canvas' : ''
-                }
+                className={`planner-editable-text-content ${editing && prose ? 'planner-editable-text-prose-canvas' : ''}`}
             >
                 {editing ? (
                     <>

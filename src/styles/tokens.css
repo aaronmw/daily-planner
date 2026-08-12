@@ -37,6 +37,7 @@
 
 :root {
     --planner-stroke-width: 2px;
+    --planner-keyboard-key-size: 21px;
     --planner-icon-glyph-size: calc(var(--spacing-grid) * 0.75);
     --planner-inline-icon-size: calc(var(--spacing-grid) * 0.6);
     --planner-motion-fast: 150ms;
