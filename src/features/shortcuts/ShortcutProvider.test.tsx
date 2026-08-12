@@ -72,7 +72,11 @@ function RecorderHarness({
         onTrigger,
         shortcut: commandOne,
     });
-    const recorder = useShortcutRecorder({ onCandidate, onCancel, onStart });
+    const recorder = useShortcutRecorder({
+        onCandidate,
+        ...(onCancel ? { onCancel } : {}),
+        ...(onStart ? { onStart } : {}),
+    });
 
     return (
         <>
