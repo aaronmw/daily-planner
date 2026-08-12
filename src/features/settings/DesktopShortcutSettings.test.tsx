@@ -10,6 +10,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
     DEFAULT_DESKTOP_SHORTCUTS,
     PLANNER_COMMAND_IDS,
+    type PlannerCommandId,
 } from '../../core/application/commandIds';
 import { ShortcutProvider } from '../shortcuts/ShortcutProvider';
 import { desktopShortcutCoordinator } from '../../platform/runtime/desktopShortcuts';
@@ -124,6 +125,34 @@ describe('DesktopShortcutSettings', () => {
         await waitFor(() =>
             expect(update).toHaveBeenCalledWith(DEFAULT_DESKTOP_SHORTCUTS)
         );
+    });
+
+    it('does not persist a deferred candidate after Escape restores the saved shortcuts', async () => {
+        const { onUpdate, update } = renderSettings();
+        const candidateRegistration = createDeferred();
+        const registeredMaps: Readonly<Record<PlannerCommandId, string>>[] = [];
+        update.mockImplementation(async shortcuts => {
+            await candidateRegistration.promise;
+            registeredMaps.push(shortcuts);
+        });
+        await editShowPlanner();
+
+        fireEvent.keyDown(window, {
+            code: 'KeyP',
+            key: 'p',
+            metaKey: true,
+        });
+        fireEvent.keyDown(window, { code: 'Escape', key: 'Escape' });
+        candidateRegistration.resolve();
+
+        await waitFor(() => expect(registeredMaps).toHaveLength(2));
+        expect(registeredMaps.at(-1)).toBe(DEFAULT_DESKTOP_SHORTCUTS);
+        expect(onUpdate).not.toHaveBeenCalled();
+        expect(
+            screen.getByRole('button', {
+                name: 'Edit shortcut for Show Daily Planner',
+            })
+        ).toHaveAttribute('aria-pressed', 'false');
     });
 
     it('restores the saved native shortcuts when recording loses focus', async () => {

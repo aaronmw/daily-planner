@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import type { PlannerCommandId } from '../../core/application/commandIds';
 import { PLANNER_COMMAND_IDS } from '../../core/application/commandIds';
 import {
@@ -55,25 +55,38 @@ function DesktopShortcutRow({
 } & DesktopShortcutSettingsProps) {
     const [error, setError] = useState('');
     const [pending, setPending] = useState(false);
+    const recordingSessionRef = useRef(0);
     const shortcut = shortcuts[commandId];
     const { active, cancel, pressedKeyLabels, start } = useShortcutRecorder({
-        onStart: () => desktopShortcutCoordinator.dispose(),
+        onStart: () => {
+            recordingSessionRef.current += 1;
+            return desktopShortcutCoordinator.dispose();
+        },
         onCandidate: async candidate => {
+            const recordingSession = recordingSessionRef.current;
             const next = { ...shortcuts, [commandId]: candidate };
             setError('');
             setPending(true);
             try {
                 await desktopShortcutCoordinator.update(next);
+                if (recordingSessionRef.current !== recordingSession) {
+                    return false;
+                }
                 onUpdate(next);
                 return true;
             } catch (caught) {
-                setError(errorMessage(caught));
+                if (recordingSessionRef.current === recordingSession) {
+                    setError(errorMessage(caught));
+                }
                 return false;
             } finally {
-                setPending(false);
+                if (recordingSessionRef.current === recordingSession) {
+                    setPending(false);
+                }
             }
         },
         onCancel: async () => {
+            recordingSessionRef.current += 1;
             setPending(true);
             try {
                 await desktopShortcutCoordinator.update(shortcuts);
