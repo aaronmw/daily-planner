@@ -114,6 +114,9 @@ function CompetingRecorderHarness({
             <button onClick={() => void second.start()} type="button">
                 Record second
             </button>
+            <button onClick={second.cancel} type="button">
+                Cancel second
+            </button>
             <output data-testid="first-recorder-active">
                 {String(first.active)}
             </output>
@@ -422,6 +425,27 @@ describe('ShortcutProvider', () => {
         expect(screen.getByTestId('second-recorder-active')).toHaveTextContent(
             'true'
         );
+    });
+
+    it('does not start a queued recorder after it is cancelled', async () => {
+        const firstStart = createDeferred<undefined>();
+        const firstOnStart = vi.fn(() => firstStart.promise);
+        const secondOnStart = vi.fn();
+        render(
+            <ShortcutProvider>
+                <CompetingRecorderHarness
+                    firstOnStart={firstOnStart}
+                    secondOnStart={secondOnStart}
+                />
+            </ShortcutProvider>
+        );
+
+        fireEvent.click(screen.getByRole('button', { name: 'Record first' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Record second' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Cancel second' }));
+        await act(async () => firstStart.resolve(undefined));
+
+        expect(secondOnStart).not.toHaveBeenCalled();
     });
 
     it('stays inactive when Escape cancels an asynchronous start', async () => {

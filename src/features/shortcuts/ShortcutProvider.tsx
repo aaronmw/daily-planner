@@ -215,6 +215,10 @@ export function ShortcutProvider({ children }: PropsWithChildren) {
             };
             pendingRecorderStartRef.current = pendingStart;
             const activate = (): Promise<void> => {
+                const ownsPendingStart = () =>
+                    pendingRecorderStartRef.current === pendingStart &&
+                    !pendingStart.cancelled &&
+                    recordingStartVersionRef.current === pendingStart.version;
                 const abandonStart = (): void | Promise<void> => {
                     if (pendingRecorderStartRef.current === pendingStart) {
                         pendingRecorderStartRef.current = null;
@@ -222,11 +226,7 @@ export function ShortcutProvider({ children }: PropsWithChildren) {
                     return invokeCancellation(pendingStart.onCancel);
                 };
                 const activateRecorder = () => {
-                    if (
-                        pendingRecorderStartRef.current !== pendingStart ||
-                        pendingStart.cancelled ||
-                        recordingStartVersionRef.current !== pendingStart.version
-                    ) {
+                    if (!ownsPendingStart()) {
                         return abandonStart();
                     }
                     const recorder: ActiveShortcutRecorder = {
@@ -239,6 +239,7 @@ export function ShortcutProvider({ children }: PropsWithChildren) {
                     pendingRecorderStartRef.current = null;
                     setRecordingView({ id, pressedKeyLabels: [] });
                 };
+                if (!ownsPendingStart()) return Promise.resolve();
                 let started: void | Promise<void>;
                 try {
                     started = options.onStart?.();
