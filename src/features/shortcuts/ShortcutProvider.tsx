@@ -17,10 +17,12 @@ import {
     shortcutFromKeyboardEvent,
     shortcutKeyLabelsFromKeyboardEvent,
 } from '../../platform/runtime/desktopShortcuts';
+import { matchesShortcut, shortcutAriaKeys } from './shortcutMatching';
 
 export type ShortcutModifier = 'alt' | 'control' | 'meta' | 'shift';
 
 export interface ShortcutDefinition {
+    code?: string;
     id: string;
     key: string;
     keyLabel: string;
@@ -99,25 +101,6 @@ const modifierLabels: Record<ShortcutModifier, string> = {
     shift: '⇧',
 };
 
-const modifierEventKeys: Record<
-    ShortcutModifier,
-    keyof Pick<KeyboardEvent, 'altKey' | 'ctrlKey' | 'metaKey' | 'shiftKey'>
-> = {
-    alt: 'altKey',
-    control: 'ctrlKey',
-    meta: 'metaKey',
-    shift: 'shiftKey',
-};
-
-const modifierAriaLabels: Record<ShortcutModifier, string> = {
-    alt: 'Alt',
-    control: 'Control',
-    meta: 'Meta',
-    shift: 'Shift',
-};
-
-const normalizeKey = (key: string) => key.toLocaleLowerCase();
-
 const isPromiseLike = (value: unknown): value is PromiseLike<unknown> =>
     typeof value === 'object' &&
     value !== null &&
@@ -140,25 +123,6 @@ const invokeCancellation = (
     } catch {
         // A recorder cleanup failure must not leak through a key or blur event.
     }
-};
-
-export const shortcutAriaKeys = (shortcut: ShortcutDefinition) =>
-    [
-        ...shortcut.modifiers.map(modifier => modifierAriaLabels[modifier]),
-        shortcut.keyLabel,
-    ].join('+');
-
-const matchesShortcut = (
-    event: KeyboardEvent,
-    shortcut: ShortcutDefinition
-) => {
-    if (normalizeKey(event.key) !== normalizeKey(shortcut.key)) return false;
-    const requiredModifiers = new Set(shortcut.modifiers);
-    return (Object.keys(modifierEventKeys) as ShortcutModifier[]).every(
-        modifier =>
-            event[modifierEventKeys[modifier]] ===
-            requiredModifiers.has(modifier)
-    );
 };
 
 export function ShortcutProvider({ children }: PropsWithChildren) {

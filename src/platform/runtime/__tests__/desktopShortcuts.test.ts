@@ -42,6 +42,19 @@ describe('desktop shortcuts', () => {
         ).toThrow('unique');
     });
 
+    it('records modifier-free candidates for in-app shortcut editing', () => {
+        const event = new KeyboardEvent('keydown', {
+            code: 'KeyN',
+            key: 'n',
+        });
+
+        expect(shortcutFromKeyboardEvent(event)).toBe('KeyN');
+        expect(shortcutKeyLabels('KeyN')).toEqual(['N']);
+        expect(() => validateShortcutMap({ 'create-item': 'KeyN' })).toThrow(
+            'modifier'
+        );
+    });
+
     it('formats modifier-only and completed keyboard-event previews', () => {
         expect(
             shortcutKeyLabelsFromKeyboardEvent(

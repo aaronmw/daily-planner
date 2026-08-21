@@ -76,7 +76,6 @@ const parseShortcut = (shortcut: string) => {
     const modifierTokens = new Set(tokens.slice(0, -1));
     if (
         !supportedCode(code) ||
-        modifierTokens.size === 0 ||
         modifierTokens.size !== tokens.length - 1 ||
         [...modifierTokens].some(
             token => !MODIFIERS.some(value => value.accelerator === token)
@@ -103,7 +102,6 @@ export const shortcutFromKeyboardEvent = (
         return null;
     }
     const modifiers = MODIFIERS.filter(value => event[value.eventProperty]);
-    if (modifiers.length === 0) return null;
     return [...modifiers.map(value => value.accelerator), event.code].join('+');
 };
 
@@ -142,15 +140,18 @@ export const describeShortcut = (shortcut: string): string => {
 };
 
 export const validateShortcutMap = (
-    shortcuts: Readonly<Record<PlannerCommandId, string>>
+    shortcuts: Readonly<Partial<Record<PlannerCommandId, string>>>
 ): void => {
-    if (Object.values(shortcuts).some(shortcut => !parseShortcut(shortcut))) {
+    const values = Object.values(shortcuts);
+    if (
+        values.some(shortcut => {
+            const parsed = parseShortcut(shortcut);
+            return !parsed || parsed.modifiers.length === 0;
+        })
+    ) {
         throw new Error('Every desktop shortcut needs a modifier and a key.');
     }
-    if (
-        new Set(Object.values(shortcuts)).size !==
-        Object.values(shortcuts).length
-    ) {
+    if (new Set(values).size !== values.length) {
         throw new Error('Desktop shortcuts must be unique.');
     }
 };
@@ -166,7 +167,7 @@ class DesktopShortcutCoordinator {
     }
 
     update(
-        shortcuts: Readonly<Record<PlannerCommandId, string>>
+        shortcuts: Readonly<Partial<Record<PlannerCommandId, string>>>
     ): Promise<void> {
         return this.#enqueue(() => this.#update(shortcuts));
     }
@@ -185,7 +186,7 @@ class DesktopShortcutCoordinator {
     }
 
     async #update(
-        shortcuts: Readonly<Record<PlannerCommandId, string>>
+        shortcuts: Readonly<Partial<Record<PlannerCommandId, string>>>
     ): Promise<void> {
         validateShortcutMap(shortcuts);
         const serialized = JSON.stringify(shortcuts);

@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+    useCallback,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+    type CSSProperties,
+} from 'react';
 import { usePlannerCommands } from '../../core/application/plannerContext';
 import { usePlannerSelector } from '../../core/store/plannerContext';
 import type { ThemeMode } from '../../core/domain/types';
@@ -11,11 +18,15 @@ import {
 import { TurnstileChallenge } from '../collaboration/TurnstileChallenge';
 import {
     ShortcutHint,
-    shortcutAriaKeys,
     type ShortcutDefinition,
 } from '../shortcuts/ShortcutProvider';
-import { CYCLE_THEME_SHORTCUT } from '../shortcuts/appShortcuts';
-import { DesktopShortcutSettings } from './DesktopShortcutSettings';
+import { shortcutAriaKeys } from '../shortcuts/shortcutMatching';
+import {
+    APP_SHORTCUT_IDS,
+    getConfigurableShortcutCommand,
+    shortcutDefinitionsFor,
+} from '../../core/application/shortcutCommands';
+import { ShortcutSettings } from './ShortcutSettings';
 import { GhostButton } from '../shell/GhostButton';
 import { buildDeletedItems } from '../trash/deletedItems';
 
@@ -32,6 +43,14 @@ const THEME_OPTIONS: readonly {
     { icon: 'sun-bright', label: 'Light', mode: 'light' },
     { icon: 'moon', label: 'Dark', mode: 'dark' },
 ];
+
+const OPTIONS_CONTROL_SELECTOR = [
+    'button:not(:disabled)',
+    'input:not(:disabled):not([type="hidden"])',
+    'select:not(:disabled)',
+    'textarea:not(:disabled)',
+    '[tabindex]:not([tabindex="-1"])',
+].join(', ');
 
 function Check({ checked }: { checked: boolean }) {
     return (
@@ -56,7 +75,7 @@ function GroupLabel({
             aria-keyshortcuts={
                 shortcut ? shortcutAriaKeys(shortcut) : undefined
             }
-            className="relative px-[45px] py-3 text-[0.8rem] uppercase text-planner-text-faded"
+            className="sr-only"
         >
             {children}
             {shortcut && (
@@ -96,11 +115,20 @@ export function OptionsMenu({ onShowDeletedItems }: OptionsMenuProps) {
     const [notificationPending, setNotificationPending] = useState(false);
     const [notificationError, setNotificationError] = useState('');
     const rowClass =
-        'planner-settings-row grid min-h-[45px] w-full grid-cols-[45px_minmax(0,1fr)_45px] items-center text-left transition-[background-color,color] duration-150 hover:bg-planner-shaded';
+        'planner-settings-row grid min-h-[45px] w-full grid-cols-[45px_minmax(0,1fr)_45px] items-center text-left transition-[background-color,color] duration-150';
     const deletedItemCount = useMemo(
         () => buildDeletedItems(lists, plannerItems).length,
         [lists, plannerItems]
     );
+    const cycleThemeCommand = getConfigurableShortcutCommand(
+        `app:${APP_SHORTCUT_IDS.cycleTheme}`
+    );
+    const cycleThemeShortcut = cycleThemeCommand
+        ? shortcutDefinitionsFor(
+              cycleThemeCommand,
+              preferences.appShortcuts[APP_SHORTCUT_IDS.cycleTheme]
+          )[0]
+        : undefined;
 
     const close = () => setOpen(false);
     const handleLauncherClick = () => {
@@ -119,13 +147,12 @@ export function OptionsMenu({ onShowDeletedItems }: OptionsMenuProps) {
         (token: string) => setExistingCaptchaToken(token),
         []
     );
-
     useEffect(() => {
         if (!open) return;
 
         const panel = panelRef.current;
         const firstControl = panel?.querySelector<HTMLElement>(
-            'button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])'
+            OPTIONS_CONTROL_SELECTOR
         );
         firstControl?.focus();
 
@@ -134,6 +161,50 @@ export function OptionsMenu({ onShowDeletedItems }: OptionsMenuProps) {
                 setOpen(false);
             }
         };
+        const onPanelKeyDown = (event: KeyboardEvent) => {
+            if (
+                event.key !== 'ArrowDown' &&
+                event.key !== 'ArrowUp' &&
+                event.key !== 'ArrowLeft' &&
+                event.key !== 'ArrowRight'
+            ) {
+                return;
+            }
+
+            event.stopPropagation();
+            if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+                const target = event.target;
+                if (
+                    !(target instanceof HTMLInputElement) &&
+                    !(target instanceof HTMLSelectElement) &&
+                    !(target instanceof HTMLTextAreaElement)
+                ) {
+                    event.preventDefault();
+                }
+                return;
+            }
+
+            event.preventDefault();
+            const controls = Array.from(
+                panel?.querySelectorAll<HTMLElement>(
+                    OPTIONS_CONTROL_SELECTOR
+                ) ?? []
+            );
+            if (controls.length === 0) return;
+
+            const currentIndex = controls.indexOf(
+                document.activeElement as HTMLElement
+            );
+            const direction = event.key === 'ArrowDown' ? 1 : -1;
+            const nextIndex =
+                currentIndex < 0
+                    ? direction > 0
+                        ? 0
+                        : controls.length - 1
+                    : (currentIndex + direction + controls.length) %
+                      controls.length;
+            controls[nextIndex]?.focus();
+        };
         const onKeyDown = (event: KeyboardEvent) => {
             if (event.key !== 'Escape') return;
             event.preventDefault();
@@ -141,9 +212,11 @@ export function OptionsMenu({ onShowDeletedItems }: OptionsMenuProps) {
             launcherRef.current?.focus();
         };
 
+        panel?.addEventListener('keydown', onPanelKeyDown);
         document.addEventListener('pointerdown', onPointerDown);
         document.addEventListener('keydown', onKeyDown);
         return () => {
+            panel?.removeEventListener('keydown', onPanelKeyDown);
             document.removeEventListener('pointerdown', onPointerDown);
             document.removeEventListener('keydown', onKeyDown);
         };
@@ -174,7 +247,11 @@ export function OptionsMenu({ onShowDeletedItems }: OptionsMenuProps) {
                     role="dialog"
                 >
                     <section className="planner-settings-section">
-                        <GroupLabel shortcut={CYCLE_THEME_SHORTCUT}>
+                        <GroupLabel
+                            {...(cycleThemeShortcut
+                                ? { shortcut: cycleThemeShortcut }
+                                : {})}
+                        >
                             Lighting mode
                         </GroupLabel>
                         {THEME_OPTIONS.map(option => (
@@ -205,20 +282,6 @@ export function OptionsMenu({ onShowDeletedItems }: OptionsMenuProps) {
                         ))}
                     </section>
 
-                    {getPlatformAdapter().kind === 'desktop' && (
-                        <section className="planner-settings-section">
-                            <GroupLabel>Desktop shortcuts</GroupLabel>
-                            <DesktopShortcutSettings
-                                onUpdate={desktopShortcuts =>
-                                    commands.updatePreferences({
-                                        desktopShortcuts,
-                                    })
-                                }
-                                shortcuts={preferences.desktopShortcuts}
-                            />
-                        </section>
-                    )}
-
                     <section className="planner-settings-section">
                         <GroupLabel>Timeline</GroupLabel>
                         <div className={`${rowClass} cursor-default`}>
@@ -229,7 +292,7 @@ export function OptionsMenu({ onShowDeletedItems }: OptionsMenuProps) {
                                 <span>Zoom</span>
                                 <input
                                     aria-label="Timeline hours visible"
-                                    className="min-w-0 accent-[var(--planner-contrast)]"
+                                    className="planner-zoom-range min-w-0"
                                     max={24}
                                     min={4}
                                     onChange={event =>
@@ -240,6 +303,11 @@ export function OptionsMenu({ onShowDeletedItems }: OptionsMenuProps) {
                                         })
                                     }
                                     step={1}
+                                    style={
+                                        {
+                                            '--planner-range-progress': `${((preferences.timelineHoursPerScreen - 4) / 20) * 100}%`,
+                                        } as CSSProperties
+                                    }
                                     type="range"
                                     value={preferences.timelineHoursPerScreen}
                                 />
@@ -663,6 +731,24 @@ export function OptionsMenu({ onShowDeletedItems }: OptionsMenuProps) {
                                     {deletedItemCount}
                                 </span>
                             </GhostButton>
+                        </section>
+                    )}
+
+                    {getPlatformAdapter().kind === 'desktop' && (
+                        <section className="planner-settings-section">
+                            <GroupLabel>Shortcuts</GroupLabel>
+                            <ShortcutSettings
+                                assignments={{
+                                    app: preferences.appShortcuts,
+                                    desktop: preferences.desktopShortcuts,
+                                }}
+                                onUpdate={assignments =>
+                                    commands.updatePreferences({
+                                        appShortcuts: assignments.app,
+                                        desktopShortcuts: assignments.desktop,
+                                    })
+                                }
+                            />
                         </section>
                     )}
                 </div>

@@ -63,6 +63,9 @@ const readSelection = (textarea: HTMLTextAreaElement): TextSelection => ({
     start: textarea.selectionStart,
 });
 
+const normalizeValue = (value: string, multiline: boolean) =>
+    multiline ? value : value.replace(/[\r\n]+/gu, ' ');
+
 export function EditableText({
     ariaLabel,
     className = '',
@@ -122,10 +125,10 @@ export function EditableText({
             if (!isEditable) return;
             shouldSaveRef.current = true;
             requestRef.current = requestId;
-            setEditingValue(value);
+            setEditingValue(normalizeValue(value, multiline));
             setEditing(true);
         },
-        [isEditable, setEditingValue, value]
+        [isEditable, multiline, setEditingValue, value]
     );
 
     useLayoutEffect(() => {
@@ -191,7 +194,11 @@ export function EditableText({
         const editRequestId = requestRef.current;
         requestRef.current = null;
         setEditing(false);
-        if (shouldSaveRef.current) void onSave(editingValue, { editRequestId });
+        if (shouldSaveRef.current) {
+            void onSave(normalizeValue(editingValue, multiline), {
+                editRequestId,
+            });
+        }
     };
 
     const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -203,6 +210,8 @@ export function EditableText({
         }
         if (
             event.key === 'Enter' &&
+            !composingRef.current &&
+            !event.nativeEvent.isComposing &&
             (!multiline || event.metaKey || event.ctrlKey)
         ) {
             event.preventDefault();
@@ -285,7 +294,9 @@ export function EditableText({
         apply(result);
     };
 
-    const display = value.trim() === '' ? placeholder : value;
+    const normalizedValue = normalizeValue(value, multiline);
+    const display =
+        normalizedValue.trim() === '' ? placeholder : normalizedValue;
     return (
         <div
             className={`planner-editable-text ${className}`}
@@ -332,7 +343,12 @@ export function EditableText({
                             onBeforeInput={handleBeforeInput}
                             onBlur={handleBlur}
                             onChange={event => {
-                                setEditingValue(event.target.value);
+                                setEditingValue(
+                                    normalizeValue(
+                                        event.target.value,
+                                        multiline
+                                    )
+                                );
                                 setSelection(readSelection(event.target));
                             }}
                             onCompositionEnd={() => {

@@ -15,6 +15,9 @@
     --color-planner-primary: var(--planner-primary);
     --color-planner-contrast: var(--planner-contrast);
     --color-planner-contrast-text: var(--planner-contrast-text);
+    --color-planner-control-thumb: var(--planner-control-thumb);
+    --color-planner-control-thumb-border: var(--planner-control-thumb-border);
+    --color-planner-control-track: var(--planner-control-track);
     --color-planner-item-border: var(--planner-item-border);
     --color-planner-item-border-hover: var(--planner-item-border-hover);
     --color-planner-item-border-active: var(--planner-item-border-active);

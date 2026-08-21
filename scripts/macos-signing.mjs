@@ -1,9 +1,14 @@
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
+import { existsSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 
 const LOCAL_MACOS_SIGNING_IDENTITY =
     'Daily Planner Local Development Code Signing';
+const NOTARIZATION_APPLE_ID = 'aaronmw@gmail.com';
+const NOTARIZATION_KEYCHAIN_SERVICE =
+    'com.aaronwright.dailyplanner.notarization';
+const NOTARIZATION_TEAM_ID = 'J73G3CSYN3';
 const APPLE_SIGNING_IDENTITY_PREFIXES = [
     'Developer ID Application:',
     'Apple Development:',
@@ -33,6 +38,149 @@ const getCodeSigningIdentityOutput = (keychain = null) => {
     } catch {
         return '';
     }
+};
+
+const getStoredNotarizationPassword = ({ runSecurity = execFileSync } = {}) => {
+    try {
+        return runSecurity(
+            'security',
+            [
+                'find-generic-password',
+                '-w',
+                '-a',
+                NOTARIZATION_APPLE_ID,
+                '-s',
+                NOTARIZATION_KEYCHAIN_SERVICE,
+            ],
+            {
+                encoding: 'utf8',
+                stdio: ['ignore', 'pipe', 'ignore'],
+            }
+        ).trim();
+    } catch {
+        return null;
+    }
+};
+
+const storeNotarizationPassword = ({ runSecurity = spawnSync } = {}) => {
+    const result = runSecurity(
+        'security',
+        [
+            'add-generic-password',
+            '-a',
+            NOTARIZATION_APPLE_ID,
+            '-s',
+            NOTARIZATION_KEYCHAIN_SERVICE,
+            '-D',
+            'application password',
+            '-j',
+            'Daily Planner Apple notarization app-specific password',
+            '-U',
+            '-w',
+        ],
+        { stdio: 'inherit' }
+    );
+
+    if (result.error) throw result.error;
+    return result.status === 0;
+};
+
+const notarizeMacosDiskImage = ({
+    dmgPath,
+    environment,
+    runCommand = spawnSync,
+}) => {
+    const credentialArgs = environment.APPLE_API_ISSUER
+        ? [
+              '--issuer',
+              environment.APPLE_API_ISSUER,
+              '--key-id',
+              environment.APPLE_API_KEY,
+              '--key',
+              environment.APPLE_API_KEY_PATH,
+          ]
+        : [
+              '--apple-id',
+              environment.APPLE_ID,
+              '--team-id',
+              environment.APPLE_TEAM_ID,
+              '--password',
+              environment.APPLE_PASSWORD,
+          ];
+    const submitResult = runCommand(
+        'xcrun',
+        ['notarytool', 'submit', dmgPath, ...credentialArgs, '--wait'],
+        { stdio: 'inherit' }
+    );
+    if (submitResult.error) throw submitResult.error;
+    if (submitResult.status !== 0) return false;
+
+    const stapleResult = runCommand('xcrun', ['stapler', 'staple', dmgPath], {
+        stdio: 'inherit',
+    });
+    if (stapleResult.error) throw stapleResult.error;
+    return stapleResult.status === 0;
+};
+
+const resolveMacosDmgPath = ({
+    targetDirectory,
+    productName,
+    version,
+    platformArch,
+    buildArgs,
+}) => {
+    const targetIndex = buildArgs.indexOf('--target');
+    const target =
+        (targetIndex >= 0 ? buildArgs[targetIndex + 1] : null) ||
+        buildArgs
+            .find(argument => argument.startsWith('--target='))
+            ?.slice('--target='.length);
+    const architecture = target?.startsWith('aarch64-')
+        ? 'aarch64'
+        : target?.startsWith('x86_64-')
+          ? 'x64'
+          : platformArch === 'arm64'
+            ? 'aarch64'
+            : 'x64';
+    const releaseDirectory = target
+        ? join(targetDirectory, target, 'release')
+        : join(targetDirectory, 'release');
+
+    return join(
+        releaseDirectory,
+        'bundle',
+        'dmg',
+        `${productName}_${version}_${architecture}.dmg`
+    );
+};
+
+const notarizeBuiltMacosDiskImage = ({
+    targetDirectory,
+    productName,
+    version,
+    platformArch,
+    buildArgs,
+    environment,
+    pathExists = existsSync,
+    notarize = notarizeMacosDiskImage,
+}) => {
+    const dmgPath = resolveMacosDmgPath({
+        targetDirectory,
+        productName,
+        version,
+        platformArch,
+        buildArgs,
+    });
+    if (!pathExists(dmgPath)) {
+        throw new Error(
+            `The expected macOS disk image was not built: ${dmgPath}`
+        );
+    }
+    if (!notarize({ dmgPath, environment })) {
+        throw new Error(`Could not notarize and staple: ${dmgPath}`);
+    }
+
+    return dmgPath;
 };
 
 const resolveMacosSigningIdentity = ({
@@ -73,6 +221,51 @@ const isInstallableSigningIdentity = identity => {
         normalizedIdentity !== 'ad hoc' &&
         normalizedIdentity !== 'ad-hoc'
     );
+};
+
+const isDeveloperIdSigningIdentity = ({ identity, identityOutput }) => {
+    const selectedIdentity = identity?.trim();
+    if (!selectedIdentity) return false;
+
+    return parseCodeSigningIdentities(identityOutput).some(
+        ({ hash, name }) =>
+            (hash === selectedIdentity || name === selectedIdentity) &&
+            name.startsWith('Developer ID Application:')
+    );
+};
+
+const resolveMacosNotarizationEnvironment = ({
+    environment,
+    identity,
+    identityOutput,
+    readPassword,
+}) => {
+    if (!isDeveloperIdSigningIdentity({ identity, identityOutput })) {
+        return { ...environment };
+    }
+
+    if (
+        environment.APPLE_API_ISSUER &&
+        environment.APPLE_API_KEY &&
+        environment.APPLE_API_KEY_PATH
+    ) {
+        return { ...environment };
+    }
+
+    const password = environment.APPLE_PASSWORD || readPassword();
+    if (!password) {
+        throw new Error(
+            'Developer ID builds must be notarized. Run ' +
+                '`pnpm setup:macos-notarization` once, then rebuild.'
+        );
+    }
+
+    return {
+        ...environment,
+        APPLE_ID: environment.APPLE_ID || NOTARIZATION_APPLE_ID,
+        APPLE_PASSWORD: password,
+        APPLE_TEAM_ID: environment.APPLE_TEAM_ID || NOTARIZATION_TEAM_ID,
+    };
 };
 
 const isStableDesignatedRequirement = (requirement, bundleIdentifier) => {
@@ -128,12 +321,22 @@ export {
     APPLE_SIGNING_IDENTITY_PREFIXES,
     findAppleSigningIdentity,
     getCodeSigningIdentityOutput,
+    getStoredNotarizationPassword,
     hasCodeSigningCertificate,
     hasCodeSigningIdentity,
+    isDeveloperIdSigningIdentity,
     isInstallableSigningIdentity,
     isStableDesignatedRequirement,
     LOCAL_MACOS_SIGNING_IDENTITY,
     LOGIN_KEYCHAIN,
+    NOTARIZATION_APPLE_ID,
+    NOTARIZATION_KEYCHAIN_SERVICE,
+    NOTARIZATION_TEAM_ID,
+    notarizeBuiltMacosDiskImage,
+    notarizeMacosDiskImage,
     parseCodeSigningIdentities,
+    resolveMacosNotarizationEnvironment,
+    resolveMacosDmgPath,
     resolveMacosSigningIdentity,
+    storeNotarizationPassword,
 };

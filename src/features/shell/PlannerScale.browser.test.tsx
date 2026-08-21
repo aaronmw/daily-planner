@@ -17,9 +17,24 @@ import { ListColumn } from '../lists/ListColumn';
 import { ItemColumn } from '../items/ItemColumn';
 import { ItemCard } from '../items/ItemCard';
 import { TimelineColumn } from '../timeline/TimelineColumn';
-import { ITEM_SELECTION_SHORTCUTS } from '../shortcuts/appShortcuts';
+import {
+    APP_SHORTCUT_IDS,
+    DEFAULT_APP_SHORTCUTS,
+    getConfigurableShortcutCommand,
+    shortcutDefinitionsFor,
+} from '../../core/application/shortcutCommands';
 import { ShortcutProvider } from '../shortcuts/ShortcutProvider';
 import '../../styles/index.css';
+
+const itemSelectionCommand = getConfigurableShortcutCommand(
+    `app:${APP_SHORTCUT_IDS.selectItems}`
+);
+const firstItemSelectionShortcut = itemSelectionCommand
+    ? shortcutDefinitionsFor(
+          itemSelectionCommand,
+          DEFAULT_APP_SHORTCUTS[APP_SHORTCUT_IDS.selectItems]
+      )[0]
+    : undefined;
 
 const noop = () => undefined;
 
@@ -67,7 +82,7 @@ describe('planner collection scale in a real browser', () => {
                             <div style={cardContainerStyle}>
                                 <ItemCard
                                     id={item.id}
-                                    shortcut={ITEM_SELECTION_SHORTCUTS[0]!}
+                                    shortcut={firstItemSelectionShortcut!}
                                 />
                             </div>
                         </ShortcutProvider>

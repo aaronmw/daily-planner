@@ -17,8 +17,9 @@ enabled = true
 
 [auth]
 enabled = true
-site_url = "http://127.0.0.1:3010"
+site_url = "https://daily-planner.localhost"
 additional_redirect_urls = [
+  "https://daily-planner.localhost/**",
   "http://127.0.0.1:3010/**",
   "http://localhost:3010/**",
   "daily-planner://auth/callback**",

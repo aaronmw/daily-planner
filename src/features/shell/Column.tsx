@@ -2,13 +2,14 @@ import type { PropsWithChildren, ReactNode } from 'react';
 import { Icon } from './Icon';
 import {
     ShortcutHint,
-    shortcutAriaKeys,
     type ShortcutDefinition,
 } from '../shortcuts/ShortcutProvider';
+import { shortcutAriaKeys } from '../shortcuts/shortcutMatching';
 
 interface ColumnProps extends PropsWithChildren {
     actions?: ReactNode;
     canCollapse: boolean;
+    collapsedContent?: ReactNode;
     heading: string;
     isOpen: boolean;
     onToggle: () => void;
@@ -20,6 +21,7 @@ export function Column({
     actions,
     canCollapse,
     children,
+    collapsedContent,
     heading,
     isOpen,
     onToggle,
@@ -29,7 +31,7 @@ export function Column({
     return (
         <section
             aria-label={heading}
-            className={`planner-column relative min-w-0 overflow-hidden transition-[color,background-color,flex-basis,flex-grow,width] duration-150 ease-in-out ${isOpen ? 'bg-planner-background text-planner-text' : 'bg-planner-contrast text-planner-background'}`}
+            className={`planner-column relative min-w-0 overflow-clip transition-[color,background-color,flex-basis,flex-grow,width] duration-150 ease-in-out ${isOpen ? 'bg-planner-background text-planner-text' : 'bg-planner-contrast text-planner-background'}`}
             data-collapsed={!isOpen}
             style={{
                 flexBasis: isOpen ? 0 : 'var(--spacing-icon-slot)',
@@ -77,29 +79,44 @@ export function Column({
                 <div className="min-h-0 flex-1">{children}</div>
             </div>
             {!isOpen && (
-                <button
-                    aria-keyshortcuts={
-                        shortcut ? shortcutAriaKeys(shortcut) : undefined
-                    }
-                    aria-label={`Expand ${heading}`}
-                    className="planner-column-expand"
-                    onClick={onToggle}
-                    title={`Expand ${heading}`}
-                    type="button"
-                >
-                    {shortcut && (
-                        <ShortcutHint
-                            className="planner-column-expand-shortcut"
-                            shortcut={shortcut}
-                        />
-                    )}
-                    <span
-                        aria-hidden="true"
-                        className="planner-column-expand-icon"
+                <>
+                    <button
+                        aria-keyshortcuts={
+                            shortcut ? shortcutAriaKeys(shortcut) : undefined
+                        }
+                        aria-label={`Expand ${heading}`}
+                        className="planner-column-expand"
+                        onClick={onToggle}
+                        title={`Expand ${heading}`}
+                        type="button"
                     >
-                        <Icon name="arrow-right-from-line" />
-                    </span>
-                </button>
+                        {shortcut && (
+                            <ShortcutHint
+                                className="planner-column-expand-shortcut"
+                                shortcut={shortcut}
+                            />
+                        )}
+                        <span
+                            aria-hidden="true"
+                            className="planner-column-expand-icon"
+                        >
+                            <Icon name="arrow-right-from-line" />
+                        </span>
+                    </button>
+                    <div className="planner-column-collapsed-layout">
+                        <span
+                            aria-hidden="true"
+                            className="planner-column-expand-heading uppercase"
+                        >
+                            {heading}
+                        </span>
+                        {collapsedContent && (
+                            <div className="planner-column-collapsed-content">
+                                {collapsedContent}
+                            </div>
+                        )}
+                    </div>
+                </>
             )}
         </section>
     );

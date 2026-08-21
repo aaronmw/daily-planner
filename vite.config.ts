@@ -2,7 +2,8 @@ import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
 import { resolve } from 'node:path';
 
-export default defineConfig({
+export default defineConfig(({ command }) => ({
+    base: command === 'build' ? '/daily-planner/' : '/',
     build: {
         emptyOutDir: true,
         outDir: 'dist',
@@ -22,4 +23,4 @@ export default defineConfig({
     server: {
         host: '127.0.0.1',
     },
-});
+}));

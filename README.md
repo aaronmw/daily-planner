@@ -8,7 +8,7 @@ content encrypted on the client.
 ## Requirements
 
 - Node.js 22.12 or newer
-- pnpm 11.16.0 through Corepack
+- pnpm 11.22.0 through Corepack
 - Rust and the Tauri prerequisites for native builds
 
 ```sh
@@ -32,7 +32,9 @@ the React application through Vite on port `1420`, so React and CSS changes use
 HMR without rebuilding or reinstalling the production app.
 
 For browser-only development, run `pnpm dev:web`; it serves the same React
-application at `http://127.0.0.1:3010`. Development processes are user-managed.
+application at `https://daily-planner.localhost`, routed by the dotfiles-managed
+Caddy service to strict upstream `127.0.0.1:3010`. Development processes are
+user-managed.
 
 Copy `.env.example` to a local ignored environment file when collaboration is
 needed. Every `VITE_*` value is browser-visible; use only the Supabase
@@ -47,11 +49,13 @@ publishable key, never a service-role or secret key.
 - `src/platform/persistence`: encrypted per-record Dexie repositories
 - `src/platform/collaboration`: Supabase, crypto, attachment, and auth adapters
 - `src/features`: planner UI organized by vertical slice
-- `src-tauri`: isolated native development and production shells
+- `src-tauri`: isolated local-HMR development shell, hosted production shell,
+  and bundled encrypted-origin migration bridge
 
-The rewrite starts with the `daily-planner-v5` vault. It deliberately leaves
-older IndexedDB databases and the existing production WebCrypto Keychain item
-untouched.
+The rewrite starts with the `daily-planner-v5` vault. The production macOS
+shell re-encrypts that vault from the former bundled Tauri origin into the
+canonical hosted origin on first launch; it deliberately leaves the source
+database and existing production WebCrypto Keychain item untouched.
 
 ## Verification
 
@@ -76,6 +80,13 @@ Vite emits a static single-page application in `dist/`. A static host must
 rewrite unknown application routes, including `/share/:listId`, to
 `/index.html` while serving existing assets normally. This is a host rewrite,
 not an HTTP redirect, so React Router receives the original clean URL.
+
+The canonical production host is
+`https://aaronmw.github.io/daily-planner/`. The production Tauri shell loads
+that URL directly, while `pnpm dev` continues to use the isolated local Vite
+origin. Deploy the matching web build before distributing a new shell; the
+shell's compatibility handshake blocks stale hosted builds instead of opening
+or resetting local data.
 
 ## Supabase
 

@@ -113,7 +113,32 @@ describe('ItemColumn contextual shortcuts', () => {
         expect(commands.createItem).toHaveBeenCalledOnce();
         expect(createHint).toHaveAttribute('data-visible', 'true');
 
+        const firstItem = view.container.querySelector<HTMLElement>(
+            `[data-item-id="${items[0]!.id}"]`
+        );
+        if (!firstItem) throw new Error('The first item card did not render.');
+        fireEvent.click(firstItem);
+        commands.selectItem.mockClear();
+
+        fireEvent.keyDown(firstItem, { key: 'ArrowDown' });
+        expect(commands.selectItem).toHaveBeenCalledWith(items[1]!.id);
+    });
+
+    it('moves item focus with unmodified arrows when only the app has focus', async () => {
+        const { commands, items, view } = createHarness();
+        await waitFor(() =>
+            expect(view.container.querySelector('[data-item-id]')).toBeTruthy()
+        );
+
         fireEvent.keyDown(document, { key: 'ArrowDown' });
-        expect(commands.selectItem).toHaveBeenCalledWith(items[0]!.id);
+        expect(commands.selectItem).toHaveBeenLastCalledWith(items[0]!.id);
+
+        fireEvent.keyDown(document, { key: 'ArrowDown' });
+        expect(commands.selectItem).toHaveBeenLastCalledWith(items[1]!.id);
+        await waitFor(() =>
+            expect(
+                view.container.querySelector(`[data-item-id="${items[1]!.id}"]`)
+            ).toHaveFocus()
+        );
     });
 });

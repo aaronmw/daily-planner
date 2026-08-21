@@ -1,19 +1,12 @@
-import {
-    type CSSProperties,
-    type MouseEvent,
-    useLayoutEffect,
-    useRef,
-    useState,
-} from 'react';
+import { type CSSProperties, useLayoutEffect, useRef, useState } from 'react';
 import type { ListId, ItemId } from '../../core/domain/ids';
-import { ACCENT_KEYS } from '../../core/domain/types';
 import { usePlannerCommands } from '../../core/application/plannerContext';
 import { usePlannerSelector } from '../../core/store/plannerContext';
 import { accentColor } from '../theme/theme';
 import { EditableText } from '../editor/EditableText';
-import { IconButton } from '../shell/IconButton';
 import { CardOwnerAvatar } from '../collaboration/CardOwnerAvatar';
 import { useListCapability } from '../collaboration/useListCapability';
+import { ListAccentPicker } from './ListAccentPicker';
 
 type AccentStyle = CSSProperties & Record<`--planner-${string}`, string>;
 const EMPTY_ITEM_IDS: readonly ItemId[] = [];
@@ -105,21 +98,23 @@ export function ListCard({ id, index }: { id: ListId; index: number }) {
             ? { id: editSession.requestId, selectAll: true }
             : null;
 
-    const cycleAccent = (event: MouseEvent<HTMLButtonElement>) => {
-        event.stopPropagation();
-        const current = ACCENT_KEYS.indexOf(list.accentKey);
-        const accentKey = ACCENT_KEYS[(current + 1) % ACCENT_KEYS.length];
-        if (accentKey) void commands.updateList(id, { accentKey });
-    };
-
     return (
         <div
             aria-label={`Open ${list.label || 'untitled list'}`}
-            className="planner-list-card group relative flex aspect-[2/3] min-w-0 cursor-pointer flex-col border-[length:var(--planner-stroke-width)] border-planner-border bg-planner-contrast p-4 text-planner-contrast-text transition-[background-color,border-color,box-shadow,transform] duration-150 ease-in-out focus:outline-none"
+            className="planner-list-card group relative flex aspect-[2/3] min-w-0 cursor-pointer flex-col border-[length:var(--planner-stroke-width)] border-planner-border bg-planner-contrast p-4 text-planner-contrast-text transition-[background-color,border-color,opacity,transform] duration-150 ease-in-out focus:outline-none"
             data-active={selected}
             data-grid-index={index}
-            onClick={() => commands.selectList(id)}
+            onClick={event => {
+                if (
+                    event.target instanceof Element &&
+                    event.target.closest('[data-list-accent-picker]')
+                ) {
+                    return;
+                }
+                commands.selectList(id);
+            }}
             onKeyDown={event => {
+                if (event.target !== event.currentTarget) return;
                 if (event.key === 'Enter' || event.key === ' ') {
                     event.preventDefault();
                     commands.selectList(id);
@@ -155,11 +150,11 @@ export function ListCard({ id, index }: { id: ListId; index: number }) {
             </h3>
             <FittedPreview itemIds={itemIds} />
             {canWrite && (
-                <div className="absolute bottom-0 right-0 opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100">
-                    <IconButton
-                        icon="palette"
-                        label={`Change ${list.label || 'list'} colour`}
-                        onClick={cycleAccent}
+                <div className="opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-focus-within:opacity-100">
+                    <ListAccentPicker
+                        accentKey={list.accentKey}
+                        label={list.label}
+                        listId={id}
                     />
                 </div>
             )}

@@ -199,7 +199,7 @@ export function TimelineColumn({
                         key={minute}
                         style={{ top: minute * pixelsPerMinute }}
                     >
-                        <time className="absolute left-0 top-0 w-[72px] -translate-y-1/2 px-2 text-right text-[0.85rem]">
+                        <time className="absolute left-0 top-0 w-[72px] -translate-y-1/2 px-2 text-right text-[0.85rem] tabular-nums">
                             {minute % 60 === 0 ? formatMinute(minute) : ''}
                         </time>
                         <span className="absolute left-[72px] right-0 top-0 h-[var(--planner-stroke-width)] bg-planner-border opacity-30" />

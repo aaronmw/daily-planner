@@ -10,6 +10,7 @@ dist/
 *.tsbuildinfo
 **/__screenshots__/
 src-tauri/target
+src-tauri/migration-dist/
 src-tauri/gen/
 .playwright-mcp/
 /.worktrees/

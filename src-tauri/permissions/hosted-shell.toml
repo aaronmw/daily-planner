@@ -1,0 +1,14 @@
+[[permission]]
+identifier = "allow-dock-icon-accent"
+description = "Allows the planner UI to synchronize the macOS Dock icon accent."
+commands.allow = ["set_dock_icon_accent"]
+
+[[permission]]
+identifier = "allow-hosted-migration"
+description = "Allows the hosted planner to claim and acknowledge one legacy-origin migration."
+commands.allow = ["claim_legacy_migration", "complete_legacy_migration"]
+
+[[permission]]
+identifier = "allow-legacy-migration-export"
+description = "Allows only the hidden bundled-origin bridge to stage a migration payload or error."
+commands.allow = ["publish_legacy_migration", "publish_legacy_migration_error"]

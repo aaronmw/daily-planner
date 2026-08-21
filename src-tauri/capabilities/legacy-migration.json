@@ -1,0 +1,8 @@
+{
+    "$schema": "../gen/schemas/desktop-schema.json",
+    "identifier": "legacy-migration-capability",
+    "description": "One-way export from the former bundled Tauri origin",
+    "local": true,
+    "windows": ["legacy-migration"],
+    "permissions": ["allow-legacy-migration-export"]
+}

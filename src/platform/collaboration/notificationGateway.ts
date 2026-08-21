@@ -46,7 +46,9 @@ export const enableNotifications = async (): Promise<void> => {
     if ((await Notification.requestPermission()) !== 'granted') {
         throw new Error('Notification permission was not granted.');
     }
-    const registration = await navigator.serviceWorker.register('/sw.js');
+    const registration = await navigator.serviceWorker.register(
+        `${import.meta.env.BASE_URL}sw.js`
+    );
     await navigator.serviceWorker.ready;
     const subscription =
         (await registration.pushManager.getSubscription()) ??

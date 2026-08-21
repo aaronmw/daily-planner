@@ -9,7 +9,10 @@ import {
 import { usePlannerCommands } from '../../core/application/plannerContext';
 import { usePlannerSelector } from '../../core/store/plannerContext';
 import type { PlannerColumn, ThemeMode } from '../../core/domain/types';
+import { nextItemDurationEstimate } from '../../core/domain/itemDuration';
+import { useListCapability } from '../collaboration/useListCapability';
 import { ListColumn } from '../lists/ListColumn';
+import { CollapsedListSwitcher } from '../lists/CollapsedListSwitcher';
 import { OptionsMenu } from '../settings/OptionsMenu';
 import { ItemColumn } from '../items/ItemColumn';
 import { TimelineColumn } from '../timeline/TimelineColumn';
@@ -23,11 +26,11 @@ import { resolveColumnShortcut, type ShortcutColumn } from './columnShortcuts';
 import { useShortcuts } from '../shortcuts/ShortcutProvider';
 import { getPlatformAdapter } from '../../platform/runtime/platformAdapter';
 import {
-    CYCLE_THEME_SHORTCUT,
-    ITEMS_COLUMN_SHORTCUT,
-    LISTS_COLUMN_SHORTCUT,
-    TIMELINE_COLUMN_SHORTCUT,
-} from '../shortcuts/appShortcuts';
+    APP_SHORTCUT_IDS,
+    getConfigurableShortcutCommand,
+    shortcutDefinitionsFor,
+    type AppShortcutId,
+} from '../../core/application/shortcutCommands';
 
 const ItemDetailsColumn = lazy(async () => {
     const module = await import('../details/ItemDetailsColumn');
@@ -42,9 +45,7 @@ const DeletedItems = lazy(async () => {
 type RootStyle = CSSProperties & Record<`--planner-${string}`, string>;
 
 const nextThemeMode = (mode: ThemeMode): ThemeMode => {
-    if (mode === 'system') return 'light';
-    if (mode === 'light') return 'dark';
-    return 'system';
+    return mode === 'light' ? 'dark' : 'light';
 };
 
 export function PlannerShell() {
@@ -56,6 +57,15 @@ export function PlannerShell() {
         state.selectedListId
             ? (state.listsById.get(state.selectedListId) ?? null)
             : null
+    );
+    const selectedItem = usePlannerSelector(state =>
+        state.selectedItemId
+            ? (state.itemsById.get(state.selectedItemId) ?? null)
+            : null
+    );
+    const canWriteSelectedItem = useListCapability(
+        selectedItem?.listId ?? null,
+        'write'
     );
     const selectedAccentKey = selectedList?.accentKey ?? null;
     const [systemPrefersDark, setSystemPrefersDark] = useState(
@@ -112,26 +122,72 @@ export function PlannerShell() {
             }));
         }
     };
+    const shortcutFor = (id: AppShortcutId) => {
+        const command = getConfigurableShortcutCommand(`app:${id}`);
+        return command
+            ? shortcutDefinitionsFor(command, preferences.appShortcuts[id])[0]
+            : undefined;
+    };
+    const cycleDurationShortcut = shortcutFor(APP_SHORTCUT_IDS.cycleDuration);
+    const cycleThemeShortcut = shortcutFor(APP_SHORTCUT_IDS.cycleTheme);
+    const itemsColumnShortcut = shortcutFor(APP_SHORTCUT_IDS.toggleItems);
+    const listsColumnShortcut = shortcutFor(APP_SHORTCUT_IDS.toggleLists);
+    const timelineColumnShortcut = shortcutFor(APP_SHORTCUT_IDS.toggleTimeline);
     useShortcuts([
-        {
-            onTrigger: () =>
-                commands.updatePreferences({
-                    themeMode: nextThemeMode(preferences.themeMode),
-                }),
-            shortcut: CYCLE_THEME_SHORTCUT,
-        },
-        {
-            onTrigger: () => runColumnShortcut('i'),
-            shortcut: ITEMS_COLUMN_SHORTCUT,
-        },
-        {
-            onTrigger: () => runColumnShortcut('l'),
-            shortcut: LISTS_COLUMN_SHORTCUT,
-        },
-        {
-            onTrigger: () => runColumnShortcut('t'),
-            shortcut: TIMELINE_COLUMN_SHORTCUT,
-        },
+        ...(cycleDurationShortcut
+            ? [
+                  {
+                      enabled: Boolean(selectedItem && canWriteSelectedItem),
+                      onTrigger: () => {
+                          if (!selectedItem) return;
+                          void commands.updateItemWith(
+                              selectedItem.id,
+                              current => ({
+                                  durationMinutes: nextItemDurationEstimate(
+                                      current.durationMinutes
+                                  ),
+                              })
+                          );
+                      },
+                      shortcut: cycleDurationShortcut,
+                  },
+              ]
+            : []),
+        ...(cycleThemeShortcut
+            ? [
+                  {
+                      onTrigger: () =>
+                          commands.updatePreferences({
+                              themeMode: nextThemeMode(preferences.themeMode),
+                          }),
+                      shortcut: cycleThemeShortcut,
+                  },
+              ]
+            : []),
+        ...(itemsColumnShortcut
+            ? [
+                  {
+                      onTrigger: () => runColumnShortcut('i'),
+                      shortcut: itemsColumnShortcut,
+                  },
+              ]
+            : []),
+        ...(listsColumnShortcut
+            ? [
+                  {
+                      onTrigger: () => runColumnShortcut('l'),
+                      shortcut: listsColumnShortcut,
+                  },
+              ]
+            : []),
+        ...(timelineColumnShortcut
+            ? [
+                  {
+                      onTrigger: () => runColumnShortcut('t'),
+                      shortcut: timelineColumnShortcut,
+                  },
+              ]
+            : []),
     ]);
 
     const resolvedTheme = resolveTheme(
@@ -183,7 +239,9 @@ export function PlannerShell() {
                 heading="Timeline"
                 isOpen={preferences.columnVisibility.timeline}
                 onToggle={() => toggle('timeline')}
-                shortcut={TIMELINE_COLUMN_SHORTCUT}
+                {...(timelineColumnShortcut
+                    ? { shortcut: timelineColumnShortcut }
+                    : {})}
                 weight={1.1}
             >
                 <TimelineColumn
@@ -193,24 +251,33 @@ export function PlannerShell() {
             </Column>
             <Column
                 canCollapse={openCount > 1}
+                collapsedContent={<CollapsedListSwitcher />}
                 heading="Lists"
                 isOpen={preferences.columnVisibility.lists}
                 onToggle={() => toggle('lists')}
-                shortcut={LISTS_COLUMN_SHORTCUT}
+                {...(listsColumnShortcut
+                    ? { shortcut: listsColumnShortcut }
+                    : {})}
                 weight={1.45}
             >
-                <ListColumn focusRequestId={columnFocusRequests.lists} />
+                <ListColumn
+                    focusRequestId={columnFocusRequests.lists}
+                    isActive={preferences.columnVisibility.lists}
+                />
             </Column>
             <Column
                 canCollapse={openCount > 1}
                 heading="Items"
                 isOpen={preferences.columnVisibility.items}
                 onToggle={() => toggle('items')}
-                shortcut={ITEMS_COLUMN_SHORTCUT}
+                {...(itemsColumnShortcut
+                    ? { shortcut: itemsColumnShortcut }
+                    : {})}
                 weight={1.05}
             >
                 <ItemColumn
                     focusRequestId={columnFocusRequests.items}
+                    isActive={preferences.columnVisibility.items}
                     minuteHeight={minuteHeight}
                 />
             </Column>

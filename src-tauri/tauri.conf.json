@@ -4,15 +4,15 @@
     "version": "1.0.0",
     "identifier": "com.aaronwright.dailyplanner",
     "build": {
-        "beforeDevCommand": "pnpm dev:desktop",
-        "devUrl": "http://127.0.0.1:1420",
-        "beforeBuildCommand": "pnpm desktop:build",
-        "frontendDist": "../dist"
+        "beforeBuildCommand": "pnpm desktop:migration:build",
+        "frontendDist": "migration-dist"
     },
     "app": {
         "windows": [
             {
+                "label": "main",
                 "title": "Daily Planner",
+                "url": "https://aaronmw.github.io/daily-planner/",
                 "width": 1440,
                 "height": 960,
                 "minWidth": 960,
@@ -22,7 +22,8 @@
             }
         ],
         "security": {
-            "csp": "default-src 'self' ipc: http://ipc.localhost; base-uri 'self'; object-src 'none'; script-src 'self' https://kit.fontawesome.com https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline' https://ka-p.fontawesome.com; font-src 'self' data: https://ka-p.fontawesome.com; connect-src 'self' ipc: http://ipc.localhost https://ka-p.fontawesome.com https://*.supabase.co wss://*.supabase.co https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; img-src 'self' data: blob: https://*.googleusercontent.com; media-src 'self' data: blob:"
+            "capabilities": ["main-capability", "legacy-migration-capability"],
+            "csp": "default-src 'none'; script-src 'self'; connect-src ipc: http://ipc.localhost"
         }
     },
     "bundle": {

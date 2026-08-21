@@ -9,7 +9,12 @@ import {
 } from '../../core/domain/factories';
 import { PlannerStoreProvider } from '../../core/store/plannerContext';
 import { createPlannerStore } from '../../core/store/plannerStore';
-import { ITEM_SELECTION_SHORTCUTS } from '../shortcuts/appShortcuts';
+import {
+    APP_SHORTCUT_IDS,
+    DEFAULT_APP_SHORTCUTS,
+    getConfigurableShortcutCommand,
+    shortcutDefinitionsFor,
+} from '../../core/application/shortcutCommands';
 import { ShortcutProvider } from '../shortcuts/ShortcutProvider';
 import { ItemCard } from './ItemCard';
 import '../../styles/index.css';
@@ -50,7 +55,15 @@ describe('item shortcut hint', () => {
             updateList: vi.fn(),
             updatePreferences: vi.fn(),
         } satisfies PlannerCommands;
-        const shortcut = ITEM_SELECTION_SHORTCUTS[0];
+        const command = getConfigurableShortcutCommand(
+            `app:${APP_SHORTCUT_IDS.selectItems}`
+        );
+        const shortcut = command
+            ? shortcutDefinitionsFor(
+                  command,
+                  DEFAULT_APP_SHORTCUTS[APP_SHORTCUT_IDS.selectItems]
+              )[0]
+            : undefined;
         if (!shortcut) throw new Error('The first item shortcut is missing.');
         const { container } = render(
             <PlannerStoreProvider store={store}>

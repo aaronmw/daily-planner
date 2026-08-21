@@ -1,5 +1,12 @@
-import { type CSSProperties, useLayoutEffect, useRef, useState } from 'react';
+import {
+    type CSSProperties,
+    type KeyboardEvent,
+    useLayoutEffect,
+    useRef,
+    useState,
+} from 'react';
 import type { ItemId } from '../../core/domain/ids';
+import { effectiveItemDurationMinutes } from '../../core/domain/itemDuration';
 import { usePlannerCommands } from '../../core/application/plannerContext';
 import { usePlannerSelector } from '../../core/store/plannerContext';
 import { accentColor } from '../theme/theme';
@@ -7,9 +14,12 @@ import { CardOwnerAvatar } from '../collaboration/CardOwnerAvatar';
 import { useListCapability } from '../collaboration/useListCapability';
 import {
     ShortcutHint,
-    shortcutAriaKeys,
     type ShortcutDefinition,
 } from '../shortcuts/ShortcutProvider';
+import {
+    matchesShortcut,
+    shortcutAriaKeys,
+} from '../shortcuts/shortcutMatching';
 
 type ItemCardStyle = CSSProperties &
     Record<`--planner-${string}`, string | number>;
@@ -20,6 +30,9 @@ const MAXIMUM_LABEL_FONT_SIZE = 16;
 interface ItemCardProps {
     context?: 'collection' | 'timeline';
     id: ItemId;
+    onNavigate?: (direction: 'next' | 'previous') => void;
+    onReorder?: (direction: 'next' | 'previous') => void | Promise<void>;
+    reorderShortcuts?: readonly ShortcutDefinition[];
     shortcut?: ShortcutDefinition;
     style?: ItemCardStyle;
 }
@@ -27,6 +40,9 @@ interface ItemCardProps {
 export function ItemCard({
     context = 'collection',
     id,
+    onNavigate,
+    onReorder,
+    reorderShortcuts = [],
     shortcut,
     style,
 }: ItemCardProps) {
@@ -93,32 +109,79 @@ export function ItemCard({
     if (!item || !list) return null;
 
     const accent = accentColor(list.accentKey);
+    const effectiveDuration = effectiveItemDurationMinutes(
+        item.durationMinutes
+    );
+    const durationSized = context === 'timeline' || relativeSizing;
+    const renderedDuration =
+        context === 'collection' && relativeSizing
+            ? effectiveDuration
+            : item.durationMinutes;
     const cardStyle: ItemCardStyle = {
         '--planner-border': accent,
         '--planner-contrast': accent,
-        '--planner-item-duration-minutes': item.durationMinutes,
-        'height':
-            context === 'timeline' || relativeSizing
-                ? `calc(var(--planner-minute-height) * ${item.durationMinutes})`
-                : 'auto',
-        'minHeight': context === 'timeline' || relativeSizing ? 0 : '45px',
+        '--planner-item-duration-minutes': renderedDuration,
+        'height': durationSized
+            ? `calc(var(--planner-minute-height) * ${renderedDuration})`
+            : 'auto',
+        'minHeight': durationSized ? 0 : '45px',
         ...style,
     };
     const singleLine = !item.label.includes('\n') && item.label.length < 72;
+    const handleKeyDown = (event: KeyboardEvent<HTMLButtonElement>) => {
+        const reorderShortcut = reorderShortcuts.find(shortcut =>
+            matchesShortcut(event, shortcut)
+        );
+        if (reorderShortcut && onReorder) {
+            event.preventDefault();
+            event.stopPropagation();
+            void onReorder(event.key === 'ArrowDown' ? 'next' : 'previous');
+            return;
+        }
+
+        if (
+            event.ctrlKey ||
+            event.altKey ||
+            event.metaKey ||
+            event.shiftKey ||
+            (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') ||
+            !onNavigate
+        ) {
+            return;
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+        const direction = event.key === 'ArrowDown' ? 'next' : 'previous';
+        onNavigate(direction);
+    };
+
+    const ariaKeyShortcuts = [
+        shortcut ? shortcutAriaKeys(shortcut) : null,
+        ...reorderShortcuts.map(shortcut => shortcutAriaKeys(shortcut)),
+    ]
+        .filter(value => value !== null)
+        .join(' ');
 
     return (
         <button
             aria-label={item.label || 'Untitled item'}
-            aria-keyshortcuts={
-                shortcut ? shortcutAriaKeys(shortcut) : undefined
-            }
-            className={`planner-item-card relative flex w-full min-w-0 cursor-pointer bg-planner-background text-left focus:outline-none ${singleLine ? 'items-center' : 'items-start'} ${item.isComplete ? 'opacity-60' : ''}`}
+            aria-keyshortcuts={ariaKeyShortcuts || undefined}
+            className={`planner-item-card relative flex w-full min-w-0 cursor-pointer text-left focus:outline-none ${singleLine ? 'items-center' : 'items-start'} ${item.isComplete ? 'opacity-60' : ''}`}
             data-active={selected}
             data-card-context={context}
             data-draggable={canWrite}
+            data-open-ended-duration={
+                context === 'collection' &&
+                relativeSizing &&
+                item.durationMinutes > 30
+                    ? true
+                    : undefined
+            }
             data-single-line={singleLine}
             data-item-id={id}
             onClick={() => commands.selectItem(id)}
+            onKeyDown={handleKeyDown}
             ref={cardRef}
             style={cardStyle}
             tabIndex={selected ? 0 : -1}
@@ -131,13 +194,13 @@ export function ItemCard({
                 />
             )}
             <CardOwnerAvatar
-                compact={item.durationMinutes < 30}
+                compact={effectiveDuration < 30}
                 identityId={item.creatorIdentityId}
                 labelPrefix="Created by"
                 listId={item.listId}
             />
             <span
-                className="planner-item-card-label min-w-0 flex-1 whitespace-pre-wrap font-medium leading-[1.45]"
+                className="planner-item-card-label min-w-0 flex-1 self-center whitespace-pre-wrap font-medium leading-[1.45]"
                 ref={labelRef}
                 style={{ fontSize: labelFontSize }}
             >

@@ -10,8 +10,10 @@ import type {
     SyncStatus,
 } from '../domain/types';
 import { DEFAULT_DESKTOP_SHORTCUTS } from '../application/commandIds';
+import { DEFAULT_APP_SHORTCUTS } from '../application/shortcutCommands';
 
 export const DEFAULT_PREFERENCES: PlannerPreferences = {
+    appShortcuts: DEFAULT_APP_SHORTCUTS,
     columnVisibility: {
         details: true,
         lists: true,

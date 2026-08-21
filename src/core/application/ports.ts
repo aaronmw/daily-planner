@@ -85,7 +85,7 @@ export interface PlatformAdapter {
     readonly kind: 'desktop' | 'web';
     openExternal: (url: string) => Promise<void>;
     registerGlobalShortcuts: (
-        shortcuts: Readonly<Record<PlannerCommandId, string>>,
+        shortcuts: Readonly<Partial<Record<PlannerCommandId, string>>>,
         onCommand: (commandId: PlannerCommandId) => void
     ) => Promise<() => void | Promise<void>>;
     setDockIconAccent: (accent: AccentKey | null) => Promise<void>;

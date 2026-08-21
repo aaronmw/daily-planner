@@ -6,7 +6,7 @@ export const isDesktopRuntime = (): boolean =>
     typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
 
 const shortcutsAreUnique = (
-    shortcuts: Readonly<Record<PlannerCommandId, string>>
+    shortcuts: Readonly<Partial<Record<PlannerCommandId, string>>>
 ): boolean => {
     const values = Object.values(shortcuts);
     return new Set(values).size === values.length;
@@ -47,7 +47,7 @@ export class TauriPlatformAdapter implements PlatformAdapter {
     }
 
     async registerGlobalShortcuts(
-        shortcuts: Readonly<Record<PlannerCommandId, string>>,
+        shortcuts: Readonly<Partial<Record<PlannerCommandId, string>>>,
         onCommand: (commandId: PlannerCommandId) => void
     ): Promise<() => void | Promise<void>> {
         if (!shortcutsAreUnique(shortcuts)) {
@@ -66,6 +66,13 @@ export class TauriPlatformAdapter implements PlatformAdapter {
         if (previous.length > 0) {
             await unregister(previous);
             this.#registered = [];
+        }
+        if (values.length === 0) {
+            this.#registeredEntries = [];
+            this.#registeredHandler = onCommand;
+            return () => {
+                this.#registeredHandler = null;
+            };
         }
         try {
             await register(values, event => {

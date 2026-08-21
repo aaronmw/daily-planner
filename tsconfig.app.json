@@ -17,5 +17,10 @@
         "target": "ES2024",
         "types": ["vite/client", "vitest/globals"]
     },
-    "include": ["src", "vite.config.ts", "vitest.config.ts"]
+    "include": [
+        "src",
+        "vite.config.ts",
+        "vite.migration.config.ts",
+        "vitest.config.ts"
+    ]
 }

@@ -28,7 +28,10 @@ afterEach(() => {
     vi.restoreAllMocks();
 });
 
-const createHarness = ({ includeDeletedItems = false } = {}) => {
+const createHarness = ({
+    includeDeletedItems = false,
+    selectItem = false,
+} = {}) => {
     const list = createPlannerList({
         accentKey: 'red',
         label: 'Shell shortcut list',
@@ -59,6 +62,7 @@ const createHarness = ({ includeDeletedItems = false } = {}) => {
             : [item],
         lists: includeDeletedItems ? [list, archivedList] : [list],
     });
+    if (selectItem) store.getState().setSelection(list.id, item.id);
     const updatePreferences = vi.fn((changes: Partial<PlannerPreferences>) => {
         const current = store.getState().preferences;
         store.getState().setPreferences({ ...current, ...changes });
@@ -100,7 +104,7 @@ const createHarness = ({ includeDeletedItems = false } = {}) => {
         </PlannerStoreProvider>
     );
 
-    return { list, store, updatePreferences };
+    return { commands, item, list, store, updatePreferences };
 };
 
 describe('PlannerShell contextual shortcuts', () => {
@@ -221,6 +225,42 @@ describe('PlannerShell contextual shortcuts', () => {
             expect(getComputedStyle(close).opacity).toBe('1');
         });
         expect(screen.getByRole('radio', { name: 'System' })).toHaveFocus();
+    });
+
+    it('scopes arrow navigation to enabled controls in open Options', async () => {
+        const user = userEvent.setup();
+        createHarness();
+
+        await user.click(screen.getByRole('button', { name: 'Options' }));
+
+        const system = screen.getByRole('radio', { name: 'System' });
+        const light = screen.getByRole('radio', { name: 'Light' });
+        const highlightIncomplete = screen.getByRole('checkbox', {
+            name: 'Highlight incomplete',
+        });
+        const zoom = screen.getByRole('slider', {
+            name: 'Timeline hours visible',
+        });
+        const leakedKeyDown = vi.fn();
+        document.addEventListener('keydown', leakedKeyDown);
+
+        await user.keyboard('{ArrowDown}');
+        expect(light).toHaveFocus();
+        expect(leakedKeyDown).not.toHaveBeenCalled();
+
+        system.focus();
+        await user.keyboard('{ArrowUp}');
+        expect(highlightIncomplete).toHaveFocus();
+
+        await user.keyboard('{ArrowDown}');
+        expect(system).toHaveFocus();
+
+        zoom.focus();
+        await user.keyboard('{ArrowRight}');
+        expect(zoom).toHaveFocus();
+        expect(leakedKeyDown).not.toHaveBeenCalled();
+
+        document.removeEventListener('keydown', leakedKeyDown);
     });
 
     it('closes Options when Escape is pressed and restores launcher focus', async () => {
@@ -367,6 +407,24 @@ describe('PlannerShell contextual shortcuts', () => {
         );
     });
 
+    it('keeps a collapsed column shell fixed when descendants request scrolling', async () => {
+        const user = userEvent.setup();
+        createHarness();
+        const section = screen.getByRole('region', { name: 'Lists' });
+
+        await user.click(
+            screen.getByRole('button', { name: 'Collapse Lists' })
+        );
+
+        expect(section.scrollWidth).toBeGreaterThan(section.clientWidth);
+        section.scrollLeft = 120;
+
+        expect(section.scrollLeft).toBe(0);
+        expect(
+            screen.getByRole('button', { name: 'Expand Lists' })
+        ).toBeVisible();
+    });
+
     it('requires command to cycle the lighting mode', () => {
         const { store, updatePreferences } = createHarness();
         fireEvent.click(screen.getByRole('button', { name: 'Options' }));
@@ -376,17 +434,44 @@ describe('PlannerShell contextual shortcuts', () => {
         const lightingHint = lightingHeading.querySelector<HTMLElement>(
             '.planner-settings-group-shortcut'
         );
-        expect(lightingHint).toHaveTextContent('⌘D');
+        expect(lightingHint).toHaveTextContent('⇧⌘D');
         expect(lightingHint).not.toHaveAttribute('data-visible');
-        expect(lightingHeading).toHaveAttribute('aria-keyshortcuts', 'Meta+D');
+        expect(lightingHeading).toHaveAttribute(
+            'aria-keyshortcuts',
+            'Shift+Meta+D'
+        );
 
         fireEvent.keyDown(document, { key: 'd' });
         expect(updatePreferences).not.toHaveBeenCalled();
         expect(store.getState().preferences.themeMode).toBe('system');
 
-        fireEvent.keyDown(document, { key: 'd', metaKey: true });
+        fireEvent.keyDown(document, {
+            code: 'KeyD',
+            key: 'd',
+            metaKey: true,
+            shiftKey: true,
+        });
         expect(store.getState().preferences.themeMode).toBe('light');
         expect(lightingHint).toHaveAttribute('data-visible', 'true');
+    });
+
+    it('cycles the selected item duration with command-D', () => {
+        const { commands, item, store, updatePreferences } = createHarness({
+            selectItem: true,
+        });
+
+        fireEvent.keyDown(document, {
+            code: 'KeyD',
+            key: 'd',
+            metaKey: true,
+        });
+
+        expect(commands.updateItemWith).toHaveBeenCalledWith(
+            item.id,
+            expect.any(Function)
+        );
+        expect(updatePreferences).not.toHaveBeenCalled();
+        expect(store.getState().preferences.themeMode).toBe('system');
     });
 
     it.each([

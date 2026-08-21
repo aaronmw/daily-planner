@@ -1,27 +1,82 @@
-import { useCallback, useEffect, useRef } from 'react';
-import { useVirtualizer } from '@tanstack/react-virtual';
+import { useCallback, useEffect, useEffectEvent, useRef } from 'react';
+import { type Virtualizer, useVirtualizer } from '@tanstack/react-virtual';
 import { usePlannerCommands } from '../../core/application/plannerContext';
+import type { PlannerCommands } from '../../core/application/plannerCommands';
 import {
     usePlannerSelector,
     usePlannerStoreApi,
 } from '../../core/store/plannerContext';
 import { ItemCard } from './ItemCard';
 import { useListCapability } from '../collaboration/useListCapability';
-import type { ItemId } from '../../core/domain/ids';
+import type { ItemId, ListId } from '../../core/domain/ids';
+import { effectiveItemDurationMinutes } from '../../core/domain/itemDuration';
 import { GhostButton } from '../shell/GhostButton';
-import { isTextEntryTarget } from '../shell/isTextEntryTarget';
 import { useItemListDropTarget } from './useItemListDropTarget';
+import { ShortcutHint, useShortcuts } from '../shortcuts/ShortcutProvider';
+import { isTextEntryTarget } from '../shell/isTextEntryTarget';
 import {
-    ShortcutHint,
-    useShortcut,
-    useShortcuts,
-} from '../shortcuts/ShortcutProvider';
-import {
-    CREATE_ITEM_SHORTCUT,
-    ITEM_SELECTION_SHORTCUTS,
-} from '../shortcuts/appShortcuts';
+    APP_SHORTCUT_IDS,
+    getConfigurableShortcutCommand,
+    shortcutDefinitionsFor,
+} from '../../core/application/shortcutCommands';
 
 const EMPTY_ITEM_IDS: readonly ItemId[] = [];
+
+interface UseItemReorderOptions {
+    canWrite: boolean;
+    commands: PlannerCommands;
+    focusItem: (itemId: ItemId) => void;
+    itemIds: readonly ItemId[];
+    listId: ListId | null;
+    virtualizer: Virtualizer<HTMLDivElement, Element>;
+}
+
+function useItemReorder({
+    canWrite,
+    commands,
+    focusItem,
+    itemIds,
+    listId,
+    virtualizer,
+}: UseItemReorderOptions) {
+    const pendingRef = useRef(false);
+
+    return useCallback(
+        async (itemId: ItemId, direction: 'next' | 'previous') => {
+            if (pendingRef.current || !listId || !canWrite) return;
+
+            const currentIndex = itemIds.indexOf(itemId);
+            const targetIndex =
+                direction === 'next' ? currentIndex + 1 : currentIndex - 1;
+            if (
+                currentIndex < 0 ||
+                targetIndex < 0 ||
+                targetIndex >= itemIds.length
+            ) {
+                return;
+            }
+
+            const previousId =
+                direction === 'next'
+                    ? (itemIds[currentIndex + 1] ?? null)
+                    : (itemIds[currentIndex - 2] ?? null);
+            const nextId =
+                direction === 'next'
+                    ? (itemIds[currentIndex + 2] ?? null)
+                    : (itemIds[currentIndex - 1] ?? null);
+
+            pendingRef.current = true;
+            try {
+                await commands.moveItem(itemId, listId, previousId, nextId);
+                virtualizer.scrollToIndex(targetIndex + 1, { align: 'auto' });
+                focusItem(itemId);
+            } finally {
+                pendingRef.current = false;
+            }
+        },
+        [canWrite, commands, focusItem, itemIds, listId, virtualizer]
+    );
+}
 
 type ItemColumnEntry =
     | { kind: 'create' }
@@ -30,11 +85,13 @@ type ItemColumnEntry =
 
 interface ItemColumnProps {
     focusRequestId?: number;
+    isActive?: boolean;
     minuteHeight: number;
 }
 
 export function ItemColumn({
     focusRequestId = 0,
+    isActive = true,
     minuteHeight,
 }: ItemColumnProps) {
     const commands = usePlannerCommands();
@@ -49,6 +106,9 @@ export function ItemColumn({
     const itemIds = selectedItemIds ?? EMPTY_ITEM_IDS;
     const relative = usePlannerSelector(
         state => state.preferences.relativeCardSizingEnabled
+    );
+    const appShortcuts = usePlannerSelector(
+        state => state.preferences.appShortcuts
     );
     const canWrite = useListCapability(selectedListId, 'write');
     const parentRef = useRef<HTMLDivElement>(null);
@@ -91,7 +151,7 @@ export function ItemColumn({
                     : entry?.kind === 'drop-preview'
                       ? (draggedItem?.durationMinutes ?? 30)
                       : 30;
-            return duration * minuteHeight;
+            return effectiveItemDurationMinutes(duration) * minuteHeight;
         },
         getItemKey: index => {
             const entry = entries[index];
@@ -168,18 +228,109 @@ export function ItemColumn({
         },
         [commands, scheduleItemFocus, itemIds, virtualizer]
     );
+    const reorderItem = useItemReorder({
+        canWrite,
+        commands,
+        focusItem: scheduleItemFocus,
+        itemIds,
+        listId: selectedListId,
+        virtualizer,
+    });
+    const handleDocumentArrowNavigation = useEffectEvent(
+        (event: KeyboardEvent) => {
+            if (
+                !isActive ||
+                event.defaultPrevented ||
+                event.metaKey ||
+                event.ctrlKey ||
+                event.altKey ||
+                event.shiftKey ||
+                (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') ||
+                isTextEntryTarget(event.target) ||
+                itemIds.length === 0
+            ) {
+                return;
+            }
+
+            const target =
+                event.target instanceof Element ? event.target : null;
+            if (
+                target?.closest(
+                    'button:not(.planner-item-card), a[href], input, select, textarea, [contenteditable="true"], [role="button"]:not(.planner-item-card)'
+                )
+            ) {
+                return;
+            }
+
+            const currentIndex = selectedItemId
+                ? itemIds.indexOf(selectedItemId)
+                : -1;
+            const nextIndex =
+                currentIndex < 0
+                    ? event.key === 'ArrowDown'
+                        ? 0
+                        : itemIds.length - 1
+                    : (currentIndex +
+                          (event.key === 'ArrowDown' ? 1 : -1) +
+                          itemIds.length) %
+                      itemIds.length;
+
+            event.preventDefault();
+            focusIndex(nextIndex);
+        }
+    );
+
+    useEffect(() => {
+        const listener = (event: KeyboardEvent) =>
+            handleDocumentArrowNavigation(event);
+        document.addEventListener('keydown', listener);
+        return () => document.removeEventListener('keydown', listener);
+    }, []);
+    const selectItemsCommand = getConfigurableShortcutCommand(
+        `app:${APP_SHORTCUT_IDS.selectItems}`
+    );
+    const itemSelectionShortcuts = selectItemsCommand
+        ? shortcutDefinitionsFor(
+              selectItemsCommand,
+              appShortcuts[APP_SHORTCUT_IDS.selectItems]
+          )
+        : [];
     useShortcuts(
-        ITEM_SELECTION_SHORTCUTS.map((shortcut, index) => ({
+        itemSelectionShortcuts.map((shortcut, index) => ({
             enabled: index < itemIds.length,
             onTrigger: () => focusIndex(index),
             shortcut,
         }))
     );
-    const createItemShortcutProps = useShortcut({
-        enabled: canWrite,
-        onTrigger: () => void commands.createItem(),
-        shortcut: CREATE_ITEM_SHORTCUT,
-    });
+    const createItemCommand = getConfigurableShortcutCommand(
+        `app:${APP_SHORTCUT_IDS.createItem}`
+    );
+    const createItemShortcut = createItemCommand
+        ? shortcutDefinitionsFor(
+              createItemCommand,
+              appShortcuts[APP_SHORTCUT_IDS.createItem]
+          )[0]
+        : undefined;
+    const [createItemShortcutProps = {}] = useShortcuts(
+        createItemShortcut
+            ? [
+                  {
+                      enabled: canWrite,
+                      onTrigger: () => void commands.createItem(),
+                      shortcut: createItemShortcut,
+                  },
+              ]
+            : []
+    );
+    const reorderItemsCommand = getConfigurableShortcutCommand(
+        `app:${APP_SHORTCUT_IDS.reorderItems}`
+    );
+    const reorderItemShortcuts = reorderItemsCommand
+        ? shortcutDefinitionsFor(
+              reorderItemsCommand,
+              appShortcuts[APP_SHORTCUT_IDS.reorderItems]
+          )
+        : [];
 
     useEffect(() => {
         if (
@@ -209,41 +360,6 @@ export function ItemColumn({
         virtualizer,
     ]);
 
-    useEffect(() => {
-        const listener = (event: globalThis.KeyboardEvent) => {
-            if (
-                event.defaultPrevented ||
-                isTextEntryTarget(event.target) ||
-                event.metaKey ||
-                event.ctrlKey ||
-                event.altKey ||
-                event.shiftKey
-            ) {
-                return;
-            }
-            if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
-                if (itemIds.length === 0) return;
-                event.preventDefault();
-                const current = selectedItemId
-                    ? itemIds.indexOf(selectedItemId)
-                    : -1;
-                const next =
-                    current < 0
-                        ? event.key === 'ArrowDown'
-                            ? 0
-                            : itemIds.length - 1
-                        : (current +
-                              (event.key === 'ArrowDown' ? 1 : -1) +
-                              itemIds.length) %
-                          itemIds.length;
-                focusIndex(next);
-                return;
-            }
-        };
-        document.addEventListener('keydown', listener);
-        return () => document.removeEventListener('keydown', listener);
-    }, [focusIndex, selectedItemId, itemIds]);
-
     useEffect(
         () => () => {
             if (focusFrameRef.current !== null) {
@@ -255,14 +371,17 @@ export function ItemColumn({
 
     if (!selectedListId) {
         return (
-            <div className="grid h-full place-items-center text-planner-text-faded">
+            <div className="grid h-full place-items-center bg-planner-shaded text-planner-text-faded">
                 No active list
             </div>
         );
     }
 
     return (
-        <div className="h-full overflow-auto p-3" ref={parentRef}>
+        <div
+            className="h-full overflow-auto bg-planner-shaded p-3"
+            ref={parentRef}
+        >
             <div
                 className="relative w-full"
                 style={{ height: virtualizer.getTotalSize() }}
@@ -278,7 +397,7 @@ export function ItemColumn({
                         shortcutNumber !== null &&
                         shortcutNumber >= 1 &&
                         shortcutNumber <= 9
-                            ? ITEM_SELECTION_SHORTCUTS[shortcutNumber - 1]
+                            ? itemSelectionShortcuts[shortcutNumber - 1]
                             : undefined;
                     const previewItem =
                         entry.kind === 'drop-preview' ? draggedItem : null;
@@ -309,10 +428,14 @@ export function ItemColumn({
                                     {canWrite ? (
                                         <>
                                             Create Item
-                                            <ShortcutHint
-                                                className="planner-create-item-shortcut"
-                                                shortcut={CREATE_ITEM_SHORTCUT}
-                                            />
+                                            {createItemShortcut && (
+                                                <ShortcutHint
+                                                    className="planner-create-item-shortcut"
+                                                    shortcut={
+                                                        createItemShortcut
+                                                    }
+                                                />
+                                            )}
                                         </>
                                     ) : (
                                         'Read only'
@@ -321,6 +444,42 @@ export function ItemColumn({
                             ) : entry.kind === 'item' ? (
                                 <ItemCard
                                     id={entry.id}
+                                    {...(isActive
+                                        ? {
+                                              onNavigate: (
+                                                  direction: 'next' | 'previous'
+                                              ) => {
+                                                  const current =
+                                                      itemIds.indexOf(entry.id);
+                                                  if (current < 0) return;
+                                                  const offset =
+                                                      direction === 'next'
+                                                          ? 1
+                                                          : -1;
+                                                  focusIndex(
+                                                      (current +
+                                                          offset +
+                                                          itemIds.length) %
+                                                          itemIds.length
+                                                  );
+                                              },
+                                          }
+                                        : {})}
+                                    {...(isActive &&
+                                    canWrite &&
+                                    entry.id === selectedItemId
+                                        ? {
+                                              onReorder: (
+                                                  direction: 'next' | 'previous'
+                                              ) =>
+                                                  reorderItem(
+                                                      entry.id,
+                                                      direction
+                                                  ),
+                                              reorderShortcuts:
+                                                  reorderItemShortcuts,
+                                          }
+                                        : {})}
                                     {...(shortcut ? { shortcut } : {})}
                                 />
                             ) : previewItem ? (
@@ -330,7 +489,7 @@ export function ItemColumn({
                                     ref={dropPreviewRef}
                                     style={{
                                         height: relative
-                                            ? `calc(var(--planner-minute-height) * ${previewItem.durationMinutes})`
+                                            ? `calc(var(--planner-minute-height) * ${effectiveItemDurationMinutes(previewItem.durationMinutes)})`
                                             : 54,
                                     }}
                                 />

@@ -11,8 +11,10 @@
 - Do not start, stop, restart, replace, or kill persistent development
   processes unless the user explicitly authorizes that process action in the
   current request.
-- Keep strict ports. If port `1420` or `3010` is occupied, report the conflict;
-  do not select a fallback port or terminate the existing owner.
+- Browser development uses `https://daily-planner.localhost` through the
+  dotfiles-managed router, backed by strict port `3010`. If port `1420` or
+  `3010` is occupied, report the conflict; do not select a fallback port or
+  terminate the existing owner.
 
 ## Installed Application Validation
 

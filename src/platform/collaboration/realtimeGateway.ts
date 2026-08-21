@@ -1,5 +1,7 @@
-import type { RealtimeChannel } from '@supabase/supabase-js';
-import { REALTIME_SUBSCRIBE_STATES } from '@supabase/realtime-js';
+import {
+    REALTIME_SUBSCRIBE_STATES,
+    type RealtimeChannel,
+} from '@supabase/supabase-js';
 import type { IdentityId, ListId } from '../../core/domain/ids';
 import { identityIdSchema } from '../../core/domain/ids';
 import { requireSupabaseClient } from './supabaseClient';

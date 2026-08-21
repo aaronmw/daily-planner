@@ -16,6 +16,7 @@ import {
     useShortcut,
     useShortcutRecorder,
 } from './ShortcutProvider';
+import { matchesShortcut } from './shortcutMatching';
 
 afterEach(() => {
     cleanup();
@@ -196,6 +197,26 @@ const getShortcutHint = () => {
 };
 
 describe('ShortcutProvider', () => {
+    it('matches configurable shifted digits by physical key code', () => {
+        expect(
+            matchesShortcut(
+                new KeyboardEvent('keydown', {
+                    code: 'Digit3',
+                    key: '#',
+                    metaKey: true,
+                    shiftKey: true,
+                }),
+                {
+                    code: 'Digit3',
+                    id: 'select-item-3',
+                    key: '3',
+                    keyLabel: '3',
+                    modifiers: ['shift', 'meta'],
+                }
+            )
+        ).toBe(true);
+    });
+
     it('dispatches only an exact, non-repeating command chord', () => {
         const onTrigger = renderHarness();
 

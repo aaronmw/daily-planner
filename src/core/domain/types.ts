@@ -1,5 +1,6 @@
 import type { AttachmentId, IdentityId, ListId, ItemId } from './ids';
 import type { PlannerCommandId } from '../application/commandIds';
+import type { AppShortcutId } from '../application/shortcutCommands';
 
 export const ACCENT_KEYS = [
     'red',
@@ -105,8 +106,9 @@ export type SyncStatus =
     | { error: string; status: 'error' };
 
 export interface PlannerPreferences {
+    appShortcuts: Partial<Record<AppShortcutId, string>>;
     columnVisibility: ColumnVisibility;
-    desktopShortcuts: Record<PlannerCommandId, string>;
+    desktopShortcuts: Partial<Record<PlannerCommandId, string>>;
     focusAssistEnabled: boolean;
     highlightIncompleteSentencesEnabled: boolean;
     notificationsEnabled: boolean;

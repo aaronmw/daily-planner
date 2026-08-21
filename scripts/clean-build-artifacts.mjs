@@ -16,6 +16,7 @@ if (!validModes.has(requestedMode)) {
     if (requestedMode === 'all' || requestedMode === 'web') {
         remove(join(projectRoot, '.next'));
         remove(join(projectRoot, 'dist-desktop'));
+        remove(join(projectRoot, 'src-tauri', 'migration-dist'));
     }
 
     if (requestedMode.startsWith('rust') || requestedMode === 'all') {

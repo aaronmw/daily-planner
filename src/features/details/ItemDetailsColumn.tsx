@@ -1,13 +1,22 @@
 import { lazy, Suspense } from 'react';
 import { usePlannerCommands } from '../../core/application/plannerContext';
+import {
+    APP_SHORTCUT_IDS,
+    getConfigurableShortcutCommand,
+    shortcutDefinitionsFor,
+} from '../../core/application/shortcutCommands';
+import {
+    ITEM_DURATION_ESTIMATES,
+    itemDurationEstimateIndex,
+} from '../../core/domain/itemDuration';
 import { usePlannerSelector } from '../../core/store/plannerContext';
 import { EditableText } from '../editor/EditableText';
-import { IconButton } from '../shell/IconButton';
+import { Icon } from '../shell/Icon';
 import { TrackedSelection } from '../shell/TrackedSelection';
+import { ShortcutHint } from '../shortcuts/ShortcutProvider';
+import { shortcutAriaKeys } from '../shortcuts/shortcutMatching';
 import { ItemNotesEditor } from './ItemNotesEditor';
 import { useListCapability } from '../collaboration/useListCapability';
-
-const DURATIONS = [15, 30, 45, 60, 90, 120] as const;
 
 const ItemComments = lazy(async () => {
     const module = await import('../collaboration/ItemComments');
@@ -24,9 +33,18 @@ export function ItemDetailsColumn() {
     const editSession = usePlannerSelector(state => state.labelEditSession);
     const preferences = usePlannerSelector(state => state.preferences);
     const canWrite = useListCapability(item?.listId ?? null, 'write');
-    const selectedDurationIndex = DURATIONS.findIndex(
-        duration => duration === item?.durationMinutes
+    const selectedDurationIndex = item
+        ? itemDurationEstimateIndex(item.durationMinutes)
+        : -1;
+    const cycleDurationCommand = getConfigurableShortcutCommand(
+        `app:${APP_SHORTCUT_IDS.cycleDuration}`
     );
+    const cycleDurationShortcut = cycleDurationCommand
+        ? shortcutDefinitionsFor(
+              cycleDurationCommand,
+              preferences.appShortcuts[APP_SHORTCUT_IDS.cycleDuration]
+          )[0]
+        : undefined;
 
     if (!item) {
         return (
@@ -45,14 +63,13 @@ export function ItemDetailsColumn() {
 
     return (
         <div className="flex h-full min-w-[280px] flex-col overflow-auto">
-            <div className="flex shrink-0 items-start bg-planner-shaded">
+            <div className="flex shrink-0 items-center bg-planner-shaded">
                 <h1 className="min-w-0 flex-1 px-4 py-3 text-[1.45rem] font-bold leading-[1.35]">
                     <EditableText
                         ariaLabel="Item label"
                         className="planner-item-title-editor"
                         editRequest={editRequest}
                         isEditable={canWrite}
-                        multiline
                         onCancel={({ editRequestId }) =>
                             commands.cancelLabelEdit(editRequestId)
                         }
@@ -78,7 +95,7 @@ export function ItemDetailsColumn() {
                 </div>
             </div>
 
-            <section className="flex min-h-[240px] min-w-0 flex-1 flex-col p-4">
+            <section className="flex min-h-[240px] min-w-0 flex-1 flex-col p-4 pr-5">
                 <h2 className="mb-2 text-[0.8rem] uppercase text-planner-text-faded">
                     Notes
                 </h2>
@@ -94,30 +111,40 @@ export function ItemDetailsColumn() {
             </section>
 
             <section className="shrink-0 bg-planner-shaded">
-                <h2 className="px-4 pt-3 text-[0.8rem] uppercase text-planner-text-faded">
+                <h2
+                    aria-keyshortcuts={
+                        cycleDurationShortcut
+                            ? shortcutAriaKeys(cycleDurationShortcut)
+                            : undefined
+                    }
+                    className="flex items-center gap-2 px-4 pt-3 text-[0.8rem] uppercase text-planner-text-faded"
+                >
                     Duration
+                    {cycleDurationShortcut && (
+                        <ShortcutHint shortcut={cycleDurationShortcut} />
+                    )}
                 </h2>
                 <TrackedSelection
                     ariaLabel="Duration"
-                    className="grid grid-cols-6"
+                    className="grid grid-cols-5"
                     disabled={!canWrite}
                     selectedIndex={selectedDurationIndex}
                 >
-                    {DURATIONS.map((duration, index) => (
+                    {ITEM_DURATION_ESTIMATES.map((estimate, index) => (
                         <button
-                            aria-pressed={item.durationMinutes === duration}
+                            aria-pressed={selectedDurationIndex === index}
                             className="relative z-10 h-[45px] text-center"
                             data-tracked-selection-index={index}
                             disabled={!canWrite}
-                            key={duration}
+                            key={estimate.label}
                             onClick={() =>
                                 void commands.updateItem(item.id, {
-                                    durationMinutes: duration,
+                                    durationMinutes: estimate.minutes,
                                 })
                             }
                             type="button"
                         >
-                            {duration}
+                            {estimate.label}
                         </button>
                     ))}
                 </TrackedSelection>
@@ -129,27 +156,15 @@ export function ItemDetailsColumn() {
                 </Suspense>
             )}
 
-            <div className="grid shrink-0 grid-cols-[1fr_45px]">
-                <button
-                    aria-pressed={item.isComplete}
-                    className="px-4 text-left transition-[background-color,color] duration-150 hover:bg-planner-shaded"
-                    disabled={!canWrite}
-                    onClick={() =>
-                        void commands.updateItem(item.id, {
-                            isComplete: !item.isComplete,
-                        })
-                    }
-                    type="button"
-                >
-                    {item.isComplete ? 'Completed' : 'Mark complete'}
-                </button>
-                <IconButton
-                    disabled={!canWrite}
-                    icon="trash"
-                    label="Move item to deleted items"
-                    onClick={() => void commands.archiveItem(item.id)}
-                />
-            </div>
+            <button
+                className="flex h-[45px] shrink-0 items-center justify-center gap-2 transition-[background-color,color] duration-150 hover:bg-planner-shaded"
+                disabled={!canWrite}
+                onClick={() => void commands.archiveItem(item.id)}
+                type="button"
+            >
+                <Icon name="box-archive" />
+                <span>Archive Item</span>
+            </button>
         </div>
     );
 }

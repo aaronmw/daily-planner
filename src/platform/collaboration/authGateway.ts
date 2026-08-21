@@ -5,16 +5,28 @@ import { getEnvironment } from '../../config/environment';
 import { isDesktopRuntime } from '../runtime/platformAdapter';
 
 const AUTH_CALLBACK = 'daily-planner://auth/callback';
+const DESKTOP_AUTH_ORIGIN = 'https://xgubpuynmcjscfxosplr.supabase.co';
 
 const redirectUrl = (): string =>
     isDesktopRuntime()
         ? AUTH_CALLBACK
         : getEnvironment().VITE_APP_URL || window.location.origin;
 
+export const isAllowedDesktopAuthUrl = (value: string): boolean => {
+    try {
+        const url = new URL(value);
+        return (
+            url.origin === DESKTOP_AUTH_ORIGIN &&
+            url.pathname === '/auth/v1/authorize'
+        );
+    } catch {
+        return false;
+    }
+};
+
 const openDesktopUrl = async (url: string | null): Promise<void> => {
     if (!isDesktopRuntime() || !url) return;
-    const parsed = new URL(url);
-    if (!['https:', 'http:'].includes(parsed.protocol)) {
+    if (!isAllowedDesktopAuthUrl(url)) {
         throw new Error('The sign-in provider returned an unsupported URL.');
     }
     const { openUrl } = await import('@tauri-apps/plugin-opener');

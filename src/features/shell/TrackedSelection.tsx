@@ -9,11 +9,16 @@ import {
 } from 'react';
 
 const OPTION_SELECTOR = '[data-tracked-selection-index]';
-const INDICATOR_SIZE = 36;
 const SNAP_DISTANCE = 10;
 const RETURN_DELAY = 140;
 
 type IndicatorMotion = 'acquire' | 'follow' | 'immediate' | 'return';
+type TrackingMode = 'grid' | 'horizontal';
+
+interface Point {
+    x: number;
+    y: number;
+}
 
 interface TrackedSelectionProps {
     ariaLabel: string;
@@ -21,10 +26,16 @@ interface TrackedSelectionProps {
     className?: string;
     disabled?: boolean;
     selectedIndex: number;
+    tracking?: TrackingMode;
 }
 
 const clamp = (value: number, minimum: number, maximum: number) =>
     Math.min(maximum, Math.max(minimum, value));
+
+const distanceBetween = (first: Point, second: Point, mode: TrackingMode) =>
+    mode === 'horizontal'
+        ? Math.abs(first.x - second.x)
+        : Math.hypot(first.x - second.x, first.y - second.y);
 
 const optionIndex = (target: EventTarget | null): number | null => {
     if (!(target instanceof Element)) return null;
@@ -42,37 +53,37 @@ export function TrackedSelection({
     className = '',
     disabled = false,
     selectedIndex,
+    tracking = 'horizontal',
 }: TrackedSelectionProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     const indicatorRef = useRef<HTMLDivElement>(null);
-    const centersRef = useRef<number[]>([]);
+    const centersRef = useRef<Point[]>([]);
     const focusedIndexRef = useRef<number | null>(null);
     const pointerActiveRef = useRef(false);
     const reducedMotionRef = useRef(false);
     const selectedIndexRef = useRef(selectedIndex);
     const frameRef = useRef<number | null>(null);
-    const pendingCoordinateRef = useRef<number | null>(null);
+    const pendingCoordinateRef = useRef<Point | null>(null);
     const returnTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const moveIndicator = useCallback(
-        (coordinate: number, motion: IndicatorMotion) => {
+        (coordinate: Point, motion: IndicatorMotion) => {
             const indicator = indicatorRef.current;
             if (!indicator) return;
 
             const reducedMotion = reducedMotionRef.current;
             const duration =
-                reducedMotion || motion === 'immediate'
+                reducedMotion || motion === 'immediate' || motion === 'follow'
                     ? '0ms'
-                    : motion === 'follow'
-                      ? '80ms'
-                      : '300ms';
+                    : '300ms';
 
             indicator.style.transitionDuration = duration;
             indicator.style.transitionTimingFunction =
                 motion === 'follow'
                     ? 'linear'
                     : 'cubic-bezier(0.22, 1, 0.36, 1)';
-            indicator.style.transform = `translate3d(${coordinate - INDICATOR_SIZE / 2}px, -50%, 0)`;
+            indicator.style.left = `${coordinate.x}px`;
+            indicator.style.top = `${coordinate.y}px`;
             indicator.style.opacity = '1';
         },
         []
@@ -80,13 +91,13 @@ export function TrackedSelection({
 
     const moveToIndex = useCallback(
         (index: number, motion: IndicatorMotion) => {
-            const coordinate = centersRef.current[index];
-            if (coordinate === undefined) {
+            const center = centersRef.current[index];
+            if (center === undefined) {
                 if (indicatorRef.current)
                     indicatorRef.current.style.opacity = '0';
                 return;
             }
-            moveIndicator(coordinate, motion);
+            moveIndicator(center, motion);
         },
         [moveIndicator]
     );
@@ -110,15 +121,12 @@ export function TrackedSelection({
             const container = containerRef.current;
             if (!container) return;
 
-            const containerRect = container.getBoundingClientRect();
             centersRef.current = Array.from(
                 container.querySelectorAll<HTMLElement>(OPTION_SELECTOR)
-            ).map(option => {
-                const optionRect = option.getBoundingClientRect();
-                return (
-                    optionRect.left - containerRect.left + optionRect.width / 2
-                );
-            });
+            ).map(option => ({
+                x: option.offsetLeft + option.offsetWidth / 2,
+                y: option.offsetTop + option.offsetHeight / 2,
+            }));
 
             moveToIndex(
                 focusedIndexRef.current ?? selectedIndexRef.current,
@@ -178,27 +186,53 @@ export function TrackedSelection({
         const acquiring = !pointerActiveRef.current;
         pointerActiveRef.current = true;
 
-        const bounds = event.currentTarget.getBoundingClientRect();
-        const pointerCoordinate = event.clientX - bounds.left;
+        const container = event.currentTarget;
+        const bounds = container.getBoundingClientRect();
+        const scaleX = bounds.width / container.clientWidth || 1;
+        const scaleY = bounds.height / container.clientHeight || 1;
         const firstCenter = centers[0];
-        const lastCenter = centers.at(-1);
-        if (firstCenter === undefined || lastCenter === undefined) return;
+        if (firstCenter === undefined) return;
+
+        const pointerCoordinate: Point = {
+            x: (event.clientX - bounds.left) / scaleX,
+            y:
+                tracking === 'horizontal'
+                    ? firstCenter.y
+                    : (event.clientY - bounds.top) / scaleY,
+        };
 
         let nearestCenter = firstCenter;
         for (const center of centers.slice(1)) {
             if (
-                Math.abs(center - pointerCoordinate) <
-                Math.abs(nearestCenter - pointerCoordinate)
+                distanceBetween(center, pointerCoordinate, tracking) <
+                distanceBetween(nearestCenter, pointerCoordinate, tracking)
             ) {
                 nearestCenter = center;
             }
         }
 
+        const horizontalCenters = centers.map(center => center.x);
+        const verticalCenters = centers.map(center => center.y);
         const coordinate = reducedMotionRef.current
             ? nearestCenter
-            : Math.abs(nearestCenter - pointerCoordinate) <= SNAP_DISTANCE
+            : distanceBetween(nearestCenter, pointerCoordinate, tracking) <=
+                SNAP_DISTANCE
               ? nearestCenter
-              : clamp(pointerCoordinate, firstCenter, lastCenter);
+              : {
+                    x: clamp(
+                        pointerCoordinate.x,
+                        Math.min(...horizontalCenters),
+                        Math.max(...horizontalCenters)
+                    ),
+                    y:
+                        tracking === 'horizontal'
+                            ? firstCenter.y
+                            : clamp(
+                                  pointerCoordinate.y,
+                                  Math.min(...verticalCenters),
+                                  Math.max(...verticalCenters)
+                              ),
+                };
 
         pendingCoordinateRef.current = coordinate;
         if (frameRef.current !== null) return;
@@ -266,7 +300,7 @@ export function TrackedSelection({
         >
             <div
                 aria-hidden="true"
-                className="pointer-events-none absolute left-0 top-1/2 z-0 size-9 rounded-full border-[length:var(--planner-stroke-width)] border-planner-contrast opacity-0 transition-[transform,opacity]"
+                className="pointer-events-none absolute left-0 top-0 z-0 size-9 -translate-x-1/2 -translate-y-1/2 rounded-full border-[length:var(--planner-stroke-width)] border-planner-contrast opacity-0 transition-[left,top,opacity]"
                 ref={indicatorRef}
             />
             {children}

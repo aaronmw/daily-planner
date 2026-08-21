@@ -6,6 +6,7 @@ import {
     itemIdSchema,
 } from './ids';
 import { ACCENT_KEYS } from './types';
+import { DEFAULT_APP_SHORTCUTS } from '../application/shortcutCommands';
 
 const isoDate = z.iso.datetime();
 
@@ -72,6 +73,19 @@ export const plannerItemSchema = collaborationMetadataSchema.extend({
 });
 
 export const plannerPreferencesSchema = z.object({
+    appShortcuts: z
+        .object({
+            'app-create-item': z.string().min(1).optional(),
+            'cycle-duration': z.string().min(1).optional(),
+            'cycle-theme': z.string().min(1).optional(),
+            'reorder-items': z.string().min(1).optional(),
+            'select-items-1-9': z.string().min(1).optional(),
+            'switch-lists': z.string().min(1).optional(),
+            'toggle-items': z.string().min(1).optional(),
+            'toggle-lists': z.string().min(1).optional(),
+            'toggle-timeline': z.string().min(1).optional(),
+        })
+        .default(DEFAULT_APP_SHORTCUTS),
     columnVisibility: z.object({
         details: z.boolean(),
         lists: z.boolean(),
@@ -79,9 +93,9 @@ export const plannerPreferencesSchema = z.object({
         timeline: z.boolean(),
     }),
     desktopShortcuts: z.object({
-        'create-list': z.string().min(1),
-        'create-item': z.string().min(1),
-        'show-planner': z.string().min(1),
+        'create-list': z.string().min(1).optional(),
+        'create-item': z.string().min(1).optional(),
+        'show-planner': z.string().min(1).optional(),
     }),
     focusAssistEnabled: z.boolean(),
     highlightIncompleteSentencesEnabled: z.boolean(),
